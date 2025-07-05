@@ -1,0 +1,452 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider     = "mysql"
+  url          = env("DATABASE_URL")
+  relationMode = "prisma"
+}
+
+model User {
+  id String @id @default(uuid())
+
+  fullname String
+  email    String  @unique
+  password String?
+
+  role Role @default(VIEWER)
+
+  active Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum Role {
+  ADMIN       // Administrador completo - acceso total
+  COORDINATOR // Coordinador - puede registrar y gestionar capacitaciones
+  VIEWER      // Solo lectura - dashboards y consultas
+}
+
+model Collaborator {
+  id String @id @default(uuid())
+
+  fullname String
+  numDoc   String  @unique
+  docType  DocType @default(CC)
+  email    String?
+  phone    String?
+
+  cityId String?
+  city   City?   @relation(fields: [cityId], references: [id])
+
+  // isVirtual Boolean @default(false)
+  // byArl     Boolean @default(false)
+
+  // checkCertificate Boolean @default(false)
+
+  documents CollaboratorCourseLevelDocument[]
+
+  certificates Certificate[]
+
+  // Relación con programaciones
+  trainingCollaborators TrainingCollaborator[]
+
+  active Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([cityId])
+}
+
+model Regional {
+  id String @id @default(uuid())
+
+  name String?
+
+  cities City[]
+
+  active Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model City {
+  id String @id @default(uuid())
+
+  realName String
+  formated String
+
+  regionalId String?
+  regional   Regional? @relation(fields: [regionalId], references: [id])
+
+  active Boolean @default(true)
+
+  collaborators Collaborator[]
+  inspections   Inspection[]
+
+  @@index([regionalId])
+}
+
+model RequiredDocument {
+  id String @id @default(uuid())
+
+  name String
+
+  courseLevelId String?
+  courseLevels  CourseLevel? @relation(fields: [courseLevelId], references: [id])
+
+  collaboratorCourseLevelDocument CollaboratorCourseLevelDocument[]
+
+  // Relación con documentos de capacitaciones
+  trainingCollaboratorDocuments TrainingCollaboratorDocument[]
+
+  active Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([courseLevelId])
+}
+
+model CollaboratorCourseLevelDocument {
+  id String @id @default(uuid())
+
+  collaboratorId String?
+  collaborator   Collaborator? @relation(fields: [collaboratorId], references: [id])
+
+  courseLevelId String
+
+  requiredDocumentId String
+  requiredDocument   RequiredDocument @relation(fields: [requiredDocumentId], references: [id])
+
+  documentLink String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([collaboratorId])
+  @@index([requiredDocumentId])
+}
+
+
+model TrainingCollaboratorDocument {
+  id String @id @default(uuid())
+
+  trainingCollaboratorId String
+  trainingCollaborator   TrainingCollaborator @relation(fields: [trainingCollaboratorId], references: [id])
+
+  requiredDocumentId String
+  requiredDocument   RequiredDocument @relation(fields: [requiredDocumentId], references: [id])
+
+  documentLink String
+  fileName     String?
+  fileSize     Int?
+  uploadedBy   String? // Usuario que subió el documento
+  
+  // Estados del documento
+  status DocumentStatus @default(PENDING)
+  reviewedBy String?
+  reviewedAt DateTime?
+  reviewNotes String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([trainingCollaboratorId, requiredDocumentId]) // Un documento por capacitación por colaborador
+  @@index([trainingCollaboratorId])
+  @@index([requiredDocumentId])
+  @@index([status])
+}
+
+enum DocumentStatus {
+  PENDING    // Pendiente de revisión
+  APPROVED   // Aprobado
+  REJECTED   // Rechazado
+  MISSING    // Faltante
+}
+
+model CourseLevel {
+  id String @id @default(uuid())
+
+  name String?
+
+  courseId String
+  course   Course @relation(fields: [courseId], references: [id])
+
+  hours Int?
+
+  requiredDocuments RequiredDocument[]
+
+  certificates Certificate[]
+
+  // Relación con programaciones
+  trainingCollaborators TrainingCollaborator[]
+
+  monthsToExpire Int? @default(0)
+
+  active Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([courseId])
+}
+
+model Course {
+  id String @id @default(uuid())
+
+  name         String?
+  shortName    String?
+  resolution   String?
+  courseLevels CourseLevel[]
+  // trainingRequest TrainingRequest[]
+
+  // Relación con programaciones
+  trainings Training[]
+
+  active Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Coach {
+  id String @id @default(uuid())
+
+  fullname String
+  numDoc String @unique
+  docType DocType @default(CC)
+
+  position String?
+  license String?
+
+  signatureUrl String?
+
+  phone String?
+
+  certificates Certificate[]
+  trainings Training[]
+
+  active Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+
+enum DocType {
+  CC
+  TI
+  CE
+  PP
+  PE
+}
+
+model Certificate {
+  id String @id @default(uuid())
+
+  collaboratorId String
+  collaborator   Collaborator @relation(fields: [collaboratorId], references: [id])
+
+  courseLevelId String
+  courseLevel   CourseLevel @relation(fields: [courseLevelId], references: [id])
+
+  // coachId String?
+  // coach   Coach?  @relation(fields: [coachId], references: [id])
+
+  fileUrl String?
+
+  collaboratorFullname String?
+  collaboratorNumDoc   String?
+  collaboratorCityName String?
+
+  collaboratorTypeDoc  DocType?
+  collaboratorArlName  String?
+  companyName          String?
+  legalRepresentative  String?
+  companyNit           String?
+
+  courseName     String?
+  levelName      String?
+  resolution     String?
+  levelHours     Int?
+  monthsToExpire Int?
+
+  coachName            String?
+  coachPosition        String?
+  coachLicence         String?
+  coachImgSignatureUrl String?
+
+  certificateDate DateTime?
+  startDate       DateTime?
+  expeditionDate  DateTime?
+  dueDate         DateTime?
+
+  wasSent Boolean @default(false)
+
+  // certificateEvent CertificateEvent[]
+
+  coachId String?
+  coach   Coach? @relation(fields: [coachId], references: [id])
+
+  active Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  // @@index([coachId])
+
+  @@index([collaboratorId])
+  @@index([courseLevelId])
+  @@index([coachId])
+}
+
+model FormationParameters {
+  id String @id @default(uuid())
+
+  threshold Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Inspection {
+  id String @id @default(uuid())
+
+  cityId String?
+  city   City?   @relation(fields: [cityId], references: [id])
+
+  date       DateTime
+  isExecuted Boolean  @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relación con Report
+  report Report?
+
+  @@index([cityId])
+}
+
+model Report {
+  id String @id @default(uuid())
+
+  deliveryDate DateTime
+  conformity   Boolean  @default(false)
+
+  fileUrl String? @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relación inversa con Inspection
+  inspection   Inspection @relation(fields: [inspectionId], references: [id])
+  inspectionId String     @unique
+}
+
+model MonthlyReports {
+  id        String   @id @default(uuid())
+  date      DateTime
+  reportUrl String?
+
+  active Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Training {
+  id String @id @default(uuid())
+
+  // name        String
+  // description String?
+  code String? @unique
+
+  courseId String
+  course   Course @relation(fields: [courseId], references: [id])
+
+  startDate DateTime
+  // endDate   DateTime?
+
+  location    String?
+  instructor  String?
+  maxCapacity Int?
+
+  // Relación con coach (instructor)
+  coachId String?
+  coach   Coach? @relation(fields: [coachId], references: [id])
+
+  status TrainingStatus @default(PLANNED)
+  statusChangeReason String?
+
+  // Relación con colaboradores inscritos
+  trainingCollaborators TrainingCollaborator[]
+
+  active Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([courseId])
+  @@index([coachId])
+  @@index([status])
+}
+
+model TrainingCollaborator {
+  id String @id @default(uuid())
+
+  trainingId String
+  training   Training @relation(fields: [trainingId], references: [id])
+
+  collaboratorId String
+  collaborator   Collaborator @relation(fields: [collaboratorId], references: [id])
+
+  courseLevelId String
+  courseLevel   CourseLevel @relation(fields: [courseLevelId], references: [id])
+
+  registrationDate DateTime @default(now())
+
+  status CollaboratorTrainingStatus @default(REGISTERED)
+
+  // Campos adicionales para tracking
+  attendance        Boolean?
+  finalScore        Float?
+  completionDate    DateTime?
+  certificateIssued Boolean   @default(false)
+
+  notes String?
+
+  // Relación con documentos de la capacitación
+  documents TrainingCollaboratorDocument[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([trainingId, collaboratorId]) // Un colaborador solo puede estar una vez en cada programación
+  @@index([trainingId])
+  @@index([collaboratorId])
+  @@index([courseLevelId])
+}
+
+enum TrainingStatus {
+  PLANNED // Planificada
+  ACTIVE // En curso
+  COMPLETED // Completada
+  CANCELLED // Cancelada
+  POSTPONED // Pospuesta
+}
+
+enum CollaboratorTrainingStatus {
+  REGISTERED // Registrado
+  CONFIRMED // Confirmado
+  ATTENDING // Asistiendo
+  COMPLETED // Completado
+  FAILED // Falló
+  DROPPED // Abandonó
+  ABSENT // Ausente
+}
