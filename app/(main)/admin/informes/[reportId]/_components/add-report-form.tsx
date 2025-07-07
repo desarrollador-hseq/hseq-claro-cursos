@@ -44,6 +44,8 @@ import {
 
 import { DeleteReport } from "./delete-report";
 import { Input } from "@/components/ui/input";
+import TitlePage from "@/components/title-page";
+import { LoadingButton } from "@/components/ui/loading-button";
 
 interface AddReportFormProps {
   report?: Report | null;
@@ -97,144 +99,135 @@ export const AddReportForm = ({ report }: AddReportFormProps) => {
   };
 
   return (
-    <div className=" max-w-[1500px] mx-auto bg-white rounded-md shadow-sm overflow-hidden p-3">
-      <div className="flex justify-between items-center gap-x-2 bg-white">
-        <div className="flex items-center">
-          <IconBadge icon={isEdit ? ClipboardEditIcon : FilePlus} />
-          <h2 className="text-2xl font-semibold">
-            {isEdit ? (
-              <p>
-                Editar Informe:{" "}
-                <span className="font-normal">
-                  {formatDate(report?.deliveryDate!)}
-                </span>
-              </p>
-            ) : (
-              "Registrar informe"
-            )}
-          </h2>
-        </div>
-        {/* {isEdit && <DeleteReport report={report!} />} */}
-      </div>
-      <Separator />
+    <div className="container">
+      <TitlePage
+        title={isEdit ? "Editar informe" : "Registrar informe"}
+        description="Registra o edita un informe de inspección"
+      />
 
-      <Form {...form}>
-        <form
-          onSubmit={form.handleSubmit(onSubmit)}
-          className="flex flex-col items-center mt-8 p-2"
-        >
-          <div className="grid grid-cols-1  gap-6 mt-1 mb-7 w-full max-w-[900px]">
-            <div className="space-y-8 ">
-              <div>
-                <FormField
-                  control={form.control}
-                  name="deliveryDate"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-col">
-                      <FormLabel>Fecha de ejecución</FormLabel>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <FormControl>
-                            <Button
-                              variant={"outline"}
-                              className={cn(
-                                "w-full pl-3 text-left font-normal bg-slate-100 hover:bg-slate-200",
-                                !field.value && "text-muted-foreground"
-                              )}
-                            >
-                              {field.value ? (
-                                format(
-                                  new Date(field.value),
-                                  "dd 'de' LLLL 'de' y",
-                                  { locale: es }
-                                )
-                              ) : (
-                                <span>Selecciona una fecha</span>
-                              )}
-                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                            </Button>
-                          </FormControl>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar
-                            mode="single"
-                            selected={new Date(field.value)}
-                            onSelect={field.onChange}
-                            // disabled={(date) =>
-                            //   date > new Date() || date < new Date("1900-01-01")
-                            // }
-                            initialFocus
-                            locale={es}
-                          />
-                        </PopoverContent>
-                      </Popover>
-
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              {isEdit && (
+      <div className="bg-white rounded-sm p-3">
+        <Form {...form}>
+          <form
+            onSubmit={form.handleSubmit(onSubmit)}
+            className="flex flex-col items-center mt-8 p-2"
+          >
+            <div className="grid grid-cols-1  gap-6 mt-1 mb-7 w-full max-w-lg">
+              <div className="space-y-8 ">
                 <div>
                   <FormField
                     control={form.control}
-                    name="conformity"
+                    name="deliveryDate"
                     render={({ field }) => (
                       <FormItem className="flex flex-col">
-                        <FormLabel
-                          className="font-bold"
-                          htmlFor="evaluationPass"
-                        >
-                          ¿Conformidad?
-                        </FormLabel>
-                        <div
-                          // onClick={() => handleEvaluation(!!!field.value)}
-                          className={cn(
-                            "w-full h-11 flex gap-3 justify-between items-center bg-slate-100 space-y-0 rounded-md border p-4 hover:cursor-pointer",
-                            field.value && "bg-green-600"
-                          )}
-                        >
-                          <div className="flex gap-4">
+                        <FormLabel>Fecha de ejecución</FormLabel>
+                        <Popover>
+                          <PopoverTrigger asChild>
                             <FormControl>
-                              <Checkbox
-                                checked={field.value || false}
-                                // onCheckedChange={field.onChange}
-                                onCheckedChange={(e) => handleEvaluation(e)}
-                                className={cn("")}
-                              />
+                              <Button
+                                variant={"outline"}
+                                className={cn(
+                                  "w-full pl-3 text-left font-normal bg-slate-100 hover:bg-slate-200",
+                                  !field.value && "text-muted-foreground"
+                                )}
+                              >
+                                {field.value ? (
+                                  format(
+                                    new Date(field.value),
+                                    "dd 'de' LLLL 'de' y",
+                                    { locale: es }
+                                  )
+                                ) : (
+                                  <span>Selecciona una fecha</span>
+                                )}
+                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                              </Button>
                             </FormControl>
-                            <span className={cn("font-bold", field.value && "text-white")}>
-                              {field.value ? "Sí" : "No"}
-                            </span>
-                          </div>
-                          <div className=" space-y-1 leading-none flex justify-between">
-                            <FormDescription
-                              className={`${field.value && "text-white"}`}
-                            >
-                              {!field.value ? (
-                                <span className="w-full flex gap-3 justify-between">
-                                  {" "}
-                                  sin conformidad
-                                  <X className="w-5 h-5 text-red-400" />{" "}
-                                </span>
-                              ) : (
-                                <span className="w-full flex gap-3 justify-between">
-                                  informe aceptado
-                                  <Check className="w-5 h-5" />{" "}
-                                </span>
-                              )}
-                            </FormDescription>
-                          </div>
-                        </div>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar
+                              mode="single"
+                              selected={new Date(field.value)}
+                              onSelect={field.onChange}
+                              // disabled={(date) =>
+                              //   date > new Date() || date < new Date("1900-01-01")
+                              // }
+                              initialFocus
+                              locale={es}
+                            />
+                          </PopoverContent>
+                        </Popover>
+
+                        <FormMessage />
                       </FormItem>
                     )}
                   />
                 </div>
-              )}
-            </div>
 
-            <div>
+                {isEdit && (
+                  <div>
+                    <FormField
+                      control={form.control}
+                      name="conformity"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-col">
+                          <FormLabel
+                            className="font-bold"
+                            htmlFor="evaluationPass"
+                          >
+                            ¿Conformidad?
+                          </FormLabel>
+                          <div
+                            // onClick={() => handleEvaluation(!!!field.value)}
+                            className={cn(
+                              "w-full h-11 flex gap-3 justify-between items-center bg-slate-100 space-y-0 rounded-md border p-4 hover:cursor-pointer",
+                              field.value && "bg-green-600"
+                            )}
+                          >
+                            <div className="flex gap-4">
+                              <FormControl>
+                                <Checkbox
+                                  checked={field.value || false}
+                                  // onCheckedChange={field.onChange}
+                                  onCheckedChange={(e) => handleEvaluation(e)}
+                                  className={cn("")}
+                                />
+                              </FormControl>
+                              <span
+                                className={cn(
+                                  "font-bold",
+                                  field.value && "text-white"
+                                )}
+                              >
+                                {field.value ? "Sí" : "No"}
+                              </span>
+                            </div>
+                            <div className=" space-y-1 leading-none flex justify-between">
+                              <FormDescription
+                                className={`${field.value && "text-white"}`}
+                              >
+                                {!field.value ? (
+                                  <span className="w-full flex gap-3 justify-between">
+                                    {" "}
+                                    sin conformidad
+                                    <X className="w-5 h-5 text-red-400" />{" "}
+                                  </span>
+                                ) : (
+                                  <span className="w-full flex gap-3 justify-between">
+                                    informe aceptado
+                                    <Check className="w-5 h-5" />{" "}
+                                  </span>
+                                )}
+                              </FormDescription>
+                            </div>
+                          </div>
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                )}
+              </div>
+
+              <div>
                 <FormField
                   control={form.control}
                   name="fileUrl"
@@ -244,24 +237,29 @@ export const AddReportForm = ({ report }: AddReportFormProps) => {
                         Link
                       </FormLabel>
                       <FormControl>
-                        <Input id="fileUrl" disabled={isSubmitting} {...field} />
+                        <Input
+                          id="fileUrl"
+                          disabled={isSubmitting}
+                          {...field}
+                        />
                       </FormControl>
                       <FormMessage className="ml-6 text-[0.8rem] text-red-500 font-medium" />
                     </FormItem>
                   )}
                 />
               </div>
-          </div>
+            </div>
 
-          <Button
-            disabled={isSubmitting || !isValid}
-            className="w-full max-w-[500px] gap-3"
-          >
-            {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
-            {isEdit ? "Actualizar" : "Crear"}
-          </Button>
-        </form>
-      </Form>
+            <LoadingButton
+              disabled={isSubmitting || !isValid}
+              className="w-full max-w-[500px] gap-3"
+              loading={isSubmitting}
+            >
+              {isEdit ? "Actualizar" : "Crear"}
+            </LoadingButton>
+          </form>
+        </Form>
+      </div>
     </div>
   );
 };

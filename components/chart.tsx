@@ -1,23 +1,28 @@
-
-import React, { ReactNode, useState } from 'react'
-import { Card, CardContent, CardHeader } from './ui/card'
-import { Separator } from './ui/separator'
-import { Loader2 } from 'lucide-react'
+import React, { ReactNode, useState } from "react";
+import { Card, CardContent, CardHeader } from "./ui/card";
+import { Separator } from "./ui/separator";
+import { Loader2 } from "lucide-react";
 import ReactEcharts from "echarts-for-react";
-import { cn } from '@/lib/utils';
+import { cn } from "@/lib/utils";
 
-
-
-
-export const Chart = ({option, title, className}: {option: object; title: string | ReactNode; className?: string}) => {
+export const Chart = ({
+  option,
+  title,
+  className,
+  children,
+}: {
+  option: object;
+  title: string | ReactNode;
+  className?: string;
+  children?: ReactNode;
+}) => {
   const [isChartLoaded, setIsChartLoaded] = useState(false);
 
   const onChartReady = () => {
     setTimeout(() => {
       setIsChartLoaded(true);
-    }, 500); 
+    }, 500);
   };
-
 
   return (
     <Card className={cn(className)}>
@@ -37,7 +42,8 @@ export const Chart = ({option, title, className}: {option: object; title: string
           onChartReady={() => onChartReady()}
           option={option}
         />
+        {children}
       </CardContent>
     </Card>
-  )
-}
+  );
+};

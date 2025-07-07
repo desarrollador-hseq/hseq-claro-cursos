@@ -38,6 +38,7 @@ interface AddCollaboratorFormProps {
   availableCollaborators: any[];
   maxCapacity: number | null;
   currentCount: number;
+  byCetar: boolean;
 }
 
 const formSchema = z.object({
@@ -57,7 +58,8 @@ export const AddCollaboratorForm = ({
   course,
   availableCollaborators,
   maxCapacity,
-  currentCount
+  currentCount,
+  byCetar
 }: AddCollaboratorFormProps) => {
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState("");
@@ -66,6 +68,7 @@ export const AddCollaboratorForm = ({
   const [selectedLevel, setSelectedLevel] = useState<any>(null);
   const [uploadedDocuments, setUploadedDocuments] = useState<{[key: string]: File}>({});
   const [fileErrors, setFileErrors] = useState<{[key: string]: string}>({});
+  const [collaboratorWarnings, setCollaboratorWarnings] = useState<{[key: string]: string}>({});
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -84,10 +87,58 @@ export const AddCollaboratorForm = ({
     return null;
   };
 
+  // Verificar si el colaborador ya tiene certificados del curso y nivel seleccionado
+  const checkExistingCertificates = async (collaboratorId: string, courseLevelId: string) => {
+    if (!collaboratorId || !courseLevelId) {
+      setCollaboratorWarnings({});
+      return;
+    }
+
+    try {
+      // Verificar certificado regular
+      const certificateResponse = await axios.get(`/api/certificates/find?collaboratorId=${collaboratorId}&courseLevelId=${courseLevelId}`);
+      
+      if (certificateResponse.data) {
+        const certificate = certificateResponse.data;
+        const level = course.courseLevels.find((l: any) => l.id === courseLevelId);
+        
+        if (certificate.type === "cetar") {
+          setCollaboratorWarnings({
+            [collaboratorId]: `⚠️ Este colaborador ya tiene certificado CETAR del curso "${course.name}" - Nivel "${level?.name}"`
+          });
+        } else {
+          // Verificar si el certificado aún es válido
+          if (certificate.dueDate) {
+            const dueDate = new Date(certificate.dueDate);
+            if (dueDate > new Date()) {
+              setCollaboratorWarnings({
+                [collaboratorId]: `⚠️ Este colaborador ya tiene certificado válido del curso "${course.name}" - Nivel "${level?.name}" que vence el ${dueDate.toLocaleDateString()}`
+              });
+            } else {
+              setCollaboratorWarnings({});
+            }
+          } else {
+            // Certificado sin vencimiento
+            setCollaboratorWarnings({
+              [collaboratorId]: `⚠️ Este colaborador ya tiene certificado válido del curso "${course.name}" - Nivel "${level?.name}". Este certificado no vence.`
+            });
+          }
+        }
+      } else {
+        setCollaboratorWarnings({});
+      }
+    } catch (error) {
+      // Si no se encuentra certificado (404), no hay problema
+      if (axios.isAxiosError(error) && error.response?.status === 404) {
+        setCollaboratorWarnings({});
+      }
+    }
+  };
+
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
-      // Validar que todos los documentos requeridos estén subidos
-      if (selectedLevel && selectedLevel.requiredDocuments.length > 0) {
+      // Validar que todos los documentos requeridos estén subidos solo si NO es CETAR
+      if (!byCetar && selectedLevel && selectedLevel.requiredDocuments.length > 0) {
         const missingDocs = selectedLevel.requiredDocuments.filter(
           (doc: any) => !uploadedDocuments[doc.id]
         );
@@ -110,13 +161,15 @@ export const AddCollaboratorForm = ({
       formData.append('collaboratorId', values.collaboratorId);
       formData.append('courseLevelId', values.courseLevelId);
       
-      // Agregar documentos al FormData
-      selectedLevel?.requiredDocuments.forEach((doc: any) => {
-        const file = uploadedDocuments[doc.id];
-        if (file) {
-          formData.append(`documents[${doc.id}]`, file);
-        }
-      });
+      // Agregar documentos al FormData solo si NO es CETAR
+      if (!byCetar) {
+        selectedLevel?.requiredDocuments.forEach((doc: any) => {
+          const file = uploadedDocuments[doc.id];
+          if (file) {
+            formData.append(`documents[${doc.id}]`, file);
+          }
+        });
+      }
 
       await axios.post(`/api/trainings/${trainingId}/collaborators`, formData, {
         headers: {
@@ -142,7 +195,7 @@ export const AddCollaboratorForm = ({
       if (axios.isAxiosError(error)) {
         if (error.response?.data === "Collaborator already registered") {
           toast.error("El colaborador ya está registrado en esta capacitación", {
-            duration: 3000, 
+            duration: 4000, 
             position: "top-center",
             style: {
               zIndex: 100000
@@ -150,15 +203,27 @@ export const AddCollaboratorForm = ({
           });
         } else if (error.response?.data === "Training is at maximum capacity") {
           toast.error("La capacitación ha alcanzado su capacidad máxima", {
-            duration: 3000, 
+            duration: 4000, 
             position: "top-center",
             style: {
               zIndex: 100000
             }
           });
+        } else if (error.response?.data && typeof error.response.data === 'string' && 
+                   (error.response.data.includes("ya tiene certificado válido") || 
+                    error.response.data.includes("ya tiene certificado CETAR"))) {
+          // Mensaje específico para certificados duplicados
+          toast.error(error.response.data, {
+            duration: 6000, 
+            position: "top-center",
+            style: {
+              zIndex: 100000,
+              maxWidth: '500px'
+            }
+          });
         } else {
-          toast.error("Error al agregar colaborador", {
-            duration: 3000, 
+          toast.error(error.response?.data || "Error al agregar colaborador", {
+            duration: 4000, 
             position: "top-center",
             style: {
               zIndex: 100000
@@ -167,7 +232,7 @@ export const AddCollaboratorForm = ({
         }
       } else {
         toast.error("Ocurrió un error inesperado", {
-          duration: 3000, 
+          duration: 4000, 
           position: "top-center",
           style: {
             zIndex: 100000
@@ -206,11 +271,11 @@ export const AddCollaboratorForm = ({
   const isAtCapacity = maxCapacity !== null && currentCount >= maxCapacity;
 
   // Verificar si todos los archivos están subidos y sin errores
-  const hasAllValidFiles = selectedLevel && selectedLevel.requiredDocuments.length > 0 
-    ? selectedLevel.requiredDocuments.every((doc: any) => 
+  const hasAllValidFiles = byCetar || !selectedLevel || selectedLevel.requiredDocuments.length === 0
+    ? true
+    : selectedLevel.requiredDocuments.every((doc: any) => 
         uploadedDocuments[doc.id] && !fileErrors[doc.id]
-      )
-    : true;
+      );
 
   return (
     <Card>
@@ -331,7 +396,14 @@ export const AddCollaboratorForm = ({
                     <FormItem>
                       <FormLabel className="font-semibold">Colaborador</FormLabel>
                       <Select
-                        onValueChange={field.onChange}
+                        onValueChange={(value) => {
+                          field.onChange(value);
+                          // Verificar certificados existentes cuando se selecciona colaborador
+                          const courseLevelId = form.getValues("courseLevelId");
+                          if (courseLevelId) {
+                            checkExistingCertificates(value, courseLevelId);
+                          }
+                        }}
                         defaultValue={field.value}
                       >
                         <FormControl>
@@ -385,6 +457,12 @@ export const AddCollaboratorForm = ({
                           setSelectedLevel(level);
                           setUploadedDocuments({}); // Reset documents when level changes
                           setFileErrors({}); // Reset file errors when level changes
+                          
+                          // Verificar certificados existentes cuando se selecciona nivel
+                          const collaboratorId = form.getValues("collaboratorId");
+                          if (collaboratorId) {
+                            checkExistingCertificates(collaboratorId, value);
+                          }
                         }}
                         defaultValue={field.value}
                       >
@@ -418,8 +496,42 @@ export const AddCollaboratorForm = ({
                   )}
                 />
 
-                {/* Sección de documentos requeridos */}
-                {selectedLevel && selectedLevel.requiredDocuments.length > 0 && (
+                {/* Advertencia de certificados existentes */}
+                {(() => {
+                  const collaboratorId = form.watch("collaboratorId");
+                  const warning = collaboratorWarnings[collaboratorId];
+                  return warning && (
+                    <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                      <div className="flex items-start gap-2">
+                        <AlertCircle className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                        <div>
+                          <span className="font-semibold text-amber-800 block">Certificado Existente</span>
+                          <p className="text-sm text-amber-700">{warning}</p>
+                          <p className="text-xs text-amber-600 mt-1">
+                            El sistema no permitirá registrar a este colaborador si ya tiene un certificado válido.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                {/* Mensaje informativo para CETAR */}
+                {byCetar && selectedLevel && (
+                  <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                    <div className="flex items-center gap-2 text-green-800">
+                      <CheckCircle className="h-5 w-5" />
+                      <span className="font-semibold">Capacitación CETAR</span>
+                    </div>
+                    <p className="text-sm text-green-700 mt-1">
+                      Esta capacitación no requiere documentación de los colaboradores.
+                      Los colaboradores pueden ser matriculados directamente.
+                    </p>
+                  </div>
+                )}
+
+                {/* Sección de documentos requeridos - Solo mostrar si NO es CETAR */}
+                {!byCetar && selectedLevel && selectedLevel.requiredDocuments.length > 0 && (
                   <div className="space-y-4">
                     <div className="border-t pt-4">
                       <h3 className="text-lg font-semibold mb-3">
@@ -616,9 +728,11 @@ export const AddCollaboratorForm = ({
                   loading={isSubmitting}
                   className="w-full bg-blue-600 hover:bg-blue-700 text-white"
                 >
-                  {selectedLevel && selectedLevel.requiredDocuments.length > 0 
-                    ? `Matricular con ${selectedLevel.requiredDocuments.length} documentos`
-                    : "Agregar Colaborador"
+                  {byCetar 
+                    ? "Matricular (CETAR - Sin documentos requeridos)"
+                    : selectedLevel && selectedLevel.requiredDocuments.length > 0 
+                      ? `Matricular con ${selectedLevel.requiredDocuments.length} documentos`
+                      : "Agregar Colaborador"
                   }
                 </LoadingButton>
               </form>

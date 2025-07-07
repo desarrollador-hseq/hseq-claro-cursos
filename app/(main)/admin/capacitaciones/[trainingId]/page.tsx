@@ -23,6 +23,7 @@ import { TrainingCollaboratorsList } from "./_components/training-collaborators-
 import { TrainingStatusManager } from "./_components/training-status-manager";
 import { formatDate } from "@/lib/utils";
 import TitlePage from "@/components/title-page";
+import { getFormationThreshold } from "@/actions/parameters";
 
 interface TrainingPageProps {
   params: {
@@ -51,8 +52,8 @@ const TrainingPage = async ({ params }: TrainingPageProps) => {
             include: {
               requiredDocuments: {
                 where: {
-                  active: true
-                }
+                  active: true,
+                },
               },
             },
           },
@@ -69,6 +70,12 @@ const TrainingPage = async ({ params }: TrainingPageProps) => {
                 },
               },
               certificates: true,
+              cetarCertificates: {
+                where: {
+                  trainingId: params.trainingId,
+                  active: true,
+                },
+              },
             },
           },
 
@@ -112,14 +119,7 @@ const TrainingPage = async ({ params }: TrainingPageProps) => {
     },
   });
 
-  // Obtener parámetros de formación (threshold)
-  const formationParameters = await db.formationParameters.findFirst({
-    orderBy: {
-      createdAt: "desc",
-    },
-  });
-
-  const threshold = formationParameters?.threshold || 70; // Default 70% si no hay parámetros
+  const threshold = await getFormationThreshold();
 
   // Estadísticas
   const totalCollaborators = training.trainingCollaborators.length;
@@ -197,7 +197,10 @@ const TrainingPage = async ({ params }: TrainingPageProps) => {
       tc.finalScore < threshold
   ).length;
 
-  const isDisabled = training.status === "COMPLETED" || training.status === "CANCELLED" || training.status === "POSTPONED";
+  const isDisabled =
+    training.status === "COMPLETED" ||
+    training.status === "CANCELLED" ||
+    training.status === "POSTPONED";
 
   return (
     <div className="container">
@@ -205,7 +208,7 @@ const TrainingPage = async ({ params }: TrainingPageProps) => {
         title={"Capacitación"}
         description="Información de la capacitación"
       />
-      <div className="mx-auto py-2 space-y-3" >
+      <div className="mx-auto py-0 space-y-3">
         {/* Header */}
         <Card className="border-blue-200 bg-gradient-to-r from-blue-50 to-indigo-50 pb-0">
           <CardHeader>
@@ -213,12 +216,15 @@ const TrainingPage = async ({ params }: TrainingPageProps) => {
               <div className="space-y-2">
                 <div className="flex items-center gap-3">
                   <h1 className="text-2xl font-bold text-blue-900">
-                    {training.code}
+                    {training.code} {training.byCetar ? "(CETAR)" : "(UVAE)"}
                   </h1>
                   {getStatusBadge(training.status)}
                 </div>
-                <p className="text-blue-700 font-medium">
-                  {training.course.name}
+                <p className="text-slate-500 font-medium text-lg">
+                  Curso:{" "}
+                  <span className="font-bold text-blue-600">
+                    {training.course.name}
+                  </span>
                 </p>
                 {training.course.shortName && (
                   <p className="text-sm text-blue-600">
@@ -234,7 +240,11 @@ const TrainingPage = async ({ params }: TrainingPageProps) => {
         </Card>
 
         {/* Información general */}
-        <div className={`grid gap-4 md:grid-cols-2 lg:grid-cols-4 ${isDisabled ? "opacity-50" : ""}`}>
+        <div
+          className={`grid gap-4 md:grid-cols-2 lg:grid-cols-4 ${
+            isDisabled ? "opacity-50" : ""
+          }`}
+        >
           <Card className="pb-0">
             <CardContent className="py-3">
               <div className="flex items-center space-x-2">
@@ -298,48 +308,55 @@ const TrainingPage = async ({ params }: TrainingPageProps) => {
               </div>
             </CardContent>
           </Card>
-          <Separator className="bg-gray-200 md:col-span-2 lg:col-span-4 my-0" />
-          <Card className="border-yellow-200 bg-yellow-50 pb-0">
-            <CardContent className="py-3">
-              <div className="flex items-center space-x-2">
-                <FileText className="h-5 w-5 text-purple-600" />
-                <div>
-                  <p className="text-sm font-medium text-gray-600">
-                    Doc. faltantes
-                  </p>
-                  <p className="text-lg font-semibold">
-                    {collaboratorsWithCompleteDocuments} / {totalCollaborators}
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="border-orange-200 bg-orange-50 pb-0">
-            <CardContent className="py-3">
-              <div className="flex items-center space-x-2">
-                <MdOutlinePendingActions className="h-5 w-5 text-orange-600" />
-                <div>
-                  <p className="text-sm font-medium text-gray-600">
-                    Por Calificar
-                  </p>
-                  <p className="text-lg font-semibold">{noScore}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="border-red-200 bg-red-50 pb-0">
-            <CardContent className="py-3">
-              <div className="flex items-center space-x-2">
-                <ThumbsDown className="h-5 w-5 text-orange-600" />
-                <div>
-                  <p className="text-sm font-medium text-gray-600">
-                    No Aprobados
-                  </p>
-                  <p className="text-lg font-semibold">{insufficientScore}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          {!training.byCetar && (
+            <>
+            <Separator className="bg-gray-200 md:col-span-2 lg:col-span-4 my-0" />
+              <Card className="border-yellow-200 bg-yellow-50 pb-0">
+                <CardContent className="py-3">
+                  <div className="flex items-center space-x-2">
+                    <FileText className="h-5 w-5 text-purple-600" />
+                    <div>
+                      <p className="text-sm font-medium text-gray-600">
+                        Doc. faltantes
+                      </p>
+                      <p className="text-lg font-semibold">
+                        {collaboratorsWithCompleteDocuments} /{" "}
+                        {totalCollaborators}
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="border-orange-200 bg-orange-50 pb-0">
+                <CardContent className="py-3">
+                  <div className="flex items-center space-x-2">
+                    <MdOutlinePendingActions className="h-5 w-5 text-orange-600" />
+                    <div>
+                      <p className="text-sm font-medium text-gray-600">
+                        Por Calificar
+                      </p>
+                      <p className="text-lg font-semibold">{noScore}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="border-red-200 bg-red-50 pb-0">
+                <CardContent className="py-3">
+                  <div className="flex items-center space-x-2">
+                    <ThumbsDown className="h-5 w-5 text-orange-600" />
+                    <div>
+                      <p className="text-sm font-medium text-gray-600">
+                        No Aprobados
+                      </p>
+                      <p className="text-lg font-semibold">
+                        {insufficientScore}
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </>
+          )}
         </div>
 
         {/* Detalles adicionales */}

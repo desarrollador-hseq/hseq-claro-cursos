@@ -1,6 +1,12 @@
 "use client";
 
-import { City, Collaborator, Regional } from "@prisma/client";
+import {
+  Certificate,
+  City,
+  Collaborator,
+  Regional,
+  TrainingCollaborator,
+} from "@prisma/client";
 import { Fade } from "react-awesome-reveal";
 import { CollaboratorFormed } from "./collaborators-formed";
 import { CollaboratorsCity } from "./collaborators-city";
@@ -13,6 +19,8 @@ import { ClientTable } from "@/components/client-table";
 
 interface CollaboratorWithFormated extends Collaborator {
   city: (City & { regional: Regional | null }) | null;
+  certificates: Certificate[];
+  trainingCollaborators: TrainingCollaborator[];
 }
 
 interface RegionalWithCitiesAndCollaborators extends Regional {
@@ -32,33 +40,57 @@ export const CollaboratorsReports = ({
 }: CollaboratorsReportsProps) => {
   const { date } = useDashboard();
 
-  // const filteredCollaborators =
-  //   !date || (date?.from === undefined && date?.to === undefined)
-  //     ? collaborators
-  //     : collaborators.filter((collaborator) => {
-  //         const startDate = new Date(collaborator.startDate);
-  //         return (
-  //           (!date.from || startDate >= date.from) &&
-  //           (!date.to || startDate <= date.to)
-  //         );
-  //       });
+  console.log({ date });
 
-  // const filteredRegionalFull =
-  //   !date || (date.from === undefined && date.to === undefined)
-  //     ? regionalFull
-  //     : regionalFull?.map((reg) => ({
-  //         ...reg,
-  //         cities: reg.cities.map((ct) => ({
-  //           ...ct,
-  //           collaborators: ct.collaborators?.filter((col) => {
-  //             const startDate = new Date(col.startDate);
-  //             return (
-  //               (!date.from || startDate >= date.from) &&
-  //               (!date.to || startDate <= date.to)
-  //             );
-  //           }),
-  //         })),
-  //       }));
+  const filteredCollaborators =
+    !date || (date?.from === undefined && date?.to === undefined)
+      ? collaborators
+      : collaborators.filter((collaborator) => {
+          // Filtrar por fecha de certificados emitidos
+          console.log({ collaboratorcert: collaborator.certificates });
+          const hasCertificateInRange = collaborator.certificates.some(
+            (cert) => {
+              const certDate = cert.startDate || cert.certificateDate;
+              if (!certDate) return false;
+              const startDate = new Date(certDate);
+              return (
+                (!date.from || startDate >= date.from) &&
+                (!date.to || startDate <= date.to)
+              );
+            }
+          );
+
+          // Filtrar por fecha de entrenamientos completados
+          const hasTrainingInRange = collaborator.trainingCollaborators.some(
+            (tc) => {
+              const completionDate = tc.completionDate;
+              if (!completionDate) return false;
+              const startDate = new Date(completionDate);
+              return (
+                (!date.from || startDate >= date.from) &&
+                (!date.to || startDate <= date.to)
+              );
+            }
+          );
+
+          return hasCertificateInRange || hasTrainingInRange;
+        });
+
+  const filteredRegionalFull =
+    !date || (date.from === undefined && date.to === undefined)
+      ? regionalFull
+      : regionalFull?.map((reg) => ({
+          ...reg,
+          cities: reg.cities.map((ct) => ({
+            ...ct,
+            collaborators: ct.collaborators?.filter((col) => {
+              // Buscar este colaborador en la lista filtrada
+              return filteredCollaborators.some(
+                (filteredCol) => filteredCol.id === col.id
+              );
+            }),
+          })),
+        }));
 
   return (
     <div
@@ -72,7 +104,7 @@ export const CollaboratorsReports = ({
           <ShowTableModal title="Colaboradores">
             <ClientTable
               columns={collaboratorColumns}
-              data={collaborators}
+              data={filteredCollaborators}
             />
           </ShowTableModal>
         </div>
@@ -84,7 +116,7 @@ export const CollaboratorsReports = ({
         <Fade delay={200} cascade triggerOnce>
           <CollaboratorsKpi
             threshold={threshold}
-            collaborators={collaborators}
+            collaborators={filteredCollaborators}
           />
         </Fade>
         {/* <div>
@@ -93,20 +125,20 @@ export const CollaboratorsReports = ({
         <Fade delay={400} cascade triggerOnce>
           <CollaboratorFormed
             threshold={threshold}
-            collaborators={collaborators}
+            collaborators={filteredCollaborators}
           />
         </Fade>
         <div className="lg:col-span-2">
-          <Fade delay={600} cascade triggerOnce>
-            <CollaboratorsCity collaborators={collaborators} />
+          <Fade delay={650} cascade triggerOnce>
+            <CollaboratorsRegional
+              collaborators={collaborators}
+              regionalsFull={filteredRegionalFull}
+            />
           </Fade>
         </div>
         <div className="lg:col-span-2">
-          <Fade delay={650} cascade triggerOnce>
-            {/* <CollaboratorsRegional
-              collaborators={collaborators}
-              regionalsFull={collaborators}
-            /> */}
+          <Fade delay={600} cascade triggerOnce>
+            <CollaboratorsCity collaborators={filteredCollaborators} />
           </Fade>
         </div>
       </div>

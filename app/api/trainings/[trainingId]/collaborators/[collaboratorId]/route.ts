@@ -47,15 +47,15 @@ export async function DELETE(
       );
     }
 
-    // Verificar si el colaborador ya tiene certificado emitido
-    if (trainingCollaborator.certificateIssued) {
+    // Verificar si el colaborador ya tiene certificado emitido (solo para no-CETAR)
+    if (!training.byCetar && trainingCollaborator.certificateIssued) {
       return NextResponse.json(
         { message: "No se puede eliminar un colaborador que ya tiene certificado emitido" },
         { status: 400 }
       );
     }
 
-    // Iniciar transacción para eliminar colaborador y sus documentos
+    // Iniciar transacción para eliminar colaborador, documentos y certificado CETAR
     const result = await db.$transaction(async (prisma) => {
       // Eliminar documentos relacionados
       await prisma.trainingCollaboratorDocument.deleteMany({
@@ -63,6 +63,20 @@ export async function DELETE(
           trainingCollaboratorId: trainingCollaborator.id,
         },
       });
+
+      // Si es capacitación CETAR, eliminar certificado CETAR
+      if (training.byCetar) {
+        await prisma.cetarCertificate.updateMany({
+          where: {
+            trainingId: trainingId,
+            collaboratorId: collaboratorId,
+            active: true,
+          },
+          data: {
+            active: false,
+          },
+        });
+      }
 
       // Eliminar la relación TrainingCollaborator
       await prisma.trainingCollaborator.delete({

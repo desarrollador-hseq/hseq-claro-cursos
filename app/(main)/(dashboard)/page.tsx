@@ -7,16 +7,28 @@ import { Separator } from "@/components/ui/separator";
 import { ReportsChartReports } from "./_components/reports/reports-chart-reports";
 import { Dashboardtitle } from "./_components/dashboard-title";
 import { MonthlyReportsSection } from "./_components/monthly-reports/monthly-reports-section";
+import { CetarDistribution } from "./_components/collaborators/cetar-distribution";
 
 const DashboardPage = async () => {
   const collaborators = await db.collaborator.findMany({
     where: {
-      active: true,
+      // Traemos todos los colaboradores para mostrar certificados emitidos
+      // independientemente de si están activos o no
     },
     include: {
       city: {
         include: {
           regional: true,
+        },
+      },
+      certificates: {
+        where: {
+          active: true,
+        },
+      },
+      trainingCollaborators: {
+        where: {
+          certificateIssued: true,
         },
       },
     },
@@ -47,6 +59,26 @@ const DashboardPage = async () => {
     },
     orderBy: {
       date: "desc",
+    },
+  });
+
+  // Obtener datos para el gráfico CETAR vs UVAE
+  const trainingCollaborators = await db.trainingCollaborator.findMany({
+    where: {
+      training: {
+        active: true,
+        status: {
+          not: "CANCELLED"
+        }
+      }
+    },
+    include: {
+      training: {
+        select: {
+          byCetar: true,
+          status: true,
+        },
+      },
     },
   });
 
@@ -85,6 +117,13 @@ const DashboardPage = async () => {
             </div>
           )}
           <Separator className="h-1.5 bg-primary" />
+             {/* Gráfico CETAR vs UVAE */}
+             {trainingCollaborators && (
+            <CetarDistribution trainingCollaborators={trainingCollaborators} />
+          )}
+          
+          <Separator className="h-1.5 bg-primary" />
+       
           {inspections && <InspectionsReports inspections={inspections} />}
 
           {/* <Separator className="h-1.5 bg-primary" /> */}

@@ -87,7 +87,63 @@ export async function POST(
       return new NextResponse("Collaborator already registered", { status: 400 });
     }
 
-    // Verificar capacidad máxima
+    // Verificar si el colaborador ya tiene certificado válido del mismo curso y nivel
+    // 1. Verificar certificados regulares
+    const existingCertificate = await db.certificate.findFirst({
+      where: {
+        collaboratorId: collaboratorId,
+        courseLevelId: courseLevelId,
+        active: true,
+      },
+    });
+
+    // 2. Verificar certificados CETAR
+    const existingCetarCertificate = await db.cetarCertificate.findFirst({
+      where: {
+        collaboratorId: collaboratorId,
+        courseLevelId: courseLevelId,
+        active: true,
+      },
+    });
+
+    // Si tiene certificado regular, verificar si no ha vencido
+    if (existingCertificate) {
+      const courseLevel = await db.courseLevel.findUnique({
+        where: { id: courseLevelId },
+        include: { course: true },
+      });
+
+      // Si el nivel no tiene vencimiento (monthsToExpire = 0), no se puede volver a certificar
+      if (courseLevel?.monthsToExpire === 0) {
+        return new NextResponse(
+          `El colaborador ya tiene certificado válido del curso "${courseLevel.course?.name}" - Nivel "${courseLevel.name}". Los certificados de este nivel no vencen.`,
+          { status: 400 }
+        );
+      }
+
+      // Si el certificado aún no ha vencido, no se puede volver a certificar
+      if (existingCertificate.dueDate && existingCertificate.dueDate > new Date()) {
+        return new NextResponse(
+          `El colaborador ya tiene certificado válido del curso "${courseLevel?.course?.name}" - Nivel "${courseLevel?.name}" que vence el ${existingCertificate.dueDate.toLocaleDateString()}.`,
+          { status: 400 }
+        );
+      }
+    }
+
+    // Si tiene certificado CETAR activo, no se puede inscribir de nuevo
+    if (existingCetarCertificate) {
+      const courseLevel = await db.courseLevel.findUnique({
+        where: { id: courseLevelId },
+        include: { course: true },
+      });
+
+      return new NextResponse(
+        `El colaborador ya tiene certificado CETAR válido del curso "${courseLevel?.course?.name}" - Nivel "${courseLevel?.name}".`,
+        { status: 400 }
+      );
+    }
+
+    // Verificar capacidad máxima y obtener información de la capacitación
     const training = await db.training.findUnique({
       where: { id: params.trainingId },
       include: {
@@ -95,7 +151,11 @@ export async function POST(
       }
     });
 
-    if (training?.maxCapacity && training.trainingCollaborators.length >= training.maxCapacity) {
+    if (!training) {
+      return new NextResponse("Training not found", { status: 404 });
+    }
+
+    if (training.maxCapacity && training.trainingCollaborators.length >= training.maxCapacity) {
       return new NextResponse("Training is at maximum capacity", { status: 400 });
     }
 
@@ -111,7 +171,7 @@ export async function POST(
       return new NextResponse("Course level not found", { status: 404 });
     }
 
-    // Usar transacción para crear colaborador y documentos
+    // Usar transacción para crear colaborador, certificado CETAR y documentos
     const result = await db.$transaction(async (tx) => {
       // 1. Crear el training collaborator
       const trainingCollaborator = await tx.trainingCollaborator.create({
@@ -119,56 +179,94 @@ export async function POST(
           trainingId: params.trainingId,
           collaboratorId,
           courseLevelId,
+          // Si es CETAR, marcar como completado inmediatamente
+          status: training.byCetar ? "COMPLETED" : "REGISTERED",
+          completionDate: training.byCetar ? new Date() : null,
         }
       });
 
-      // 2. Procesar y subir documentos
+      // 2. Si es CETAR, crear certificado CETAR automáticamente
+      let cetarCertificate = null;
+      if (training.byCetar) {
+        // Obtener información del colaborador para el certificado
+        const collaborator = await tx.collaborator.findUnique({
+          where: { id: collaboratorId }
+        });
+
+        if (collaborator) {
+          // Calcular fecha de vencimiento si aplica
+          let dueDate: Date | null = null;
+          if (courseLevel.monthsToExpire && courseLevel.monthsToExpire > 0) {
+            dueDate = new Date();
+            dueDate.setMonth(dueDate.getMonth() + courseLevel.monthsToExpire);
+          }
+
+          cetarCertificate = await tx.cetarCertificate.create({
+            data: {
+              trainingId: params.trainingId,
+              collaboratorId,
+              courseLevelId,
+              certificateUrl: "", // URL vacía, se llenará después
+              collaboratorFullname: collaborator.fullname,
+              collaboratorNumDoc: collaborator.numDoc,
+              collaboratorTypeDoc: collaborator.docType,
+              dueDate,
+            }
+          });
+        }
+      }
+
+      // 3. Procesar y subir documentos solo si NO es CETAR
       const documentEntries = [];
       
-      for (const requiredDoc of courseLevel.requiredDocuments) {
-        const file = formData.get(`documents[${requiredDoc.id}]`) as File;
-        
-        if (!file) {
-          throw new Error(`Missing required document: ${requiredDoc.name}`);
-        }
-
-        // Crear FormData para processAndUploadFile
-        const uploadFormData = new FormData();
-        uploadFormData.append('file', file);
-        uploadFormData.append('field', 'document');
-        uploadFormData.append('ubiPath', `training-documents/${params.trainingId}/${collaboratorId}`);
-
-        // Simular Request para processAndUploadFile
-        const mockRequest = new Request('http://localhost', {
-          method: 'POST',
-          body: uploadFormData
-        });
-
-        const uploadResult = await processAndUploadFile(mockRequest);
-        
-        if (uploadResult.error) {
-          throw new Error(`Error uploading ${requiredDoc.name}: ${uploadResult.error}`);
-        }
-
-        // 3. Crear entrada en la base de datos
-        const documentEntry = await tx.trainingCollaboratorDocument.create({
-          data: {
-            trainingCollaboratorId: trainingCollaborator.id,
-            requiredDocumentId: requiredDoc.id,
-            fileName: file.name,
-            documentLink: uploadResult.url!,
-            fileSize: file.size,
-            uploadedBy: session.user.email || 'unknown',
-            status: 'APPROVED'
+      if (!training.byCetar) {
+        // Solo procesar documentos si la capacitación NO es CETAR
+        for (const requiredDoc of courseLevel.requiredDocuments) {
+          const file = formData.get(`documents[${requiredDoc.id}]`) as File;
+          
+          if (!file) {
+            throw new Error(`Missing required document: ${requiredDoc.name}`);
           }
-        });
 
-        documentEntries.push(documentEntry);
+          // Crear FormData para processAndUploadFile
+          const uploadFormData = new FormData();
+          uploadFormData.append('file', file);
+          uploadFormData.append('field', 'document');
+          uploadFormData.append('ubiPath', `training-documents/${params.trainingId}/${collaboratorId}`);
+
+          // Simular Request para processAndUploadFile
+          const mockRequest = new Request('http://localhost', {
+            method: 'POST',
+            body: uploadFormData
+          });
+
+          const uploadResult = await processAndUploadFile(mockRequest);
+          
+          if (uploadResult.error) {
+            throw new Error(`Error uploading ${requiredDoc.name}: ${uploadResult.error}`);
+          }
+
+          // 3. Crear entrada en la base de datos
+          const documentEntry = await tx.trainingCollaboratorDocument.create({
+            data: {
+              trainingCollaboratorId: trainingCollaborator.id,
+              requiredDocumentId: requiredDoc.id,
+              fileName: file.name,
+              documentLink: uploadResult.url!,
+              fileSize: file.size,
+              uploadedBy: session.user.email || 'unknown',
+              status: 'APPROVED'
+            }
+          });
+
+          documentEntries.push(documentEntry);
+        }
       }
 
       return {
         trainingCollaborator,
-        documents: documentEntries
+        documents: documentEntries,
+        cetarCertificate
       };
     });
 

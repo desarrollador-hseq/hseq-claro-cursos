@@ -118,7 +118,7 @@ export const CollaboratorsRegional = ({
       option={option}
       title={
         <div className="flex flex-col items-center gap-3">
-          <span>Número de colaboradores por regional</span>
+          <span>Colaboradores certificados en cada regional</span>
           <CollaboratorsRegionalMenu regionals={regionalsFull} />
           <div />
         </div>

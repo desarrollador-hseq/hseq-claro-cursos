@@ -28,6 +28,16 @@ const statusText = {
 
 export const trainingDatatableColumn: ColumnDef<Training & { course: Course }>[] = [
   {
+    accessorKey: "byCetar",
+    header: ({ column }) => {
+      return <span>Tipo</span>;
+    },
+    cell: ({ row }) => {
+      const { byCetar } = row.original;
+      return <span className="capitalize">{byCetar ? "CETAR" : "UVAE"}</span>;
+    },
+  },
+  {
     accessorKey: "code",
     header: ({ column }) => {
       return (

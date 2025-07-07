@@ -25,6 +25,8 @@ import {
   PlusCircle,
   Award,
   Users,
+  Link,
+  ExternalLink,
 } from "lucide-react";
 import { CollaboratorDocumentsModal } from "./collaborator-documents-modal";
 import { ChangeLevelModal } from "./change-level-modal";
@@ -54,6 +56,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { ExternalCertificateDialog } from "./external-certificate-dialog";
 
 interface TrainingCollaboratorsListProps {
   training: trainingInterface;
@@ -214,8 +217,7 @@ export const TrainingCollaboratorsList = ({
 
   const isDisabled =
     // training.status === "COMPLETED" ||
-    training.status === "CANCELLED" ||
-    training.status === "POSTPONED";
+    training.status === "CANCELLED" || training.status === "POSTPONED";
 
   const isPending = (collaborator: any) => {
     const requiredDocsCount = collaborator.courseLevel.requiredDocuments.length;
@@ -289,6 +291,7 @@ export const TrainingCollaboratorsList = ({
               availableCollaborators={availableCollaborators}
               maxCapacity={training.maxCapacity}
               currentCount={totalCollaborators}
+              byCetar={training.byCetar}
             />
           </div>
         </CardContent>
@@ -328,6 +331,7 @@ export const TrainingCollaboratorsList = ({
                 availableCollaborators={availableCollaborators}
                 maxCapacity={training.maxCapacity}
                 currentCount={totalCollaborators}
+                byCetar={training.byCetar}
               />
             </SimpleModal>
             {/* Botón de certificación masiva */}
@@ -350,7 +354,7 @@ export const TrainingCollaboratorsList = ({
                       "flex items-center justify-between p-4 border rounded-lg transition-colors",
                       isDisabled && !isAdmin
                         ? "opacity-60"
-                        : isPending(tc)
+                        : !training.byCetar && isPending(tc)
                         ? "bg-red-50 border-red-200"
                         : "bg-green-50 border-green-200"
                     )}
@@ -411,141 +415,145 @@ export const TrainingCollaboratorsList = ({
                       </div>
 
                       {/* Estado de documentos */}
-                      <div
-                        className={`flex items-center gap-2  border-2  rounded-lg px-3 py-2 ${
-                          isDisabled && !isAdmin
-                            ? "opacity-50"
-                            : docStatus.color === "green"
-                            ? "border-green-500 bg-green-600 text-white"
-                            : docStatus.color === "yellow"
-                            ? "border-yellow-500 text-yellow-700 bg-yellow-50"
-                            : docStatus.color === "orange"
-                            ? "border-orange-500 text-white bg-red-500"
-                            : docStatus.color === "red"
-                            ? "border-red-500 text-red-700 bg-red-50"
-                            : ""
-                        }`}
-                      >
-                        <div className="flex flex-col">
-                          <span className="text-xs font-medium">
-                            Documentos
-                          </span>
-                          {isDisabled && !isAdmin ? (
-                            <div className="flex items-center gap-2">
-                              <Badge
-                                variant="outline"
-                                className="text-xs border-slate-300 bg-slate-50 border-none text-slate-300"
-                              >
-                                Documentos
-                              </Badge>
-                            </div>
-                          ) : (
+                      {!training.byCetar && (
+                        <div
+                          className={`flex items-center gap-2  border-2  rounded-lg px-3 py-2 ${
+                            isDisabled && !isAdmin
+                              ? "opacity-50"
+                              : docStatus.color === "green"
+                              ? "border-green-500 bg-green-600 text-white"
+                              : docStatus.color === "yellow"
+                              ? "border-yellow-500 text-yellow-700 bg-yellow-50"
+                              : docStatus.color === "orange"
+                              ? "border-orange-500 text-white bg-red-500"
+                              : docStatus.color === "red"
+                              ? "border-red-500 text-red-700 bg-red-50"
+                              : ""
+                          }`}
+                        >
+                          <div className="flex flex-col">
+                            <span className="text-xs font-medium">
+                              Documentos
+                            </span>
+                            {isDisabled && !isAdmin ? (
+                              <div className="flex items-center gap-2">
+                                <Badge
+                                  variant="outline"
+                                  className="text-xs border-slate-300 bg-slate-50 border-none text-slate-300"
+                                >
+                                  Documentos
+                                </Badge>
+                              </div>
+                            ) : (
+                              <div className="flex items-center gap-2">
+                                <Badge
+                                  variant="outline"
+                                  className={`text-xs ${
+                                    docStatus.color === "green"
+                                      ? "border-green-500 text-green-700 bg-green-50"
+                                      : docStatus.color === "yellow"
+                                      ? "border-yellow-500 text-yellow-700 bg-yellow-50"
+                                      : docStatus.color === "orange"
+                                      ? "border-orange-500 text-orange-700 bg-orange-50"
+                                      : docStatus.color === "red"
+                                      ? "border-red-500 text-red-700 bg-red-50"
+                                      : "border-slate-300 bg-slate-50 border-none text-slate-300"
+                                  } `}
+                                >
+                                  {docStatus.label}
+                                </Badge>
+                                {tc.courseLevel.requiredDocuments.length >
+                                  0 && (
+                                  <span className="text-[10px] font-semibold">
+                                    {tc.courseLevel.requiredDocuments.length}/{" "}
+                                    {(() => {
+                                      const currentLevelRequiredDocIds =
+                                        tc.courseLevel.requiredDocuments.map(
+                                          (doc: any) => doc.id
+                                        );
+                                      const validDocs = (
+                                        tc.documents || []
+                                      ).filter((doc: any) =>
+                                        currentLevelRequiredDocIds.includes(
+                                          doc.requiredDocumentId
+                                        )
+                                      );
+                                      return validDocs.length;
+                                    })()}
+                                  </span>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                          {tc.courseLevel.requiredDocuments.length > 0 && (
+                            <Button
+                              variant="outline"
+                              onClick={() => handleViewDocuments(tc)}
+                              title="Ver documentos"
+                              className="h-6 w-6 p-0 text-slate-500 hover:text-slate-700"
+                              disabled={
+                                isAdmin
+                                  ? false
+                                  : isDisabled || tc.certificateIssued
+                              }
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </div>
+                      )}
+                      {!training.byCetar && (
+                        <div
+                          className={`flex items-center gap-2 border-2  rounded-lg px-3 py-2 ${
+                            isDisabled && !isAdmin
+                              ? "opacity-50"
+                              : scoreStatus.status === "no-score"
+                              ? "bg-red-100  border-red-400 text-slate-600"
+                              : scoreStatus.status === "failing"
+                              ? "bg-red-500 border-red-600 text-white"
+                              : scoreStatus.status === "passing"
+                              ? "bg-green-600 border-green-700 text-white"
+                              : "bg-s   late-100 border-2 border-slate-400 text-slate-600"
+                          } `}
+                        >
+                          <div className="flex flex-col">
+                            <span className="text-xs  font-medium">
+                              Calificación
+                            </span>
                             <div className="flex items-center gap-2">
                               <Badge
                                 variant="outline"
                                 className={`text-xs ${
-                                  docStatus.color === "green"
+                                  isDisabled && !isAdmin
+                                    ? "opacity-50"
+                                    : scoreStatus.color === "green"
                                     ? "border-green-500 text-green-700 bg-green-50"
-                                    : docStatus.color === "yellow"
-                                    ? "border-yellow-500 text-yellow-700 bg-yellow-50"
-                                    : docStatus.color === "orange"
-                                    ? "border-orange-500 text-orange-700 bg-orange-50"
-                                    : docStatus.color === "red"
+                                    : scoreStatus.color === "red"
                                     ? "border-red-500 text-red-700 bg-red-50"
-                                    : "border-slate-300 bg-slate-50 border-none text-slate-300"
-                                } `}
+                                    : "border-slate-300 text-slate-700 bg-slate-50"
+                                }`}
                               >
-                                {docStatus.label}
+                                {scoreStatus.label}
                               </Badge>
-                              {tc.courseLevel.requiredDocuments.length > 0 && (
-                                <span className="text-[10px] font-semibold">
-                                  {tc.courseLevel.requiredDocuments.length}/{" "}
-                                  {(() => {
-                                    const currentLevelRequiredDocIds =
-                                      tc.courseLevel.requiredDocuments.map(
-                                        (doc: any) => doc.id
-                                      );
-                                    const validDocs = (
-                                      tc.documents || []
-                                    ).filter((doc: any) =>
-                                      currentLevelRequiredDocIds.includes(
-                                        doc.requiredDocumentId
-                                      )
-                                    );
-                                    return validDocs.length;
-                                  })()}
-                                </span>
-                              )}
+                              {tc.finalScore !== null &&
+                                tc.finalScore !== undefined && (
+                                  <span className="text-xs font-semibold text-slate-700">
+                                    {tc.finalScore}%
+                                  </span>
+                                )}
                             </div>
-                          )}
-                        </div>
-                        {tc.courseLevel.requiredDocuments.length > 0 && (
-                          <Button
-                            variant="outline"
-                            onClick={() => handleViewDocuments(tc)}
-                            title="Ver documentos"
-                            className="h-6 w-6 p-0 text-slate-500 hover:text-slate-700"
-                            disabled={
-                              isAdmin
-                                ? false
-                                : isDisabled || tc.certificateIssued
-                            }
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                        )}
-                      </div>
-
-                      {/* Estado de nota */}
-                      <div
-                        className={`flex items-center gap-2 border-2  rounded-lg px-3 py-2 ${
-                          isDisabled && !isAdmin
-                            ? "opacity-50"
-                            : (scoreStatus.status === "no-score"
-                            ? "bg-red-100  border-red-400 text-slate-600"
-                            : scoreStatus.status === "failing"
-                            ? "bg-red-500 border-red-600 text-white"
-                            : scoreStatus.status === "passing"
-                            ? "bg-green-600 border-green-700 text-white"
-                            : "bg-s   late-100 border-2 border-slate-400 text-slate-600")
-                        } `}
-                      >
-                        <div className="flex flex-col">
-                          <span className="text-xs  font-medium">
-                            Calificación
-                          </span>
-                          <div className="flex items-center gap-2">
-                            <Badge
-                              variant="outline"
-                              className={`text-xs ${
-                                isDisabled && !isAdmin
-                                  ? "opacity-50"
-                                  : (scoreStatus.color === "green"
-                                  ? "border-green-500 text-green-700 bg-green-50"
-                                  : scoreStatus.color === "red"
-                                  ? "border-red-500 text-red-700 bg-red-50"
-                                  : "border-slate-300 text-slate-700 bg-slate-50")
-                              }`}
-                            >
-                              {scoreStatus.label}
-                            </Badge>
-                            {tc.finalScore !== null &&
-                              tc.finalScore !== undefined && (
-                                <span className="text-xs font-semibold text-slate-700">
-                                  {tc.finalScore}%
-                                </span>
-                              )}
                           </div>
-                        </div>
 
-                        <EditScoreModal
-                          collaborator={tc}
-                          trainingId={training.id}
-                          threshold={threshold}
-                          isAdmin={isAdmin}
-                          isDisabled={isDisabled}
-                        />
-                      </div>
+                          <EditScoreModal
+                            collaborator={tc}
+                            trainingId={training.id}
+                            threshold={threshold}
+                            isAdmin={isAdmin}
+                            isDisabled={isDisabled}
+                          />
+                        </div>
+                      )}
+                      {/* Estado de nota */}
 
                       {/* Estado del colaborador */}
                       <div
@@ -582,8 +590,74 @@ export const TrainingCollaboratorsList = ({
                         </div>
                       </div>
 
-                      {/* Acciones */}
+                      {training.byCetar && (
+                        <div
+                          className={`flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 relative `}
+                        >
+                          <div className="flex flex-col ">
+                            <span className="text-xs text-slate-500 font-medium">
+                              Certificado
+                            </span>
+                            <div className="flex items-center gap-1 ">
+                                                             <ExternalCertificateDialog
+                                 trainingId={training.id}
+                                 collaboratorId={tc.collaboratorId}
+                                 collaboratorName={
+                                   tc.collaborator?.fullname || ""
+                                 }
+                                 currentUrl={tc.collaborator?.cetarCertificates?.[0]?.certificateUrl || null}
+                                 trigger={
+                                   <Button
+                                     variant="ghost"
+                                     size="sm"
+                                     title={
+                                       tc.collaborator?.cetarCertificates?.[0]?.certificateUrl
+                                         ? "Ver/Editar certificado CETAR"
+                                         : "Añadir certificado CETAR"
+                                     }
+                                     className={cn(
+                                       "flex items-center gap-2 p-0 h-fit",
+                                       tc.collaborator?.cetarCertificates?.[0]?.certificateUrl
+                                         ? "text-green-600 hover:text-green-700 hover:bg-green-50"
+                                         : "text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                                     )}
+                                   >
+                                     <FileText className="h-4 w-4" />
+                                     {tc.collaborator?.cetarCertificates?.[0]?.certificateUrl ? (
+                                       <span className="text-xs">
+                                         Certificado
+                                       </span>
+                                     ) : (
+                                       <span className="text-xs">
+                                         Añadir URL
+                                       </span>
+                                     )}
+                                   </Button>
+                                 }
+                               />
+                               {tc.collaborator?.cetarCertificates?.[0]?.certificateUrl && (
+                                 <a
+                                   href={tc.collaborator?.cetarCertificates?.[0]?.certificateUrl}
+                                   target="_blank"
+                                   rel="noopener noreferrer"
+                                   className="text-blue-500 absolute right-0 top-0 "
+                                 >
+                                   <Button
+                                     variant="ghost"
+                                     size="sm"
+                                     title="Abrir certificado"
+                                     className=" p-1 h-fit "
+                                   >
+                                     <ExternalLink className="h-3 w-3" />
+                                   </Button>
+                                 </a>
+                               )}
+                            </div>
+                          </div>
+                        </div>
+                      )}
 
+                      {/* Acciones */}
                       <div className="flex gap-2">
                         <Button
                           variant="ghost"
@@ -611,7 +685,7 @@ export const TrainingCollaboratorsList = ({
           </div>
         </CardContent>
         <CardFooter>
-          {totalCollaborators > 0 && (
+          {totalCollaborators > 0 && !training.byCetar && (
             <MassCertificationButton
               trainingId={training.id}
               trainingCollaborators={training.trainingCollaborators}

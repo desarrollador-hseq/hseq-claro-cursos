@@ -19,7 +19,7 @@ export async function GET(req: NextRequest) {
       return new NextResponse("Missing collaboratorId or courseLevelId", { status: 400 });
     }
 
-    // Buscar el certificado más reciente activo para este colaborador y nivel
+    // Buscar certificado regular activo
     const certificate = await db.certificate.findFirst({
       where: {
         collaboratorId,
@@ -31,11 +31,53 @@ export async function GET(req: NextRequest) {
       },
     });
 
+    // Si no encontramos certificado regular, buscar certificado CETAR
     if (!certificate) {
+      const cetarCertificate = await db.cetarCertificate.findFirst({
+        where: {
+          collaboratorId,
+          courseLevelId,
+          active: true,
+        },
+        include: {
+          training: true,
+          collaborator: true,
+          courseLevel: {
+            include: {
+              course: true,
+            },
+          },
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+      });
+
+      if (cetarCertificate) {
+        // Retornar información del certificado CETAR en formato compatible
+        return NextResponse.json({
+          id: cetarCertificate.id,
+          type: "cetar",
+          certificateUrl: cetarCertificate.certificateUrl,
+          collaboratorId: cetarCertificate.collaboratorId,
+          courseLevelId: cetarCertificate.courseLevelId,
+          certificateDate: cetarCertificate.certificateDate,
+          expeditionDate: cetarCertificate.expeditionDate,
+          dueDate: cetarCertificate.dueDate,
+          createdAt: cetarCertificate.createdAt,
+          training: cetarCertificate.training,
+          collaborator: cetarCertificate.collaborator,
+          courseLevel: cetarCertificate.courseLevel,
+        });
+      }
+
       return new NextResponse("Certificate not found", { status: 404 });
     }
 
-    return NextResponse.json(certificate);
+    return NextResponse.json({
+      ...certificate,
+      type: "regular",
+    });
   } catch (error) {
     console.error("[CERTIFICATE_FIND]", error);
     return new NextResponse("Internal Error", { status: 500 });

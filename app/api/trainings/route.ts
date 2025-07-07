@@ -85,7 +85,7 @@ export async function POST(req: NextRequest) {
     console.log("API startDate type:", typeof body.startDate);
     console.log("API startDate value:", body.startDate);
     
-    const { courseId, startDate, location, instructor, coachId, maxCapacity } = body;
+    const { courseId, startDate, location, instructor, coachId, maxCapacity, byCetar } = body;
 
     if (!courseId) {
       console.log("Missing courseId");
@@ -109,6 +109,7 @@ export async function POST(req: NextRequest) {
         instructor,
         coachId: coachId || null,
         maxCapacity: maxCapacity ? parseInt(maxCapacity) : null,
+        byCetar: byCetar || false,
       },
       include: {
         course: {

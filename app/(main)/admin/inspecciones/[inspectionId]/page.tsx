@@ -20,7 +20,14 @@ const CreateInspection = async ({
     params.inspectionId = "crear";
   }
 
-  const cities = await db.city.findMany({});
+  const cities = await db.city.findMany({
+    where: {
+      active: true,
+    },
+    orderBy: {
+      realName: "asc",
+    },
+  });
 
   return (
     <div>

@@ -96,106 +96,139 @@ export async function POST(
         const collaborator = trainingCollaborator.collaborator;
         const courseLevel = trainingCollaborator.courseLevel;
 
-        // Verificar si ya existe certificado válido
-        const existingCertificate = await db.certificate.findFirst({
-          where: {
-            collaboratorId: collaborator.id,
-            courseLevelId: courseLevel.id,
-            active: true,
-          },
-        });
+        // Verificar si ya está certificado
+        if (training.byCetar) {
+          // Para CETAR, verificar si ya está marcado como certificado emitido
+          if (trainingCollaborator.certificateIssued) {
+            skipped++;
+            continue;
+          }
+        } else {
+          // Para no-CETAR, verificar tabla Certificate
+          const existingCertificate = await db.certificate.findFirst({
+            where: {
+              collaboratorId: collaborator.id,
+              courseLevelId: courseLevel.id,
+              active: true,
+            },
+          });
 
-        // Si existe certificado y el nivel no tiene vencimiento (monthsToExpire = 0), no se puede volver a certificar
-        if (existingCertificate && courseLevel.monthsToExpire === 0) {
-          skipped++;
-          continue;
+          // Si existe certificado y el nivel no tiene vencimiento (monthsToExpire = 0), no se puede volver a certificar
+          if (existingCertificate && courseLevel.monthsToExpire === 0) {
+            skipped++;
+            continue;
+          }
+
+          // Si existe certificado y aún no ha vencido, no se puede volver a certificar
+          if (existingCertificate && existingCertificate.dueDate && existingCertificate.dueDate > new Date()) {
+            skipped++;
+            continue;
+          }
         }
 
-        // Si existe certificado y aún no ha vencido, no se puede volver a certificar
-        if (existingCertificate && existingCertificate.dueDate && existingCertificate.dueDate > new Date()) {
-          skipped++;
-          continue;
+        // Verificar documentos requeridos (solo para no-CETAR)
+        if (!training.byCetar) {
+          const requiredDocsCount = courseLevel.requiredDocuments?.length || 0;
+          
+          // Filtrar solo los documentos que corresponden a los documentos requeridos del nivel actual
+          const currentLevelRequiredDocIds = courseLevel.requiredDocuments?.map(doc => doc.id) || [];
+          const validApprovedDocs = trainingCollaborator.documents.filter(doc => 
+            currentLevelRequiredDocIds.includes(doc.requiredDocumentId)
+          );
+          const approvedDocsCount = validApprovedDocs.length;
+
+          if (requiredDocsCount > 0 && approvedDocsCount < requiredDocsCount) {
+            console.log(`Colaborador ${collaborator.fullname}: Documentos insuficientes. Requeridos: ${requiredDocsCount}, Aprobados válidos: ${approvedDocsCount}`);
+            errors++;
+            continue;
+          }
         }
 
-        // Verificar documentos requeridos
-        const requiredDocsCount = courseLevel.requiredDocuments?.length || 0;
-        
-        // Filtrar solo los documentos que corresponden a los documentos requeridos del nivel actual
-        const currentLevelRequiredDocIds = courseLevel.requiredDocuments?.map(doc => doc.id) || [];
-        const validApprovedDocs = trainingCollaborator.documents.filter(doc => 
-          currentLevelRequiredDocIds.includes(doc.requiredDocumentId)
-        );
-        const approvedDocsCount = validApprovedDocs.length;
-
-        if (requiredDocsCount > 0 && approvedDocsCount < requiredDocsCount) {
-          console.log(`Colaborador ${collaborator.fullname}: Documentos insuficientes. Requeridos: ${requiredDocsCount}, Aprobados válidos: ${approvedDocsCount}`);
-          errors++;
-          continue;
+        // Verificar requisitos para certificar
+        if (training.byCetar) {
+          // Para CETAR, verificar que tenga certificado CETAR con URL válida
+          const cetarCertificate = await db.cetarCertificate.findFirst({
+            where: {
+              trainingId: params.trainingId,
+              collaboratorId: collaborator.id,
+              active: true,
+            },
+          });
+          
+          if (!cetarCertificate || !cetarCertificate.certificateUrl || cetarCertificate.certificateUrl.trim() === "") {
+            console.log(`Colaborador ${collaborator.fullname}: Falta URL de certificado CETAR para proceder con la certificación`);
+            errors++;
+            continue;
+          }
+        } else {
+          // Para no-CETAR, verificar nota aprobatoria
+          const finalScore = trainingCollaborator.finalScore;
+          if (finalScore === null || finalScore === undefined || finalScore < threshold) {
+            errors++;
+            continue;
+          }
         }
 
-        // Verificar nota aprobatoria
-        const finalScore = trainingCollaborator.finalScore;
-        if (finalScore === null || finalScore === undefined || finalScore < threshold) {
-          errors++;
-          continue;
-        }
+        // Para no-CETAR, crear certificado en la tabla Certificate
+        if (!training.byCetar) {
+          // Calcular fechas
+          const now = new Date();
+          const certificateDate = now;
+          const startDate = training.startDate;
+          const expeditionDate = now;
+          
+          // Calcular fecha de vencimiento
+          let dueDate: Date | null = null;
+          if (courseLevel.monthsToExpire && courseLevel.monthsToExpire > 0) {
+            dueDate = new Date(now);
+            dueDate.setMonth(dueDate.getMonth() + courseLevel.monthsToExpire);
+          }
 
-        // Calcular fechas
-        const now = new Date();
-        const certificateDate = now;
-        const startDate = training.startDate;
-        const expeditionDate = now;
-        
-        // Calcular fecha de vencimiento
-        let dueDate: Date | null = null;
-        if (courseLevel.monthsToExpire && courseLevel.monthsToExpire > 0) {
-          dueDate = new Date(now);
-          dueDate.setMonth(dueDate.getMonth() + courseLevel.monthsToExpire);
+          // Crear certificado
+          const certificate = await db.certificate.create({
+            data: {
+              collaboratorId: collaborator.id,
+              courseLevelId: courseLevel.id,
+              coachId: training.coachId,
+              
+              // Información del colaborador (como strings)
+              collaboratorFullname: collaborator.fullname,
+              collaboratorNumDoc: collaborator.numDoc,
+              collaboratorTypeDoc: collaborator.docType,
+              collaboratorCityName: collaborator.city?.realName,
+              collaboratorArlName: "", // Valor por defecto
+              companyName: "CLARO COLOMBIA S.A.S",
+              legalRepresentative: "",
+              companyNit: "800225440-9",
+              
+              // Información del curso (como strings)
+              courseName: training.course.name,
+              levelName: courseLevel.name,
+              resolution: training.course.resolution,
+              levelHours: courseLevel.hours,
+              monthsToExpire: courseLevel.monthsToExpire,
+              
+              // Información del coach (como strings)
+              coachName: training.coach?.fullname || training.instructor,
+              coachPosition: training.coach?.position,
+              coachLicence: training.coach?.license,
+              coachImgSignatureUrl: training.coach?.signatureUrl,
+              
+              // Fechas
+              certificateDate,
+              startDate,
+              expeditionDate,
+              dueDate,
+              
+              // Estado
+              wasSent: false,
+              active: true,
+            },
+          });
         }
-
-        // Crear certificado
-        const certificate = await db.certificate.create({
-          data: {
-            collaboratorId: collaborator.id,
-            courseLevelId: courseLevel.id,
-            coachId: training.coachId,
-            
-            // Información del colaborador (como strings)
-            collaboratorFullname: collaborator.fullname,
-            collaboratorNumDoc: collaborator.numDoc,
-            collaboratorTypeDoc: collaborator.docType,
-            collaboratorCityName: collaborator.city?.realName,
-            collaboratorArlName: "", // Valor por defecto
-            companyName: "CLARO COLOMBIA S.A.S",
-            legalRepresentative: "",
-            companyNit: "800225440-9",
-            
-            // Información del curso (como strings)
-            courseName: training.course.name,
-            levelName: courseLevel.name,
-            resolution: training.course.resolution,
-            levelHours: courseLevel.hours,
-            monthsToExpire: courseLevel.monthsToExpire,
-            
-            // Información del coach (como strings)
-            coachName: training.coach?.fullname || training.instructor,
-            coachPosition: training.coach?.position,
-            coachLicence: training.coach?.license,
-            coachImgSignatureUrl: training.coach?.signatureUrl,
-            
-            // Fechas
-            certificateDate,
-            startDate,
-            expeditionDate,
-            dueDate,
-            
-            // Estado
-            wasSent: false,
-            active: true,
-          },
-        });
 
         // Actualizar el estado de certificado emitido en TrainingCollaborator
+        const now = new Date();
         await db.trainingCollaborator.update({
           where: { id: trainingCollaborator.id },
           data: { 

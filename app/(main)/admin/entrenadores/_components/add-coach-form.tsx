@@ -138,7 +138,7 @@ export const AddCoachForm = ({ coach }: AddCoachFormProps) => {
   };
 
   return (
-    <div className="max-w-[1200px] mx-auto p-6">
+    <div className="bg-white rounded-sm p-6">
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
           {/* Información básica */}
@@ -199,7 +199,7 @@ export const AddCoachForm = ({ coach }: AddCoachFormProps) => {
 
           {/* Sección de imagen de firma */}
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold">Imagen de Firma</h3>
+            <h3 className="text-sm font-semibold text-secondary">Imagen de Firma</h3>
             <div
               {...getRootProps()}
               className={cn(

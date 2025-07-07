@@ -1,10 +1,9 @@
 "use client";
 import Link from "next/link";
-import { LogOut, Settings } from "lucide-react";
+import { Settings } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { LogoGrupoHseq } from "@/components/logo-grupo-hseq";
 import { AdminSidebar } from "./admin-sidebar";
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { AdminOnly } from "@/components/rbac-wrapper";
 import { ButtonLogout } from "@/components/button-logout";
@@ -52,15 +51,7 @@ export const AdminNavbar = () => {
             >
               Capacitaciones
             </Link>
-            <Link
-              href="/admin/inspecciones"
-              className={cn(
-                "w-fit p-2 rounded-sm hover:bg-secondary/30",
-                pathname?.startsWith(`/admin/inspecciones`) && "bg-secondary"
-              )}
-            >
-              Inspecciones
-            </Link>
+
             <AdminOnly>
               <Link
                 href="/admin/entrenadores"
@@ -72,6 +63,15 @@ export const AdminNavbar = () => {
                 Entrenadores
               </Link>
             </AdminOnly>
+            <Link
+              href="/admin/inspecciones"
+              className={cn(
+                "w-fit p-2 rounded-sm hover:bg-secondary/30",
+                pathname?.startsWith(`/admin/inspecciones`) && "bg-secondary"
+              )}
+            >
+              Inspecciones
+            </Link>
             <Link
               href="/admin/informes"
               className={cn(

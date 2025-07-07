@@ -118,6 +118,22 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // También verificar si tiene certificado CETAR
+    const cetarCertificate = await db.cetarCertificate.findFirst({
+      where: {
+        collaboratorId: data.collaboratorId,
+        courseLevelId: data.courseLevelId,
+        active: true,
+      },
+    });
+
+    if (cetarCertificate) {
+      return NextResponse.json(
+        { message: "Ya existe un certificado CETAR para este colaborador y nivel" },
+        { status: 409 }
+      );
+    }
+
     // Crear certificado
     const certificate = await db.certificate.create({
       data: {

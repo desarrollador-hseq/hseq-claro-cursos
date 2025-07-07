@@ -61,7 +61,7 @@ const CreateTrainingPage = async () => {
         {/* Formulario */}
         <div className="grid gap-6 lg:grid-cols-3">
           {/* Formulario principal */}
-          <div className="lg:col-span-2">
+          <div className="lg:col-span-3">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -76,7 +76,7 @@ const CreateTrainingPage = async () => {
           </div>
 
           {/* Panel de ayuda */}
-          <div className="space-y-4">
+          {/* <div className="space-y-4">
             <Card className="border-yellow-200 bg-yellow-50">
               <CardHeader>
                 <CardTitle className="text-yellow-800 text-lg">
@@ -121,7 +121,7 @@ const CreateTrainingPage = async () => {
                 </div>
               </CardContent>
             </Card>
-          </div>
+          </div> */}
         </div>
       </div>
     </div>

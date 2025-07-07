@@ -41,6 +41,7 @@ import { LoadingButton } from "@/components/ui/loading-button";
 import { CalendarInputForm } from "@/components/calendar-input-form";
 import { SelectLabel } from "@radix-ui/react-select";
 import { cn } from "@/lib/utils";
+import { Checkbox } from "@/components/ui/checkbox";
 
 type CourseWithLevels = Course & {
   courseLevels: (CourseLevel & {
@@ -59,6 +60,7 @@ const formSchema = z.object({
   location: z.string().optional(),
   coachId: z.string().optional(),
   maxCapacity: z.string().optional(),
+  byCetar: z.boolean().optional(),
 });
 
 export const CreateTrainingForm = ({
@@ -78,6 +80,7 @@ export const CreateTrainingForm = ({
       location: "",
       coachId: "",
       maxCapacity: "",
+      byCetar: false,
     },
   });
 
@@ -133,10 +136,48 @@ export const CreateTrainingForm = ({
 
         <div
           className={cn(
-            "flex flex-col gap-y-2",
-            !!selectedCourse && "border border-secondary bg-blue-50/50 rounded-md p-2"
+            "flex flex-col gap-y-4",
+            !!selectedCourse &&
+              "border border-secondary bg-blue-50/50 rounded-md p-4"
           )}
         >
+          <FormField
+            control={form.control}
+            name="byCetar"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-base font-semibold">
+                  Tipo de Capacitación
+                </FormLabel>
+                <div className={cn(
+                  "hover:bg-accent/50 flex gap-3 rounded-lg border p-4 transition-all items-center",
+                  field.value 
+                    ? "border-green-600 bg-green-50 dark:border-green-900 dark:bg-green-950" 
+                    : "border-orange-600 bg-orange-50 dark:border-orange-900 dark:bg-orange-950"
+                )}>
+                  <FormControl>
+                    <Checkbox 
+                      id="toggle-cetar" 
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+
+                  <div className="flex-1">
+                    <FormLabel className="text-sm font-medium cursor-pointer" htmlFor="toggle-cetar">
+                      {field.value ? "CETAR" : "NO CETAR"}
+                    </FormLabel>
+                    <p className="text-xs text-gray-600 mt-1">
+                      {field.value 
+                        ? "No se requiere documentación de los colaboradores para esta capacitación" 
+                        : "Se requiere documentación completa de los colaboradores"}
+                    </p>
+                  </div>
+                </div>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
           {/* Curso */}
           <FormField
             control={form.control}

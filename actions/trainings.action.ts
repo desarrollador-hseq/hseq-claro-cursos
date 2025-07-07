@@ -25,7 +25,7 @@ export const getTrainings = async ({ status = "all" }: { status: TrainingStatus 
                 coach: true
             },
             orderBy: {
-                startDate: "asc"
+                createdAt: "desc"
             }
         });
         return trainings;

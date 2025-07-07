@@ -42,34 +42,45 @@ export const MassCertificationButton = ({
 
   // Filtrar colaboradores elegibles para certificación
   const eligibleCollaborators = trainingCollaborators.filter((tc) => {
-    // Verificar que tenga todos los documentos aprobados
-    const requiredDocsCount = tc.courseLevel.requiredDocuments.length;
-    const approvedDocsCount = tc.documents.filter(
-      (doc: any) => doc.status === "APPROVED"
-    ).length;
+    // Para capacitaciones CETAR, la lógica es diferente
+    const isCetar = (tc as any).training?.byCetar;
+    
+    if (isCetar) {
+      // Para CETAR: verificar que tenga certificado CETAR con URL válida
+      const cetarCert = (tc as any).collaborator?.cetarCertificates?.[0];
+      const hasValidCetarCert = cetarCert && cetarCert.certificateUrl && cetarCert.certificateUrl.trim() !== "";
+      return hasValidCetarCert && !tc.certificateIssued;
+    } else {
+      // Para no-CETAR: lógica original
+      // Verificar que tenga todos los documentos aprobados
+      const requiredDocsCount = tc.courseLevel.requiredDocuments.length;
+      const approvedDocsCount = tc.documents.filter(
+        (doc: any) => doc.status === "APPROVED"
+      ).length;
 
-    // Verificar que tenga documentos válidos
-    const hasValidDocs =
-      requiredDocsCount === 0 || approvedDocsCount === requiredDocsCount;
+      // Verificar que tenga documentos válidos
+      const hasValidDocs =
+        requiredDocsCount === 0 || approvedDocsCount === requiredDocsCount;
 
-    // Si no tiene documentos válidos, no es elegible
-    if (!hasValidDocs) return false;
+      // Si no tiene documentos válidos, no es elegible
+      if (!hasValidDocs) return false;
 
-    // Verificar que tenga nota aprobatoria
-    const hasPassingScore =
-      tc.finalScore !== null &&
-      tc.finalScore !== undefined &&
-      tc.finalScore >= threshold;
+      // Verificar que tenga nota aprobatoria
+      const hasPassingScore =
+        tc.finalScore !== null &&
+        tc.finalScore !== undefined &&
+        tc.finalScore >= threshold;
 
-    // Si no tiene nota aprobatoria, no es elegible
-    if (!hasPassingScore) return false;
+      // Si no tiene nota aprobatoria, no es elegible
+      if (!hasPassingScore) return false;
 
-    // Si nunca ha sido certificado, es elegible
-    if (!tc.certificateIssued) return true;
+      // Si nunca ha sido certificado, es elegible
+      if (!tc.certificateIssued) return true;
 
-    // Si ya fue certificado, verificar si el certificado puede renovarse
-    // (esto se verificará en el backend, pero por simplicidad en UI mostraremos como no elegible)
-    return false;
+      // Si ya fue certificado, verificar si el certificado puede renovarse
+      // (esto se verificará en el backend, pero por simplicidad en UI mostraremos como no elegible)
+      return false;
+    }
   });
 
   const alreadyCertified = trainingCollaborators.filter(

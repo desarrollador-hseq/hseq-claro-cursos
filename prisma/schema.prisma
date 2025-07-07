@@ -27,9 +27,9 @@ model User {
 }
 
 enum Role {
-  ADMIN       // Administrador completo - acceso total
+  ADMIN // Administrador completo - acceso total
   COORDINATOR // Coordinador - puede registrar y gestionar capacitaciones
-  VIEWER      // Solo lectura - dashboards y consultas
+  VIEWER // Solo lectura - dashboards y consultas
 }
 
 model Collaborator {
@@ -51,7 +51,8 @@ model Collaborator {
 
   documents CollaboratorCourseLevelDocument[]
 
-  certificates Certificate[]
+  certificates      Certificate[]
+  cetarCertificates CetarCertificate[]
 
   // Relación con programaciones
   trainingCollaborators TrainingCollaborator[]
@@ -135,7 +136,6 @@ model CollaboratorCourseLevelDocument {
   @@index([requiredDocumentId])
 }
 
-
 model TrainingCollaboratorDocument {
   id String @id @default(uuid())
 
@@ -149,11 +149,11 @@ model TrainingCollaboratorDocument {
   fileName     String?
   fileSize     Int?
   uploadedBy   String? // Usuario que subió el documento
-  
+
   // Estados del documento
-  status DocumentStatus @default(PENDING)
-  reviewedBy String?
-  reviewedAt DateTime?
+  status      DocumentStatus @default(PENDING)
+  reviewedBy  String?
+  reviewedAt  DateTime?
   reviewNotes String?
 
   createdAt DateTime @default(now())
@@ -166,10 +166,10 @@ model TrainingCollaboratorDocument {
 }
 
 enum DocumentStatus {
-  PENDING    // Pendiente de revisión
-  APPROVED   // Aprobado
-  REJECTED   // Rechazado
-  MISSING    // Faltante
+  PENDING // Pendiente de revisión
+  APPROVED // Aprobado
+  REJECTED // Rechazado
+  MISSING // Faltante
 }
 
 model CourseLevel {
@@ -184,7 +184,8 @@ model CourseLevel {
 
   requiredDocuments RequiredDocument[]
 
-  certificates Certificate[]
+  certificates      Certificate[]
+  cetarCertificates CetarCertificate[]
 
   // Relación con programaciones
   trainingCollaborators TrainingCollaborator[]
@@ -221,25 +222,24 @@ model Coach {
   id String @id @default(uuid())
 
   fullname String
-  numDoc String @unique
-  docType DocType @default(CC)
+  numDoc   String  @unique
+  docType  DocType @default(CC)
 
   position String?
-  license String?
+  license  String?
 
   signatureUrl String?
 
   phone String?
 
   certificates Certificate[]
-  trainings Training[]
+  trainings    Training[]
 
   active Boolean @default(true)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
-
 
 enum DocType {
   CC
@@ -267,11 +267,11 @@ model Certificate {
   collaboratorNumDoc   String?
   collaboratorCityName String?
 
-  collaboratorTypeDoc  DocType?
-  collaboratorArlName  String?
-  companyName          String?
-  legalRepresentative  String?
-  companyNit           String?
+  collaboratorTypeDoc DocType?
+  collaboratorArlName String?
+  companyName         String?
+  legalRepresentative String?
+  companyNit          String?
 
   courseName     String?
   levelName      String?
@@ -294,7 +294,7 @@ model Certificate {
   // certificateEvent CertificateEvent[]
 
   coachId String?
-  coach   Coach? @relation(fields: [coachId], references: [id])
+  coach   Coach?  @relation(fields: [coachId], references: [id])
 
   active Boolean @default(true)
 
@@ -305,6 +305,43 @@ model Certificate {
   @@index([collaboratorId])
   @@index([courseLevelId])
   @@index([coachId])
+}
+
+model CetarCertificate {
+  id String @id @default(uuid())
+
+  // Referencias a las entidades principales
+  collaboratorId String
+  collaborator   Collaborator @relation(fields: [collaboratorId], references: [id])
+
+  courseLevelId String
+  courseLevel   CourseLevel @relation(fields: [courseLevelId], references: [id])
+
+  trainingId String
+  training   Training @relation(fields: [trainingId], references: [id])
+
+  // URL del certificado externo
+  certificateUrl       String   @db.Text
+  // Información del colaborador (como strings para independencia)
+  collaboratorFullname String
+  collaboratorNumDoc   String
+  collaboratorTypeDoc  DocType?
+
+  // Fechas importantes
+  certificateDate DateTime  @default(now())
+  expeditionDate  DateTime  @default(now())
+  dueDate         DateTime?
+
+  // Estado y control
+  wasSent Boolean @default(false)
+  active  Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([collaboratorId])
+  @@index([courseLevelId])
+  @@index([trainingId])
 }
 
 model FormationParameters {
@@ -377,15 +414,18 @@ model Training {
   instructor  String?
   maxCapacity Int?
 
+  byCetar Boolean @default(false)
+
   // Relación con coach (instructor)
   coachId String?
-  coach   Coach? @relation(fields: [coachId], references: [id])
+  coach   Coach?  @relation(fields: [coachId], references: [id])
 
-  status TrainingStatus @default(PLANNED)
+  status             TrainingStatus @default(PLANNED)
   statusChangeReason String?
 
   // Relación con colaboradores inscritos
   trainingCollaborators TrainingCollaborator[]
+  cetarCertificates     CetarCertificate[]
 
   active Boolean @default(true)
 
