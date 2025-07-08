@@ -84,9 +84,9 @@ const ContentRegionalModal = ({
 
     // console.log({collaborators: collaborators})
 
-    collaborators.forEach(({ percentage }) => {
+    collaborators.forEach(({ email }) => {
       // traer threshold de la db
-      if (percentage === 80) {
+      if (email) {
         formadoCount += 1;
       } else {
         formacionCount += 1;

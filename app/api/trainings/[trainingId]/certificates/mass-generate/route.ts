@@ -138,7 +138,7 @@ export async function POST(
           const approvedDocsCount = validApprovedDocs.length;
 
           if (requiredDocsCount > 0 && approvedDocsCount < requiredDocsCount) {
-            console.log(`Colaborador ${collaborator.fullname}: Documentos insuficientes. Requeridos: ${requiredDocsCount}, Aprobados válidos: ${approvedDocsCount}`);
+            console.log(`Colaborador ${collaborator.name} ${collaborator.lastname}: Documentos insuficientes. Requeridos: ${requiredDocsCount}, Aprobados válidos: ${approvedDocsCount}`);
             errors++;
             continue;
           }
@@ -156,7 +156,7 @@ export async function POST(
           });
           
           if (!cetarCertificate || !cetarCertificate.certificateUrl || cetarCertificate.certificateUrl.trim() === "") {
-            console.log(`Colaborador ${collaborator.fullname}: Falta URL de certificado CETAR para proceder con la certificación`);
+            console.log(`Colaborador ${collaborator.name} ${collaborator.lastname}: Falta URL de certificado CETAR para proceder con la certificación`);
             errors++;
             continue;
           }
@@ -192,7 +192,7 @@ export async function POST(
               coachId: training.coachId,
               
               // Información del colaborador (como strings)
-              collaboratorFullname: collaborator.fullname,
+              collaboratorFullname: collaborator.name + " " + collaborator.lastname,
               collaboratorNumDoc: collaborator.numDoc,
               collaboratorTypeDoc: collaborator.docType,
               collaboratorCityName: collaborator.city?.realName,

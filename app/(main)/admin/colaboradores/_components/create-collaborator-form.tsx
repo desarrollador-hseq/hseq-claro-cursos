@@ -1,16 +1,14 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import axios from "axios";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { City, Collaborator } from "@prisma/client";
-import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import * as z from "zod";
-import { cn } from "@/lib/utils";
-import { Loader2, ThumbsUp, User, UserPlus } from "lucide-react";
-import { Button } from "@/components/ui/button";
+
 
 import {
   Form,
@@ -32,8 +30,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { DeleteCollaborator } from "./delete-collaborator";
-import { FormattedNumberInput } from "./formatted-input-form";
+import { DeleteCollaborator } from "../[collaboratorId]/_components/delete-collaborator";
 import { DocumentInputForm } from "@/components/document-input-form";
 import { LoadingButton } from "@/components/ui/loading-button";
 
@@ -43,8 +40,11 @@ interface AddCollaboratorFormProps {
 }
 
 const formSchema = z.object({
-  fullname: z.string().min(1, {
+  name: z.string().min(1, {
     message: "Nombre requerido",
+  }),
+  lastname: z.string().min(1, {
+    message: "Apellido requerido",
   }),
   numDoc: z.string().min(1, {
     message: "Número de documento requerido",
@@ -54,7 +54,7 @@ const formSchema = z.object({
   // evaluationPass: z.boolean().default(false),
 });
 
-export const AddCollaboratorForm = ({
+export const CreateCollaboratorForm = ({
   collaborator,
   cities,
 }: AddCollaboratorFormProps) => {
@@ -70,7 +70,8 @@ export const AddCollaboratorForm = ({
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      fullname: collaborator?.fullname || "",
+      name: collaborator?.name || "",
+      lastname: collaborator?.lastname || "",
       numDoc: collaborator?.numDoc
         ? new Intl.NumberFormat("es-ES").format(
             Number(collaborator.numDoc.toString().replace(/\./g, ""))
@@ -91,16 +92,19 @@ export const AddCollaboratorForm = ({
   const { setValue, setError } = form;
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
-    const { fullname, numDoc, ...valuesRes } = values;
-    const fullnameClean = fullname.trim();
+    const { name, lastname, numDoc, ...valuesRes } = values;
+    const nameClean = name.trim();
+    const lastnameClean = lastname.trim();
     const numDocClean = numDoc.replaceAll(".", "").trim();
-    setValue("fullname", fullnameClean, { shouldValidate: true });
+    setValue("name", nameClean, { shouldValidate: true });
+    setValue("lastname", lastnameClean, { shouldValidate: true });
     setValue("numDoc", numDocClean, { shouldValidate: true });
     try {
       if (isEdit) {
         await axios.patch(`/api/collaborators/${collaborator?.id}`, {
           ...valuesRes,
-          fullname: fullnameClean,
+          name: nameClean,
+          lastname: lastnameClean,
           numDoc: numDocClean,
         });
         toast.success("Colaborador actualizado");
@@ -158,16 +162,39 @@ export const AddCollaboratorForm = ({
               <div>
                 <FormField
                   control={form.control}
-                  name="fullname"
+                  name="name"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="font-bold" htmlFor="fullName">
-                        Nombre completo
+                      <FormLabel className="font-semibold" htmlFor="name">
+                        Nombre
                       </FormLabel>
 
                       <FormControl>
                         <Input
-                          id="fullName"
+                          id="name"
+                          disabled={isSubmitting}
+                          className="text-lg font-semibold"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage className="ml-6 text-[0.8rem] text-red-500 font-medium" />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              <div>
+                <FormField
+                  control={form.control}
+                  name="lastname"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="font-semibold" htmlFor="lastname">
+                        Apellido
+                      </FormLabel>
+
+                      <FormControl>
+                        <Input
+                          id="lastname"
                           disabled={isSubmitting}
                           className="text-lg font-semibold"
                           {...field}

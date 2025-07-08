@@ -25,11 +25,9 @@ export const GenerateCertificateBolivar = ({
   const lastPath = path.split("/").pop();
   const [isClient, setIsClient] = useState(false);
   const isRoot = useMemo(() => lastPath === "dashboard", [lastPath]);
-  const [endDateformat, setEndDateFormat] = useState(
-    format(new Date(collaborator.endDate), "PPP", { locale: es })
-  );
+ 
 
-  const nameandNumFormated = `${collaborator.fullname.replace(" ", "-")}-${
+  const nameandNumFormated = `${collaborator.name.replace(" ", "-")}-${
     collaborator.numDoc
   }`;
 
@@ -39,7 +37,7 @@ export const GenerateCertificateBolivar = ({
 
   return (
     <div className="w-full h-full">
-      <Card className="w-full min-h-[80vh]">
+      {/* <Card className="w-full min-h-[80vh]">
         <CardHeader className="flex items-end">
           <div>
             {!isRoot && isClient && (
@@ -96,7 +94,7 @@ export const GenerateCertificateBolivar = ({
             </PDFViewer>
           )}
         </CardContent>
-      </Card>
+      </Card> */}
     </div>
   );
 };

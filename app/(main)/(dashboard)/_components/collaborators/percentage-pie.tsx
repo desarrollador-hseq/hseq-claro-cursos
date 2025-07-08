@@ -10,7 +10,7 @@ interface CollaboratorsReportsProps {
 export const PercentagePie = ({ collaborators }: CollaboratorsReportsProps) => {
   const processData = () => {
     const groupedData = collaborators.reduce((acc: any, collaborator) => {
-      const key = `${collaborator.percentage}% Formación`;
+      const key = `${collaborator.email ? "Formado" : "En formación"}`;
       acc[key] = (acc[key] || 0) + 1;
       return acc;
     }, {});

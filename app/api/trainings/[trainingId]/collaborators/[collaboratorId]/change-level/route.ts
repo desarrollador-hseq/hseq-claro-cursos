@@ -65,6 +65,62 @@ export async function PATCH(
       return new NextResponse("Course level does not belong to this training's course", { status: 400 });
     }
 
+    // Verificar si el colaborador ya tiene certificado válido del nuevo nivel
+    // 1. Verificar certificados regulares
+    const existingCertificate = await db.certificate.findFirst({
+      where: {
+        collaboratorId: params.collaboratorId,
+        courseLevelId: courseLevelId,
+        active: true,
+      },
+    });
+
+    // 2. Verificar certificados CETAR
+    const existingCetarCertificate = await db.cetarCertificate.findFirst({
+      where: {
+        collaboratorId: params.collaboratorId,
+        courseLevelId: courseLevelId,
+        active: true,
+      },
+    });
+
+    // Si tiene certificado regular, verificar si no ha vencido
+    if (existingCertificate) {
+      const courseLevel = await db.courseLevel.findUnique({
+        where: { id: courseLevelId },
+        include: { course: true },
+      });
+
+      // Si el nivel no tiene vencimiento (monthsToExpire = 0), no se puede cambiar al nivel
+      if (courseLevel?.monthsToExpire === 0) {
+        return new NextResponse(
+          `El colaborador ya tiene certificado válido del curso "${courseLevel.course?.name}" - Nivel "${courseLevel.name}". Los certificados de este nivel no vencen.`,
+          { status: 400 }
+        );
+      }
+
+      // Si el certificado aún no ha vencido, no se puede cambiar al nivel
+      if (existingCertificate.dueDate && existingCertificate.dueDate > new Date()) {
+        return new NextResponse(
+          `El colaborador ya tiene certificado válido del curso "${courseLevel?.course?.name}" - Nivel "${courseLevel?.name}" que vence el ${existingCertificate.dueDate.toLocaleDateString()}.`,
+          { status: 400 }
+        );
+      }
+    }
+
+    // Si tiene certificado CETAR activo, no se puede cambiar al nivel
+    if (existingCetarCertificate) {
+      const courseLevel = await db.courseLevel.findUnique({
+        where: { id: courseLevelId },
+        include: { course: true },
+      });
+
+      return new NextResponse(
+        `El colaborador ya tiene certificado CETAR válido del curso "${courseLevel?.course?.name}" - Nivel "${courseLevel?.name}".`,
+        { status: 400 }
+      );
+    }
+
     // Actualizar el nivel del colaborador
     const updatedTrainingCollaborator = await db.trainingCollaborator.update({
       where: {

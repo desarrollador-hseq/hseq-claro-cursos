@@ -1,5 +1,5 @@
 import TitlePage from "@/components/title-page";
-import { AddCollaboratorForm } from "../[collaboratorId]/_components/add-collaborator-form";
+import { CreateCollaboratorForm } from "../_components/create-collaborator-form";
 import { db } from "@/lib/db";
 import { PlusCircle, User } from "lucide-react";
 import { CoordinatorUp } from "@/components/rbac-wrapper";
@@ -31,7 +31,7 @@ const CreateCollaborator = async () => {
         </CoordinatorUp>
       </TitlePage>
 
-      <AddCollaboratorForm cities={cities || []} />
+      <CreateCollaboratorForm cities={cities || []} />
     </div>
   );
 };

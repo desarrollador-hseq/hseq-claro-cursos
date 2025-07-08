@@ -29,6 +29,7 @@ const statusText = {
 export const trainingDatatableColumn: ColumnDef<Training & { course: Course }>[] = [
   {
     accessorKey: "byCetar",
+    accessorFn: (value) => value.byCetar ? "CETAR" : "UVAE",
     header: ({ column }) => {
       return <span>Tipo</span>;
     },

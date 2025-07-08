@@ -7,6 +7,7 @@ import { formatDateCert } from "@/lib/utils";
 import { PdfPreview } from "../pdf-preview";
 import { CertificateTemplate } from "./certificate-template";
 import { getCertificate } from "@/actions/certificates.action";
+import { Banner } from "../ui/banner";
 
 const getCertificateByClient = async (certificateId: string) => {
   try {
@@ -65,20 +66,31 @@ const ShowCertificate = ({
   }
   const sanitizeFileName = (fileName: string) => {
     return fileName
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '') // Remove accents
-      .replace(/[^a-zA-Z0-9\s-]/g, '') // Remove special characters except spaces and hyphens
-      .replace(/\s+/g, '-') // Replace spaces with hyphens
-      .replace(/-+/g, '-') // Replace multiple hyphens with single hyphen
-      .replace(/^-+|-+$/g, '') // Remove leading/trailing hyphens
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "") // Remove accents
+      .replace(/[^a-zA-Z0-9\s-]/g, "") // Remove special characters except spaces and hyphens
+      .replace(/\s+/g, "-") // Replace spaces with hyphens
+      .replace(/-+/g, "-") // Replace multiple hyphens with single hyphen
+      .replace(/^-+|-+$/g, "") // Remove leading/trailing hyphens
       .toLowerCase();
   };
 
-  const fileName = sanitizeFileName(`${certificate.collaboratorNumDoc}-${certificate.collaboratorFullname}`);
+  const fileName = sanitizeFileName(
+    `${certificate.collaboratorNumDoc}-${certificate.collaboratorFullname}`
+  );
 
+  console.log({ certificate });
+
+  const isExpired =
+    certificate.dueDate && new Date(certificate.dueDate) < new Date();
 
   return (
-    <div className="flex items-center justify-between bg-white m-0 p-0 w-full mx-auto">
+    <div className="flex flex-col items-center justify-center bg-white m-0 p-0 w-full mx-auto gap-4">
+     <div className="w-full">
+     {isExpired && (
+        <Banner label="Certificado vencido" icon={AlertCircle} variant="danger" className="w-full" />
+      )}
+     </div>
       {pdfComponent ? (
         <PdfPreview
           pdfComponent={pdfComponent as React.ReactElement}

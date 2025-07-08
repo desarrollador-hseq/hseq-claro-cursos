@@ -37,8 +37,8 @@ export const certificateDatatableColumn: ColumnDef<
       );
     },
     cell: ({ row }) => {
-      const collaborator = row.original?.collaborator;
-      return <span className="capitalize">{collaborator?.fullname}</span>;
+      const name = row.original?.collaboratorFullname;
+      return <span className="capitalize">{name}</span>;
     },
   },
   {

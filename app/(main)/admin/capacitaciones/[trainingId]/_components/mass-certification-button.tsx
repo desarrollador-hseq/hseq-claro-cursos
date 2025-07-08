@@ -205,8 +205,8 @@ export const MassCertificationButton = ({
             Certificación Masiva - {trainingCode}
           </DialogTitle>
           <DialogDescription>
-            Generar certificados para todos los colaboradores elegibles de "
-            {courseName}"
+            Generar certificados para todos los colaboradores elegibles de 
+            {courseName}
           </DialogDescription>
         </DialogHeader>
 
@@ -298,7 +298,7 @@ export const MassCertificationButton = ({
                     >
                       <div>
                         <p className="font-medium text-gray-900">
-                          {tc.collaborator.fullname}
+                          {tc.collaborator.name} {tc.collaborator.lastname}
                         </p>
                         <p className="text-sm text-gray-600">
                           {tc.collaborator.numDoc} • {tc.courseLevel.name}

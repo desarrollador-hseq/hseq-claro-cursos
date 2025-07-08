@@ -82,11 +82,12 @@ export const DeleteCollaboratorModal = ({
             <CardContent className="pt-4">
               <div className="flex items-center gap-3">
                 <div className="flex h-12 w-12 items-center justify-center rounded-full bg-red-100 text-red-600 font-semibold">
-                  {collaborator.collaborator.fullname.charAt(0).toUpperCase()}
+                  {collaborator.collaborator.name.charAt(0).toUpperCase()}
+                  {collaborator.collaborator.lastname.charAt(0).toUpperCase()}
                 </div>
                 <div className="flex-1">
                   <p className="font-medium text-gray-900">
-                    {collaborator.collaborator.fullname}
+                    {collaborator.collaborator.name} {collaborator.collaborator.lastname}
                   </p>
                   <p className="text-sm text-gray-600">
                     {collaborator.collaborator.numDoc} • {collaborator.collaborator.email}
@@ -160,7 +161,7 @@ export const DeleteCollaboratorModal = ({
             <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
               <p className="text-sm text-gray-700 text-center">
                 ¿Estás seguro de que quieres eliminar a{" "}
-                <span className="font-medium">{collaborator.collaborator.fullname}</span>{" "}
+                <span className="font-medium">{collaborator.collaborator.name} {collaborator.collaborator.lastname}</span>{" "}
                 de esta capacitación?
               </p>
             </div>

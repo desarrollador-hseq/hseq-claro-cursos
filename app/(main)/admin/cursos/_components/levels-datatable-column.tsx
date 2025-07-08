@@ -12,7 +12,9 @@ import { ArrowUpDown, MoreHorizontal, Pencil } from "lucide-react";
 import { AddLevelForm } from "./add-level-form";
 
 export const levelsDataTableColumns: ColumnDef<
-  CourseLevel & { course: Course | null }
+  CourseLevel & { course: Course | null } & {
+    requiredDocuments: RequiredDocument[];
+  }
 >[] = [
   {
     accessorKey: "name",
@@ -31,6 +33,7 @@ export const levelsDataTableColumns: ColumnDef<
   },
   {
     accessorKey: "hours",
+    enableColumnFilter: false,
     accessorFn: (value) => value.hours,
     header: ({ column }) => {
       return (
@@ -45,6 +48,46 @@ export const levelsDataTableColumns: ColumnDef<
     cell: ({ row }) => {
       const hours = row.original.hours;
       return <span className="capitalize">{hours || 0}</span>;
+    },
+  },
+  {
+    accessorKey: "monthsToExpire",
+    enableColumnFilter: false,
+    accessorFn: (value) => value.hours,
+    header: ({ column }) => {
+      return (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          Meses para expirar
+        </Button>
+      );
+    },
+    cell: ({ row }) => {
+      const monthsToExpire = row.original.monthsToExpire;
+      return <span className="capitalize">{monthsToExpire || "N/A"}</span>;
+    },
+  },
+  {
+    accessorKey: "totalDocuments",
+    enableColumnFilter: false,
+    accessorFn: (value) => value.requiredDocuments.length,
+    header: ({ column }) => {
+      return (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          # Docs requeridos
+        </Button>
+      );
+    },
+    cell: ({ row }) => {
+      const requiredDocuments = row.original.requiredDocuments;
+      return (
+        <span className="capitalize">{requiredDocuments.length || 0}</span>
+      );
     },
   },
   {

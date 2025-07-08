@@ -34,16 +34,16 @@ const TabsTrainingList = () => {
         <TabsTrigger value="COMPLETED">Completados</TabsTrigger>
       </TabsList>
       <TabsContent value="all">
-        <ClientTable columns={trainingDatatableColumn} data={trainings} />
+        <ClientTable columns={trainingDatatableColumn} data={trainings as any} />
       </TabsContent>
       <TabsContent value="PLANNED">
-        <ClientTable columns={trainingDatatableColumn} data={trainings} />
+        <ClientTable columns={trainingDatatableColumn} data={trainings as any} />
       </TabsContent>
       <TabsContent value="IN_PROGRESS">
-        <ClientTable columns={trainingDatatableColumn} data={trainings} />
+        <ClientTable columns={trainingDatatableColumn} data={trainings as any} />
       </TabsContent>
       <TabsContent value="COMPLETED">
-        <ClientTable columns={trainingDatatableColumn} data={trainings} />
+        <ClientTable columns={trainingDatatableColumn} data={trainings as any} />
       </TabsContent>
     </Tabs>
   );

@@ -172,6 +172,7 @@ export async function POST(
     }
 
     // Usar transacción para crear colaborador, certificado CETAR y documentos
+    // Aumentar timeout para permitir subida de archivos (2 minutos)
     const result = await db.$transaction(async (tx) => {
       // 1. Crear el training collaborator
       const trainingCollaborator = await tx.trainingCollaborator.create({
@@ -182,6 +183,7 @@ export async function POST(
           // Si es CETAR, marcar como completado inmediatamente
           status: training.byCetar ? "COMPLETED" : "REGISTERED",
           completionDate: training.byCetar ? new Date() : null,
+          certificateIssued: training.byCetar ? true : false,
         }
       });
 
@@ -207,10 +209,11 @@ export async function POST(
               collaboratorId,
               courseLevelId,
               certificateUrl: "", // URL vacía, se llenará después
-              collaboratorFullname: collaborator.fullname,
+              collaboratorFullname: collaborator.name + " " + collaborator.lastname,
               collaboratorNumDoc: collaborator.numDoc,
               collaboratorTypeDoc: collaborator.docType,
               dueDate,
+
             }
           });
         }
@@ -268,6 +271,8 @@ export async function POST(
         documents: documentEntries,
         cetarCertificate
       };
+    }, {
+      timeout: 120000, // 2 minutos para permitir subida de archivos
     });
 
     // Obtener el resultado completo con includes

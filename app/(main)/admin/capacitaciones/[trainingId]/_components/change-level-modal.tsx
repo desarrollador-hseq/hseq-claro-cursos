@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/select";
 import {
   ArrowUpDown,
+  AlertCircle,
 } from "lucide-react";
 
 interface ChangeLevelModalProps {
@@ -41,7 +42,59 @@ export const ChangeLevelModal = ({
   const router = useRouter();
   const [selectedLevelId, setSelectedLevelId] = useState("");
   const [loading, setLoading] = useState(false);
+  const [certificateWarning, setCertificateWarning] = useState<string>("");
 
+  // Verificar si el colaborador ya tiene certificados del nuevo nivel seleccionado
+  const checkExistingCertificates = async (courseLevelId: string) => {
+    if (!courseLevelId || !collaborator) {
+      setCertificateWarning("");
+      return;
+    }
+
+    try {
+      // Verificar certificado regular
+      const certificateResponse = await axios.get(
+        `/api/certificates/find?collaboratorId=${collaborator.collaborator.id}&courseLevelId=${courseLevelId}`
+      );
+
+      if (certificateResponse.data) {
+        const certificate = certificateResponse.data;
+        const level = training.course.courseLevels.find(
+          (l: any) => l.id === courseLevelId
+        );
+
+        if (certificate.type === "cetar") {
+          setCertificateWarning(
+            `Este colaborador ya tiene certificado CETAR del curso "${training.course.name}" - Nivel "${level?.name}"`
+          );
+        } else {
+          // Verificar si el certificado aún es válido
+          if (certificate.dueDate) {
+            const dueDate = new Date(certificate.dueDate);
+            if (dueDate > new Date()) {
+              setCertificateWarning(
+                `Este colaborador ya tiene certificado válido del curso "${training.course.name}" - Nivel "${level?.name}" que vence el ${dueDate.toLocaleDateString()}`
+              );
+            } else {
+              setCertificateWarning("");
+            }
+          } else {
+            // Certificado sin vencimiento
+            setCertificateWarning(
+              `Este colaborador ya tiene certificado válido del curso "${training.course.name}" - Nivel "${level?.name}". Este certificado no vence.`
+            );
+          }
+        }
+      } else {
+        setCertificateWarning("");
+      }
+    } catch (error) {
+      // Si no se encuentra certificado (404), no hay problema
+      if (axios.isAxiosError(error) && error.response?.status === 404) {
+        setCertificateWarning("");
+      }
+    }
+  };
 
   const handleLevelChange = async () => {
     if (!selectedLevelId) {
@@ -60,6 +113,8 @@ export const ChangeLevelModal = ({
       toast.success("Nivel cambiado exitosamente");
       router.refresh();
       onOpenChange(false);
+      setSelectedLevelId("");
+      setCertificateWarning("");
     } catch (error) {
       console.error("Error changing level:", error);
       if (axios.isAxiosError(error)) {
@@ -87,7 +142,7 @@ export const ChangeLevelModal = ({
             Cambiar Nivel de Colaborador
           </DialogTitle>
           <DialogDescription>
-            Cambiar el nivel de <strong>{collaborator.collaborator.fullname}</strong> en la capacitación
+            Cambiar el nivel de <strong>{collaborator.collaborator.name} {collaborator.collaborator.lastname}</strong> en la capacitación
           </DialogDescription>
         </DialogHeader>
 
@@ -115,7 +170,13 @@ export const ChangeLevelModal = ({
           {/* Seleccionar nuevo nivel */}
           <div className="space-y-3">
             <label className="text-sm font-medium">Nuevo Nivel</label>
-            <Select value={selectedLevelId} onValueChange={setSelectedLevelId}>
+            <Select 
+              value={selectedLevelId} 
+              onValueChange={(value) => {
+                setSelectedLevelId(value);
+                checkExistingCertificates(value);
+              }}
+            >
               <SelectTrigger>
                 <SelectValue placeholder="Selecciona el nuevo nivel" />
               </SelectTrigger>
@@ -134,20 +195,38 @@ export const ChangeLevelModal = ({
             </Select>
           </div>
 
-
+          {/* Advertencia de certificados existentes */}
+          {certificateWarning && (
+            <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
+              <div className="flex items-start gap-2">
+                <AlertCircle className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                <div>
+                  <span className="font-semibold text-amber-800 block">Certificado Existente</span>
+                  <p className="text-sm text-amber-700">{certificateWarning}</p>
+                  <p className="text-xs text-amber-600 mt-1">
+                    El sistema no permitirá cambiar a este nivel si el colaborador ya tiene un certificado válido.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Acciones */}
           <div className="flex justify-end space-x-4">
             <Button
               variant="outline"
-              onClick={() => onOpenChange(false)}
+              onClick={() => {
+                onOpenChange(false);
+                setSelectedLevelId("");
+                setCertificateWarning("");
+              }}
               disabled={loading}
             >
               Cancelar
             </Button>
             <Button
               onClick={handleLevelChange}
-              disabled={!selectedLevelId || loading}
+              disabled={!selectedLevelId || loading || !!certificateWarning}
               className="bg-blue-600 hover:bg-blue-700"
             >
               {loading ? "Cambiando..." : "Cambiar Nivel"}

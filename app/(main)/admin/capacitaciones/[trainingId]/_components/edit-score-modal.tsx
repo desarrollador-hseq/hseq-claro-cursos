@@ -105,13 +105,13 @@ export const EditScoreModal = ({
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger
         asChild
-        disabled={isAdmin ? false : isDisabled || collaborator.certificateIssued}
+        disabled={isAdmin ? false : isDisabled}
       >
         <Button
           variant="outline"
           size="sm"
           className="h-6 w-6 p-0 text-slate-500 hover:text-slate-700 "
-          disabled={isAdmin ? false : isDisabled || collaborator.certificateIssued}
+          disabled={isAdmin ? false : isDisabled}
         >
           <TrendingUp className="h-4 w-4" />
         </Button>
@@ -125,7 +125,7 @@ export const EditScoreModal = ({
           </DialogTitle>
           <DialogDescription>
             Asignar nota final al colaborador{" "}
-            <strong>{collaborator.collaborator.fullname}</strong>
+            <strong>{collaborator.collaborator.name} {collaborator.collaborator.lastname}</strong>
           </DialogDescription>
         </DialogHeader>
 
@@ -135,11 +135,12 @@ export const EditScoreModal = ({
             <CardContent className="pt-4">
               <div className="flex items-center gap-3">
                 <div className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 text-slate-700 font-semibold">
-                  {collaborator.collaborator.fullname.charAt(0).toUpperCase()}
+                  {collaborator.collaborator.name.charAt(0).toUpperCase()}
+                  {collaborator.collaborator.lastname.charAt(0).toUpperCase()}
                 </div>
                 <div className="flex-1">
                   <p className="font-medium text-slate-900">
-                    {collaborator.collaborator.fullname}
+                    {collaborator.collaborator.name} {collaborator.collaborator.lastname}
                   </p>
                   <p className="text-sm text-slate-600">
                     {collaborator.collaborator.numDoc} •{" "}

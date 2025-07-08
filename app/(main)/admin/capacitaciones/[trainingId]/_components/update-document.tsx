@@ -71,7 +71,9 @@ export const UpdateDocumentForm = ({
 }: UpdateDocumentFormProps) => {
   const [isEditing, setIsEditing] = useState(false);
   const [fileUrl, setFileUrl] = useState<string | undefined>(initialFileUrl);
-  const [document, setDocument] = useState<TrainingCollaboratorDocument | null>(null);
+  const [document, setDocument] = useState<TrainingCollaboratorDocument | null>(
+    null
+  );
   const router = useRouter();
   const toggleEdit = () => setIsEditing((current) => !current);
 
@@ -85,42 +87,48 @@ export const UpdateDocumentForm = ({
       file: document || undefined,
     },
   });
-  
+
   const { isSubmitting, isValid } = form.formState;
   const { setValue } = form;
-  
+
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop: (acceptedFiles) => {
       const file = acceptedFiles[0];
       if (file) {
         // Comprimir imagen si es necesario
-        if (file.type.startsWith('image/')) {
+        if (file.type.startsWith("image/")) {
           setIsCompressing(true);
           toast.loading(`Comprimiendo imagen: ${file.name}...`, {
-            id: 'compress-upload'
+            id: "compress-upload",
           });
-          
+
           compressAndResizeImage(
             file,
             (compressedFile) => {
               setIsCompressing(false);
-              toast.dismiss('compress-upload');
-              
+              toast.dismiss("compress-upload");
+
               // Mostrar resultado de compresión
               if (compressedFile.size < file.size) {
                 const originalSize = formatFileSize(file.size);
                 const compressedSize = formatFileSize(compressedFile.size);
-                const reduction = Math.round(((file.size - compressedFile.size) / file.size) * 100);
-                toast.success(`Imagen comprimida: ${originalSize} → ${compressedSize} (${reduction}% reducción)`);
+                const reduction = Math.round(
+                  ((file.size - compressedFile.size) / file.size) * 100
+                );
+                toast.success(
+                  `Imagen comprimida: ${originalSize} → ${compressedSize} (${reduction}% reducción)`
+                );
               }
-              
+
               setSelectedFile(compressedFile);
             },
             (error) => {
               setIsCompressing(false);
-              toast.dismiss('compress-upload');
-              console.error('Error compressing image:', error);
-              toast.error('Error al comprimir la imagen. Usando archivo original.');
+              toast.dismiss("compress-upload");
+              console.error("Error compressing image:", error);
+              toast.error(
+                "Error al comprimir la imagen. Usando archivo original."
+              );
               setSelectedFile(file);
             }
           );
@@ -186,18 +194,21 @@ export const UpdateDocumentForm = ({
       // Actualizar estado local
       setDocument(updatedDocument);
       setFileUrl(updatedDocument.documentLink);
-      
+
       toast.success("Documento actualizado exitosamente");
       toggleEdit();
       router.refresh();
     } catch (error) {
       console.error("Error al actualizar documento:", error);
-      
+
       if (axios.isAxiosError(error)) {
-        const errorMessage = error.response?.data || "Error al procesar la solicitud";
+        const errorMessage =
+          error.response?.data || "Error al procesar la solicitud";
         toast.error(errorMessage);
       } else {
-        toast.error("Ocurrió un error inesperado, por favor inténtelo nuevamente");
+        toast.error(
+          "Ocurrió un error inesperado, por favor inténtelo nuevamente"
+        );
       }
     } finally {
       clearInterval(progressInterval);
@@ -223,7 +234,7 @@ export const UpdateDocumentForm = ({
 
   const handleDownload = () => {
     if (fileUrl) {
-      window.open(fileUrl, '_blank');
+      window.open(fileUrl, "_blank");
     }
   };
 
@@ -242,7 +253,7 @@ export const UpdateDocumentForm = ({
             </p> */}
           </div>
         </div>
-        
+
         <div className="flex items-center gap-2">
           {/* Estado del documento */}
           {/* {document && (
@@ -267,7 +278,7 @@ export const UpdateDocumentForm = ({
               <Download className="h-3 w-3" />
             </Button>
           )} */}
-          
+
           {/* Botón principal */}
           <Button
             onClick={toggleEdit}
@@ -302,15 +313,17 @@ export const UpdateDocumentForm = ({
       <div className="border border-t-0 rounded-b-lg bg-white">
         {!isEditing ? (
           // Vista de archivo
-          <div className="p-4">
+          <div className="p-0">
             {!fileUrl ? (
               <div className="flex flex-col items-center justify-center py-12 text-center">
                 <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gray-100 mb-4">
                   <ImageIcon className="h-8 w-8 text-gray-400" />
                 </div>
-                <p className="text-sm text-gray-600 mb-2">No hay documento cargado</p>
+                <p className="text-sm text-gray-600 mb-2">
+                  No hay documento cargado
+                </p>
                 <p className="text-xs text-gray-500">
-                  Haz clic en "Agregar" para subir un archivo
+                  Haz clic en Agregar para subir un archivo
                 </p>
               </div>
             ) : (
@@ -319,10 +332,10 @@ export const UpdateDocumentForm = ({
                 <div className="relative bg-gray-50 rounded-lg overflow-hidden">
                   {isPdf ? (
                     <div className="h-64">
-                      <PdfRenderer url={fileUrl} />
+                      <PdfRenderer url={fileUrl} showFullscreenButton showDownloadButton />
                     </div>
                   ) : (
-                    <div className="p-4">
+                    <div className="p-1">
                       <ModalImage
                         small={fileUrl}
                         large={fileUrl}
@@ -332,7 +345,7 @@ export const UpdateDocumentForm = ({
                     </div>
                   )}
                 </div>
-                
+
                 {/* Información del archivo */}
                 {document && (
                   <div className="bg-gray-50 rounded-lg p-3">
@@ -340,7 +353,9 @@ export const UpdateDocumentForm = ({
                       <div>
                         <span className="font-medium">Subido:</span>
                         <br />
-                        {new Date(document.createdAt).toLocaleDateString('es-ES')}
+                        {new Date(document.createdAt).toLocaleDateString(
+                          "es-ES"
+                        )}
                       </div>
                       {document.fileSize && (
                         <div>
@@ -350,11 +365,15 @@ export const UpdateDocumentForm = ({
                         </div>
                       )}
                     </div>
-                    
+
                     {document.reviewNotes && (
                       <div className="mt-3 p-2 bg-yellow-50 border-l-4 border-yellow-400 rounded">
-                        <p className="text-xs font-medium text-yellow-800">Notas de revisión:</p>
-                        <p className="text-xs text-yellow-700 mt-1">{document.reviewNotes}</p>
+                        <p className="text-xs font-medium text-yellow-800">
+                          Notas de revisión:
+                        </p>
+                        <p className="text-xs text-yellow-700 mt-1">
+                          {document.reviewNotes}
+                        </p>
                       </div>
                     )}
                   </div>
@@ -366,21 +385,24 @@ export const UpdateDocumentForm = ({
           // Vista de edición
           <div className="p-4">
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <form
+                onSubmit={form.handleSubmit(onSubmit)}
+                className="space-y-4"
+              >
                 {/* Zona de drag & drop */}
                 <div
                   {...getRootProps()}
                   className={cn(
                     "relative border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-all duration-200",
-                    isDragActive 
-                      ? "border-blue-400 bg-blue-50" 
-                      : selectedFile 
-                        ? "border-green-400 bg-green-50" 
-                        : "border-gray-300 bg-gray-50 hover:border-blue-400 hover:bg-blue-50"
+                    isDragActive
+                      ? "border-blue-400 bg-blue-50"
+                      : selectedFile
+                      ? "border-green-400 bg-green-50"
+                      : "border-gray-300 bg-gray-50 hover:border-blue-400 hover:bg-blue-50"
                   )}
                 >
                   <input {...getInputProps()} />
-                  
+
                   {uploadProgress > 0 && uploadProgress < 100 ? (
                     // Estado de subida
                     <div className="space-y-4">
@@ -388,7 +410,9 @@ export const UpdateDocumentForm = ({
                         <Loader2 className="h-6 w-6 text-blue-600 animate-spin" />
                       </div>
                       <div>
-                        <p className="text-sm font-medium text-blue-900">Subiendo archivo...</p>
+                        <p className="text-sm font-medium text-blue-900">
+                          Subiendo archivo...
+                        </p>
                         <Progress value={uploadProgress} className="mt-2" />
                       </div>
                     </div>
@@ -403,9 +427,12 @@ export const UpdateDocumentForm = ({
                         )}
                       </div>
                       <div>
-                        <p className="font-medium text-green-900">{selectedFile.name}</p>
+                        <p className="font-medium text-green-900">
+                          {selectedFile.name}
+                        </p>
                         <p className="text-sm text-green-700">
-                          {(selectedFile.size / 1024).toFixed(1)} KB • Listo para subir
+                          {(selectedFile.size / 1024).toFixed(1)} KB • Listo
+                          para subir
                         </p>
                       </div>
                       <Button
@@ -425,7 +452,9 @@ export const UpdateDocumentForm = ({
                       <div className="flex h-12 w-12 items-center justify-center rounded-full bg-green-100 mx-auto">
                         <CheckCircle className="h-6 w-6 text-green-600" />
                       </div>
-                      <p className="font-medium text-green-900">¡Archivo subido exitosamente!</p>
+                      <p className="font-medium text-green-900">
+                        ¡Archivo subido exitosamente!
+                      </p>
                     </div>
                   ) : (
                     // Estado inicial
@@ -435,7 +464,9 @@ export const UpdateDocumentForm = ({
                       </div>
                       <div>
                         <p className="text-sm font-medium text-gray-900">
-                          {isDragActive ? "Suelta el archivo aquí" : "Arrastra un archivo o haz clic para seleccionar"}
+                          {isDragActive
+                            ? "Suelta el archivo aquí"
+                            : "Arrastra un archivo o haz clic para seleccionar"}
                         </p>
                         <p className="text-xs text-gray-600 mt-1">
                           Formatos: JPG, PNG, PDF • Máximo: 1MB
@@ -451,7 +482,9 @@ export const UpdateDocumentForm = ({
                   disabled={isSubmitting || !selectedFile}
                   className={cn(
                     "w-full",
-                    selectedFile && !isSubmitting && "bg-green-600 hover:bg-green-700"
+                    selectedFile &&
+                      !isSubmitting &&
+                      "bg-green-600 hover:bg-green-700"
                   )}
                 >
                   {isSubmitting ? (

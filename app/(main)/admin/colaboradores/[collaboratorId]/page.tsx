@@ -1,14 +1,9 @@
 import React from "react";
 import { db } from "@/lib/db";
-import { Info, LockKeyhole, User } from "lucide-react";
-import { AddCollaboratorForm } from "./_components/add-collaborator-form";
+import { User } from "lucide-react";
+import { CreateCollaboratorForm } from "../_components/create-collaborator-form";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { FileUploadForm } from "@/components/file-upload-form";
 import { Card, CardContent } from "@/components/ui/card";
-import { TooltipInfo } from "@/components/tooltip-info";
-import { ArchivesLinkForm } from "./_components/archives-link-form";
-import { GenerateCertificate } from "./_components/generate-certificate";
-import { GenerateCertificateBolivar } from "./_components/generate-certificate-bolivar";
 import TitlePage from "@/components/title-page";
 
 const CreateCollaborator = async ({
@@ -68,7 +63,7 @@ const CreateCollaborator = async ({
             </TabsTrigger>
           </TabsList>
           <TabsContent value="info" className="w-full">
-            <AddCollaboratorForm collaborator={collaborator} cities={cities} />
+            <CreateCollaboratorForm collaborator={collaborator} cities={cities} />
           </TabsContent>
           <TabsContent value="archives" className="w-full">
             <div>

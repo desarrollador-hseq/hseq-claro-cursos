@@ -33,11 +33,24 @@ export async function PATCH(req: Request, { params }: { params: { collaboratorId
                 }
             }
         }
+        // if (!!values.email) {
+
+        //     if (currentCollaborator.email !== values.email) {
+        //         const duplicateEmail = await db.collaborator.findFirst({
+        //             where: { email: values.email, active: true }
+        //         });
+
+        //         if (duplicateEmail) {
+        //             return new NextResponse("Email ya registrado", { status: 400 });
+        //         }
+        //     }
+        // }
 
         // Filtrar solo los campos que quieres permitir actualizar
         // Esto es opcional pero recomendado por seguridad
         const allowedFields = {
-            fullname: values.fullname,
+            name: values.name,
+            lastname: values.lastname,
             numDoc: values.numDoc,
             cityId: values.cityId,
             startDate: values.startDate,

@@ -177,9 +177,9 @@ export const CollaboratorDocumentsModal = ({
           </div>
         </DialogHeader>
 
-        <div className="space-y-6">
+        <div className="space-y-6 p-0">
           {/* Estadísticas */}
-          <Card className="border-blue-200 bg-blue-50/50">
+          {/* <Card className="border-blue-200 bg-blue-50/50">
             <CardContent className="pt-6">
               <div className="grid grid-cols-4 gap-4 text-center">
                 <div>
@@ -208,16 +208,16 @@ export const CollaboratorDocumentsModal = ({
                 </div>
               </div>
             </CardContent>
-          </Card>
+          </Card> */}
 
           <Separator />
 
           {/* Lista de documentos requeridos con UpdateDocumentForm */}
-          <div className="space-y-6">
-            <h3 className="text-lg font-semibold flex items-center gap-2">
+          <div className="space-y-6 p-0">
+            {/* <h3 className="text-lg font-semibold flex items-center gap-2">
               <FileText className="h-5 w-5" />
               Documentos Requeridos ({requiredDocuments.length})
-            </h3>
+            </h3> */}
 
             {!loading ? requiredDocuments.length === 0 ? (
               <Card>
@@ -227,16 +227,16 @@ export const CollaboratorDocumentsModal = ({
                 </CardContent>
               </Card>
             ) : (
-              <div className="grid gap-6 md:grid-cols-2">
+              <div className="grid gap-4 md:grid-cols-2">
                 {requiredDocuments.map((reqDoc: RequiredDocument) => {
                   const existingDoc = documentsMap.get(reqDoc.id);
 
                   return (
                     <div key={reqDoc.id} className="">
-                      <Card className={`border ${existingDoc ? 'border-blue-500' : 'border-gray-200'}`}>
-                        <CardContent className="p-4">
+                      <Card className={`border ${existingDoc ? 'border-blue-500' : 'border-gray-200'} p-0`}>
+                        <CardContent className="p-0">
                           {/* Siempre mostrar el componente de actualización de documento */}
-                          <div className="space-y-4">
+                          <div className="space-y-4 p-0">
                             <UpdateDocumentForm
                               trainingId={trainingId}
                               trainingCollaboratorId={trainingCollaborator.collaborator.id}
@@ -250,10 +250,10 @@ export const CollaboratorDocumentsModal = ({
                             {existingDoc && (
                               <>
                                 <div className="flex items-center justify-between pt-2 border-t">
-                                  <div className="flex items-center gap-2">
+                                  {/* <div className="flex items-center gap-2">
                                     {getStatusIcon(existingDoc.status)}
                                     {getStatusBadge(existingDoc.status)}
-                                  </div>
+                                  </div> */}
 
                                   {canManage && existingDoc.status === "PENDING" && (
                                     <div className="flex gap-2">

@@ -115,7 +115,7 @@ const TrainingPage = async ({ params }: TrainingPageProps) => {
       },
     },
     orderBy: {
-      fullname: "asc",
+      name: "asc",
     },
   });
 

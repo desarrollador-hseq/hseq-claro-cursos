@@ -35,7 +35,8 @@ enum Role {
 model Collaborator {
   id String @id @default(uuid())
 
-  fullname String
+  name String
+  lastname String
   numDoc   String  @unique
   docType  DocType @default(CC)
   email    String?

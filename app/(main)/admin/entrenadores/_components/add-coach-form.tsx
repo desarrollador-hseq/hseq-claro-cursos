@@ -164,7 +164,7 @@ export const AddCoachForm = ({ coach }: AddCoachFormProps) => {
               name="position"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="font-semibold">Cargo</FormLabel>
+                  <FormLabel className="font-semibold">Rol</FormLabel>
                   <FormControl>
                     <Input disabled={isSubmitting} {...field} />
                   </FormControl>

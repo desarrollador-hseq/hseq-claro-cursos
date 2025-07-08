@@ -26,7 +26,7 @@ const CertificadosPage = async ({
         <CertificateInfo
           collaboratorId={certificate?.collaboratorId || ""}
           courseLevelId={certificate?.courseLevelId || ""}
-          collaboratorName={certificate?.collaborator?.fullname || ""}
+          collaboratorName={certificate?.collaboratorFullname || ""}
           courseName={certificate?.courseName || ""}
           canManage={true}
         />

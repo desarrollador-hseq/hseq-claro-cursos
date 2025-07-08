@@ -8,7 +8,7 @@ import {
   TrainingCollaborator,
 } from "@prisma/client";
 import { Fade } from "react-awesome-reveal";
-import { CollaboratorFormed } from "./collaborators-formed";
+// import { CollaboratorFormed } from "./collaborators-formed";
 import { CollaboratorsCity } from "./collaborators-city";
 import { CollaboratorsKpi } from "./collaborators-kpi";
 import { useDashboard } from "@/components/providers/dashboard-provider";
@@ -122,12 +122,12 @@ export const CollaboratorsReports = ({
         {/* <div>
           <PercentagePie  collaborators={filteredCollaborators} />
         </div> */}
-        <Fade delay={400} cascade triggerOnce>
+        {/* <Fade delay={400} cascade triggerOnce>
           <CollaboratorFormed
             threshold={threshold}
             collaborators={filteredCollaborators}
           />
-        </Fade>
+        </Fade> */}
         <div className="lg:col-span-2">
           <Fade delay={650} cascade triggerOnce>
             <CollaboratorsRegional

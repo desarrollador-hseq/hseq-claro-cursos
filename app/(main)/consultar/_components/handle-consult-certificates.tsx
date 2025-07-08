@@ -258,7 +258,7 @@ export const HandleConsultCertificates = () => {
                             Nombre Completo
                           </p>
                           <p className="text-lg font-bold text-gray-900">
-                            {collaborator.fullname}
+                            {collaborator.name} {collaborator.lastname}
                           </p>
                         </div>
                       </div>

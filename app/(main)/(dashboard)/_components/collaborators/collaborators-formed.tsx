@@ -14,7 +14,8 @@ export const CollaboratorFormed = ({
 }: CollaboratorsReportsProps) => {
   const countFormedCollaborators = () => {
     return collaborators.reduce((count, collaborator) => {
-      if (collaborator.percentage >= threshold) {
+      if (collaborator.email) {
+      // if (collaborator. >= threshold) {
         return count + 1;
       }
       return count;

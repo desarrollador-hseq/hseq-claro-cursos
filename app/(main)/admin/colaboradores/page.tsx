@@ -1,8 +1,6 @@
 import React from "react";
 import Link from "next/link";
-import { getServerSession } from "next-auth";
 import { PlusCircle, User } from "lucide-react";
-import { authOptions } from "@/lib/auth-options";
 import { db } from "@/lib/db";
 import { collaboratorColumns } from "./_components/collaborator-datatable-column";
 import { Button } from "@/components/ui/button";
@@ -11,7 +9,7 @@ import { CoordinatorUp } from "@/components/rbac-wrapper";
 import TitlePage from "@/components/title-page";
 
 const CollaboratorPage = async () => {
-  const session = await getServerSession(authOptions);
+
   const collaborators = await db.collaborator.findMany({
     where: {
       active: true,
@@ -20,7 +18,7 @@ const CollaboratorPage = async () => {
       city: true,
     },
     orderBy: {
-      fullname: "asc",
+      name: "asc",
     },
   });
   return (

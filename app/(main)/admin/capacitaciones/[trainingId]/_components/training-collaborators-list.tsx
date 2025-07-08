@@ -366,7 +366,7 @@ export const TrainingCollaboratorsList = ({
                         </div>
                         <div>
                           <p className="font-medium text-gray-900">
-                            {tc.collaborator.fullname}
+                            {tc.collaborator.name} {tc.collaborator.lastname}
                           </p>
                           <p className="text-sm text-gray-600">
                             {tc.collaborator.numDoc}
@@ -407,7 +407,9 @@ export const TrainingCollaboratorsList = ({
                           title="Cambiar nivel"
                           className="h-8 w-8 p-0 text-slate-500 hover:text-slate-700"
                           disabled={
-                            isAdmin ? false : isDisabled || tc.certificateIssued
+                            training.byCetar ||
+                            isDisabled ||
+                            tc.certificateIssued
                           }
                         >
                           <ArrowUpDown className="h-4 w-4" />
@@ -549,14 +551,15 @@ export const TrainingCollaboratorsList = ({
                             trainingId={training.id}
                             threshold={threshold}
                             isAdmin={isAdmin}
-                            isDisabled={isDisabled}
+                            isDisabled={isDisabled || tc.certificateIssued}
                           />
                         </div>
                       )}
                       {/* Estado de nota */}
 
                       {/* Estado del colaborador */}
-                      <div
+                      {!training.byCetar && (
+                        <div
                         className={`flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 `}
                       >
                         <div className="flex flex-col">
@@ -589,6 +592,7 @@ export const TrainingCollaboratorsList = ({
                           </div>
                         </div>
                       </div>
+                      )}
 
                       {training.byCetar && (
                         <div
@@ -599,59 +603,71 @@ export const TrainingCollaboratorsList = ({
                               Certificado
                             </span>
                             <div className="flex items-center gap-1 ">
-                                                             <ExternalCertificateDialog
-                                 trainingId={training.id}
-                                 collaboratorId={tc.collaboratorId}
-                                 collaboratorName={
-                                   tc.collaborator?.fullname || ""
-                                 }
-                                 currentUrl={tc.collaborator?.cetarCertificates?.[0]?.certificateUrl || null}
-                                 trigger={
-                                   <Button
-                                     variant="ghost"
-                                     size="sm"
-                                     title={
-                                       tc.collaborator?.cetarCertificates?.[0]?.certificateUrl
-                                         ? "Ver/Editar certificado CETAR"
-                                         : "Añadir certificado CETAR"
-                                     }
-                                     className={cn(
-                                       "flex items-center gap-2 p-0 h-fit",
-                                       tc.collaborator?.cetarCertificates?.[0]?.certificateUrl
-                                         ? "text-green-600 hover:text-green-700 hover:bg-green-50"
-                                         : "text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                                     )}
-                                   >
-                                     <FileText className="h-4 w-4" />
-                                     {tc.collaborator?.cetarCertificates?.[0]?.certificateUrl ? (
-                                       <span className="text-xs">
-                                         Certificado
-                                       </span>
-                                     ) : (
-                                       <span className="text-xs">
-                                         Añadir URL
-                                       </span>
-                                     )}
-                                   </Button>
-                                 }
-                               />
-                               {tc.collaborator?.cetarCertificates?.[0]?.certificateUrl && (
-                                 <a
-                                   href={tc.collaborator?.cetarCertificates?.[0]?.certificateUrl}
-                                   target="_blank"
-                                   rel="noopener noreferrer"
-                                   className="text-blue-500 absolute right-0 top-0 "
-                                 >
-                                   <Button
-                                     variant="ghost"
-                                     size="sm"
-                                     title="Abrir certificado"
-                                     className=" p-1 h-fit "
-                                   >
-                                     <ExternalLink className="h-3 w-3" />
-                                   </Button>
-                                 </a>
-                               )}
+                              <ExternalCertificateDialog
+                                trainingId={training.id}
+                                collaboratorId={tc.collaboratorId}
+                                collaboratorName={
+                                  tc.collaborator?.name +
+                                    " " +
+                                    tc.collaborator?.lastname || ""
+                                }
+                                currentUrl={
+                                  tc.collaborator?.cetarCertificates?.[0]
+                                    ?.certificateUrl || null
+                                }
+                                trigger={
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    title={
+                                      tc.collaborator?.cetarCertificates?.[0]
+                                        ?.certificateUrl
+                                        ? "Ver/Editar certificado CETAR"
+                                        : "Añadir certificado CETAR"
+                                    }
+                                    className={cn(
+                                      "flex items-center gap-2 p-0 h-fit",
+                                      tc.collaborator?.cetarCertificates?.[0]
+                                        ?.certificateUrl
+                                        ? "text-green-600 hover:text-green-700 hover:bg-green-50"
+                                        : "text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                                    )}
+                                  >
+                                    <FileText className="h-4 w-4" />
+                                    {tc.collaborator?.cetarCertificates?.[0]
+                                      ?.certificateUrl ? (
+                                      <span className="text-xs">
+                                        Certificado
+                                      </span>
+                                    ) : (
+                                      <span className="text-xs">
+                                        Añadir URL
+                                      </span>
+                                    )}
+                                  </Button>
+                                }
+                              />
+                              {tc.collaborator?.cetarCertificates?.[0]
+                                ?.certificateUrl && (
+                                <a
+                                  href={
+                                    tc.collaborator?.cetarCertificates?.[0]
+                                      ?.certificateUrl
+                                  }
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-blue-500 absolute right-0 top-0 "
+                                >
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    title="Abrir certificado"
+                                    className=" p-1 h-fit "
+                                  >
+                                    <ExternalLink className="h-3 w-3" />
+                                  </Button>
+                                </a>
+                              )}
                             </div>
                           </div>
                         </div>

@@ -41,7 +41,8 @@ import { LoadingButton } from "@/components/ui/loading-button";
 import { CalendarInputForm } from "@/components/calendar-input-form";
 import { SelectLabel } from "@radix-ui/react-select";
 import { cn } from "@/lib/utils";
-import { Checkbox } from "@/components/ui/checkbox";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { X, Check } from "lucide-react";
 
 type CourseWithLevels = Course & {
   courseLevels: (CourseLevel & {
@@ -149,31 +150,45 @@ export const CreateTrainingForm = ({
                 <FormLabel className="text-base font-semibold">
                   Tipo de Capacitación
                 </FormLabel>
-                <div className={cn(
-                  "hover:bg-accent/50 flex gap-3 rounded-lg border p-4 transition-all items-center",
-                  field.value 
-                    ? "border-green-600 bg-green-50 dark:border-green-900 dark:bg-green-950" 
-                    : "border-orange-600 bg-orange-50 dark:border-orange-900 dark:bg-orange-950"
-                )}>
-                  <FormControl>
-                    <Checkbox 
-                      id="toggle-cetar" 
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                    />
-                  </FormControl>
-
-                  <div className="flex-1">
-                    <FormLabel className="text-sm font-medium cursor-pointer" htmlFor="toggle-cetar">
-                      {field.value ? "CETAR" : "NO CETAR"}
-                    </FormLabel>
-                    <p className="text-xs text-gray-600 mt-1">
-                      {field.value 
-                        ? "No se requiere documentación de los colaboradores para esta capacitación" 
-                        : "Se requiere documentación completa de los colaboradores"}
-                    </p>
-                  </div>
-                </div>
+                <FormControl>
+                  <ToggleGroup 
+                    type="single" 
+                    value={field.value ? "cetar" : "no-cetar"}
+                    onValueChange={(value) => {
+                      field.onChange(value === "cetar");
+                    }}
+                    className="justify-start gap-0 border rounded-md overflow-hidden"
+                  >
+                    <ToggleGroupItem 
+                      value="no-cetar" 
+                      aria-label="UVAE"
+                      className={cn(
+                        "flex-1 h-16 gap-3 rounded-none border data-[state=on]:bg-blue-200 data-[state=on]:text-blue-900 data-[state=on]:border-blue-400 rounded-l-md",
+                        !field.value && "bg-blue-100 text-blue-900 border-blue-200"
+                      )}
+                    >
+                      {/* <X className="h-4 w-4" /> */}
+                      <div className="text-left">
+                        <div className="font-medium">UVAE</div>
+                        <div className="text-xs opacity-70"></div>
+                      </div>
+                    </ToggleGroupItem>
+                    <ToggleGroupItem 
+                      value="cetar" 
+                      aria-label="CETAR"
+                      className={cn(
+                        "flex-1 h-16 gap-3 rounded-none border data-[state=on]:bg-green-100 data-[state=on]:text-green-900 data-[state=on]:border-green-400 rounded-r-md",
+                        field.value && "bg-green-50 text-green-900"
+                      )}
+                    >
+                      {/* <Check className="h-4 w-4" /> */}
+                      <div className="text-left">
+                        <div className="font-medium">CETAR</div>
+                        {/* <div className="text-xs opacity-70">Sin documentación requerida</div> */}
+                      </div>
+                    </ToggleGroupItem>
+                  </ToggleGroup>
+                </FormControl>
                 <FormMessage />
               </FormItem>
             )}
@@ -220,7 +235,7 @@ export const CreateTrainingForm = ({
           />
 
           {/* Mostrar niveles del curso seleccionado */}
-          {selectedCourse && (
+          {!watch("byCetar") && selectedCourse && (
             <Card className="border-yellow-200 bg-yellow-50/50 p-1 rounded-md">
               <CardHeader className="p-1">
                 <CardTitle className="text-yellow-900 text-lg flex items-center gap-x-2">

@@ -164,7 +164,7 @@ export async function POST(
         collaboratorId: params.collaboratorId,
         courseLevelId: trainingCollaborator.courseLevelId,
         certificateUrl,
-        collaboratorFullname: trainingCollaborator.collaborator.fullname,
+        collaboratorFullname: trainingCollaborator.collaborator.name + " " + trainingCollaborator.collaborator.lastname,
         collaboratorNumDoc: trainingCollaborator.collaborator.numDoc,
         collaboratorTypeDoc: trainingCollaborator.collaborator.docType,
         dueDate: calculatedDueDate,

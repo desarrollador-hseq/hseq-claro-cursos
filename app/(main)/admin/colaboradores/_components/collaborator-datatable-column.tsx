@@ -35,7 +35,8 @@ export const collaboratorColumns: ColumnDef<
   Collaborator & { city: { realName: string | undefined } | null }
 >[] = [
   {
-    accessorKey: "fullname",
+    accessorKey: "name",
+    accessorFn: (value) => `${value.name} ${value.lastname}`,
     header: ({ column }) => {
       return (
         <Button
@@ -46,6 +47,11 @@ export const collaboratorColumns: ColumnDef<
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       );
+    },
+    cell: ({ row }) => {
+      const name = row.original.name;
+      const lastname = row.original.lastname;
+      return <span className="capitalize">{name} {lastname}</span>;
     },
   },
   {
