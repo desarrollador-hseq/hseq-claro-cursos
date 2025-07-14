@@ -46,12 +46,14 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { LoadingButton } from "@/components/ui/loading-button";
+import { CalendarInputForm } from "@/components/calendar-input-form";
+import { Certificate, DocType } from "@prisma/client";
 
 const certificateSchema = z.object({
   // Información del colaborador
   collaboratorFullname: z.string().min(1, "Nombre completo es requerido"),
   collaboratorNumDoc: z.string().min(1, "Número de documento es requerido"),
-  collaboratorTypeDoc: z.enum(["CC", "TI", "CE", "PA", "RC", "NIT"]),
+  collaboratorTypeDoc: z.enum(["CC", "TI", "CE", "PA", "PE"]),
   collaboratorCityName: z.string().optional(),
   collaboratorArlName: z.string().min(1, "Nombre de ARL es requerido"),
   companyName: z.string().min(1, "Nombre de empresa es requerido"),
@@ -66,25 +68,27 @@ const certificateSchema = z.object({
 
   // Información del coach
   coachName: z.string().min(1, "Nombre del coach es requerido"),
+  coachDoc: z.string().optional(),
   coachPosition: z.string().optional(),
   coachLicence: z.string().optional(),
 
   // Fechas
-  certificateDate: z.string().min(1, "Fecha de certificado es requerida"),
-  startDate: z.string().min(1, "Fecha de inicio es requerida"),
-  expeditionDate: z.string().min(1, "Fecha de expedición es requerida"),
-  dueDate: z.string().optional(),
+  certificateDate: z.date(),
+  startDate: z.date(),
+  endDate: z.date(),
+  expeditionDate: z.date(),
+  dueDate: z.date().optional(),
 });
 
 type CertificateFormValues = z.infer<typeof certificateSchema>;
 
 interface EditCertificateModalProps {
-  certificateId: string;
+  certificate: Certificate;
   onUpdate?: () => void;
 }
 
 export const EditCertificateModal = ({
-  certificateId,
+  certificate,
   onUpdate,
 }: EditCertificateModalProps) => {
   const router = useRouter();
@@ -110,33 +114,24 @@ export const EditCertificateModal = ({
       coachName: "",
       coachPosition: "",
       coachLicence: "",
-      certificateDate: "",
-      startDate: "",
-      expeditionDate: "",
-      dueDate: "",
+      coachDoc: "",
+      certificateDate: undefined,
+      startDate: undefined,
+      endDate: undefined,
+      expeditionDate: undefined,
+      dueDate: undefined,
       collaboratorCityName: "",
     },
   });
 
-  // Cargar datos del certificado
-  useEffect(() => {
-    if (isOpen && certificateId) {
-      loadCertificate();
-    }
-  }, [isOpen, certificateId]);
+  console.log({
+    certificateeidit: certificate,
+    type: typeof certificate.certificateDate,
+  });
 
   const loadCertificate = async () => {
     setIsLoading(true);
     try {
-      const response = await axios.get(`/api/certificates/${certificateId}`);
-      const certificate = response.data;
-
-      // Formatear fechas para input date
-      const formatDate = (date: string | null) => {
-        if (!date) return "";
-        return new Date(date).toISOString().split("T")[0];
-      };
-
       form.reset({
         collaboratorFullname: certificate.collaboratorFullname || "",
         collaboratorNumDoc: certificate.collaboratorNumDoc || "",
@@ -154,10 +149,12 @@ export const EditCertificateModal = ({
         coachName: certificate.coachName || "",
         coachPosition: certificate.coachPosition || "",
         coachLicence: certificate.coachLicence || "",
-        certificateDate: formatDate(certificate.certificateDate),
-        startDate: formatDate(certificate.startDate),
-        expeditionDate: formatDate(certificate.expeditionDate),
-        dueDate: formatDate(certificate.dueDate),
+        coachDoc: certificate.coachDoc || "",
+        certificateDate: certificate.certificateDate || undefined,
+        startDate: certificate.startDate || undefined,
+        endDate: certificate.endDate || undefined,
+        expeditionDate: certificate.expeditionDate || undefined,
+        dueDate: certificate.dueDate || undefined,
         collaboratorCityName: certificate.collaboratorCityName || "",
       });
     } catch (error) {
@@ -168,10 +165,16 @@ export const EditCertificateModal = ({
     }
   };
 
+  useEffect(() => {
+    if (isOpen && certificate) {
+      loadCertificate();
+    }
+  }, [isOpen, certificate]);
+
   const onSubmit = async (values: CertificateFormValues) => {
     setIsSubmitting(true);
     try {
-      await axios.put(`/api/certificates/${certificateId}`, values);
+      await axios.put(`/api/certificates/${certificate.id}`, values);
       toast.success("Certificado actualizado exitosamente");
       setIsOpen(false);
       if (onUpdate) onUpdate();
@@ -210,7 +213,8 @@ export const EditCertificateModal = ({
             Editar Certificado
           </DialogTitle>
           <p className="text-sm text-gray-600">
-            {form.getValues("collaboratorFullname")} - {form.getValues("courseName")}
+            {form.getValues("collaboratorFullname")} -{" "}
+            {form.getValues("courseName")}
           </p>
         </DialogHeader>
 
@@ -285,8 +289,6 @@ export const EditCertificateModal = ({
                                 Cédula de Extranjería
                               </SelectItem>
                               <SelectItem value="PA">Pasaporte</SelectItem>
-                              <SelectItem value="RC">Registro Civil</SelectItem>
-                              <SelectItem value="NIT">NIT</SelectItem>
                             </SelectContent>
                           </Select>
                           <FormMessage />
@@ -525,6 +527,22 @@ export const EditCertificateModal = ({
                         </FormItem>
                       )}
                     />
+
+                    <FormField
+                      control={form.control}
+                      name="coachDoc"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>
+                            Número de documento del entrenador
+                          </FormLabel>
+                          <FormControl>
+                            <Input {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
                   </div>
                 </CardContent>
               </Card>
@@ -539,60 +557,34 @@ export const EditCertificateModal = ({
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField
+                    <CalendarInputForm
                       control={form.control}
+                      label="Fecha de Emisión del Certificado"
                       name="certificateDate"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Fecha del Certificado</FormLabel>
-                          <FormControl>
-                            <Input type="date" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
                     />
 
-                    <FormField
+                    <CalendarInputForm
                       control={form.control}
+                      label="Fecha de Inicio del Curso"
                       name="startDate"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Fecha de Inicio</FormLabel>
-                          <FormControl>
-                            <Input type="date" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
                     />
 
-                    <FormField
+                    <CalendarInputForm
                       control={form.control}
+                      label="Fecha de Finalización del Curso"
+                      name="endDate"
+                    />
+
+                    <CalendarInputForm
+                      control={form.control}
+                      label="Fecha de Expedición del Certificado"
                       name="expeditionDate"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Fecha de Expedición</FormLabel>
-                          <FormControl>
-                            <Input type="date" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
                     />
 
-                    <FormField
+                    <CalendarInputForm
                       control={form.control}
+                      label="Fecha de Vencimiento del Certificado"
                       name="dueDate"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Fecha de Vencimiento</FormLabel>
-                          <FormControl>
-                            <Input type="date" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
                     />
                   </div>
                 </CardContent>

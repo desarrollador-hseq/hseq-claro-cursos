@@ -2,15 +2,19 @@
 
 import {
   Certificate,
+  CetarCertificate,
   City,
   Collaborator,
+  Course,
+  CourseLevel,
   Regional,
   TrainingCollaborator,
 } from "@prisma/client";
 import { Fade } from "react-awesome-reveal";
-// import { CollaboratorFormed } from "./collaborators-formed";
+import { CollaboratorFormed } from "./collaborators-formed";
 import { CollaboratorsCity } from "./collaborators-city";
 import { CollaboratorsKpi } from "./collaborators-kpi";
+import { CertificatesByCourse } from "./certificates-by-course";
 import { useDashboard } from "@/components/providers/dashboard-provider";
 import { ShowTableModal } from "../modals/show-table";
 import { collaboratorColumns } from "@/app/(main)/admin/colaboradores/_components/collaborator-datatable-column";
@@ -27,16 +31,32 @@ interface RegionalWithCitiesAndCollaborators extends Regional {
   cities: (City & { collaborators: Collaborator[] | null })[];
 }
 
+interface CertificateWithCourseLevel extends Certificate {
+  courseLevel: CourseLevel & {
+    course: Course;
+  };
+}
+
+interface CetarCertificateWithCourseLevel extends CetarCertificate {
+  courseLevel: CourseLevel & {
+    course: Course;
+  };
+}
+
 interface CollaboratorsReportsProps {
-  collaborators: CollaboratorWithFormated[];
+  collaborators: any[];
   threshold: number;
   regionalFull: RegionalWithCitiesAndCollaborators[] | null | undefined;
+  certificates: CertificateWithCourseLevel[];
+  cetarCertificates: CetarCertificateWithCourseLevel[];
 }
 
 export const CollaboratorsReports = ({
   collaborators,
   threshold,
   regionalFull,
+  certificates,
+  cetarCertificates,
 }: CollaboratorsReportsProps) => {
   const { date } = useDashboard();
 
@@ -49,7 +69,7 @@ export const CollaboratorsReports = ({
           // Filtrar por fecha de certificados emitidos
           console.log({ collaboratorcert: collaborator.certificates });
           const hasCertificateInRange = collaborator.certificates.some(
-            (cert) => {
+            (cert: Certificate) => {
               const certDate = cert.startDate || cert.certificateDate;
               if (!certDate) return false;
               const startDate = new Date(certDate);
@@ -62,7 +82,7 @@ export const CollaboratorsReports = ({
 
           // Filtrar por fecha de entrenamientos completados
           const hasTrainingInRange = collaborator.trainingCollaborators.some(
-            (tc) => {
+            (tc: TrainingCollaborator) => {
               const completionDate = tc.completionDate;
               if (!completionDate) return false;
               const startDate = new Date(completionDate);
@@ -92,6 +112,27 @@ export const CollaboratorsReports = ({
           })),
         }));
 
+    const filteredCertificates = certificates.filter((cert) => {
+      const certDate = cert.certificateDate;
+      if (!certDate) return false;
+      const startDate = new Date(certDate);
+      return (
+        (!date?.from || startDate >= date.from) &&
+        (!date?.to || startDate <= date.to)
+      );
+    });
+
+    
+    const filteredCetarCertificates = cetarCertificates.filter((cert) => {
+      const certDate = cert.certificateDate;
+      if (!certDate) return false;
+      const startDate = new Date(certDate);
+      return (
+        (!date?.from || startDate >= date.from) &&
+        (!date?.to || startDate <= date.to)
+      );
+    });
+
   return (
     <div
       className="w-full flex flex-col justify-center mb-6 "
@@ -117,17 +158,18 @@ export const CollaboratorsReports = ({
           <CollaboratorsKpi
             threshold={threshold}
             collaborators={filteredCollaborators}
+            certificates={filteredCertificates}
           />
         </Fade>
         {/* <div>
           <PercentagePie  collaborators={filteredCollaborators} />
         </div> */}
-        {/* <Fade delay={400} cascade triggerOnce>
+        <Fade delay={400} cascade triggerOnce>
           <CollaboratorFormed
             threshold={threshold}
             collaborators={filteredCollaborators}
           />
-        </Fade> */}
+        </Fade>
         <div className="lg:col-span-2">
           <Fade delay={650} cascade triggerOnce>
             <CollaboratorsRegional
@@ -141,6 +183,16 @@ export const CollaboratorsReports = ({
             <CollaboratorsCity collaborators={filteredCollaborators} />
           </Fade>
         </div>
+      </div>
+
+      {/* Gráfico de certificaciones por curso */}
+      <div className="p-2 mb-3">
+        <Fade delay={800} cascade triggerOnce>
+          <CertificatesByCourse 
+            certificates={filteredCertificates}
+            cetarCertificates={filteredCetarCertificates}
+          />
+        </Fade>
       </div>
     </div>
   );

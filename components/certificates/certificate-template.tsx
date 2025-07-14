@@ -43,351 +43,436 @@ Font.register({
 });
 
 interface CertificateTemplateProps {
- certificate: Certificate;
+  certificate: Certificate;
 }
 
 export const CertificateTemplate = ({
-  certificate
+  certificate,
 }: CertificateTemplateProps) => {
- 
+  console.log({ certificate });
   const colFullname = certificate.collaboratorFullname;
   const colDoc = certificate.collaboratorNumDoc;
   const courseName = certificate.courseName;
-  const courseLevelName = certificate.levelName;
+  const courseLevelName =
+    certificate.levelName && certificate.levelName == certificate.courseName
+      ? undefined
+      : certificate.levelName;
   const courseHours = certificate.levelHours || "---";
   const city = certificate.collaboratorCityName;
-  const dateCert = certificate.startDate ? formatDateCert(new Date(certificate.startDate)) : "---";
-  
- 
+  const dateCert = certificate.startDate
+    ? formatDateCert(new Date(certificate.startDate))
+    : "---";
+  const coachName = certificate.coachName || "";
+  const coachPosition = certificate.coachPosition || "ENTRENADOR";
+  const coachLicense = certificate.coachLicence || "";
+  const coachNumDoc = certificate.coachDoc || "";
+  const startDate = certificate.startDate
+    ? formatDateCert(new Date(certificate.startDate))
+    : "---";
+  const endDate = certificate.endDate
+    ? formatDateCert(new Date(certificate.endDate))
+    : "---";
 
   return (
     <Document style={{ height: "100%", width: "100%" }}>
       <Page size="A4" orientation="landscape" style={styles.page}>
-        <View
-          style={{
-            width: "100%",
-            height: "100%",
-          }}
-        >
-          <View
-            style={{
-              height: "101%",
-              backgroundColor: "#ff0000",
-              position: "absolute",
-              top: 0,
-              bottom: 0,
-              left: 0,
-              width: 45,
-            }}
-          />
-          <Image
-            style={{ width: 130, position: "absolute", top: 10, right: 20 }}
-            src="/riesgo.png"
-          />
+        <View style={styles.container}>
+          {/* Header con logos */}
 
-          <View
-            style={{
-              display: "flex",
-              flexDirection: "row",
-              justifyContent: "space-between",
-              width: "90%",
-              height: "90%",
-              marginLeft: 55,
-              marginRight: 10,
-            }}
-          >
-            <View style={{ display: "flex", flexDirection: "column", flex: 1 }}>
-              {/* --------Title--------- */}
-              <View
-                style={{
-                  width: "100%",
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  marginTop: "30",
-                }}
-              >
-                <Text style={{ fontSize: 36, fontWeight: "bold" }}>
-                  COMUNICACIÓN CELULAR
-                </Text>
-                <Text style={{ fontSize: 36, fontWeight: "bold" }}>
-                  COMCEL S.A.
-                </Text>
-                <Text style={{ fontSize: 15, marginTop: 12 }}>
-                  Hace constar que:{" "}
+          {/* Contenido principal */}
+          <View style={styles.mainContent}>
+            <View style={styles.header}>
+              <Image style={styles.logoClaro} src="/logo-claro.png" />
+              <Image style={styles.logoSsta} src="/ssta.png" />
+            </View>
+            {/* Lado izquierdo - Contenido del certificado */}
+            <View style={styles.leftContent}>
+              {/* Título principal */}
+              <View style={styles.titleSection}>
+                <Text style={styles.mainTitle}>
+                  CERTIFICADO DE CAPACITACIÓN Y ENTRENAMIENTO PARA TRABAJO EN
+                  ALTURA
                 </Text>
               </View>
 
-              {/* --------Nombres--------- */}
-              <View
-                style={{
-                  width: "100%",
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  marginTop: 12,
-                }}
-              >
-                <Text
-                  style={{
-                    fontSize: 25,
-                    fontWeight: "semibold",
-                    textTransform: "uppercase",
-                  }}
-                >
-                  {colFullname}
+              {/* Información UVAE */}
+              <View style={styles.uvaeSection}>
+                <Text style={styles.uvaeText}>
+                  LA UNIDAD VOCACIONAL DE APRENDIZAJE EN EMPRESA (UVAE) DE
                 </Text>
-                <Text style={{ fontSize: 16, fontWeight: "normal" }}>
-                  Identificado con número de documento:
-                </Text>
-                <Text style={{ fontSize: 15 }}>{colDoc}</Text>
+                <Text style={styles.uvaeText}>COMUNICACIÓN</Text>
+                <Text style={styles.uvaeText}>CELULAR COMCEL S.A.</Text>
+                <Text style={styles.haceConstar}>Hace constar que:</Text>
               </View>
 
-              {/* --------Course--------- */}
-              <View
-                style={{
-                  width: "100%",
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  marginTop: 20,
-                }}
-              >
-                <Text
-                  style={{
-                    fontSize: 16,
-                    fontWeight: "normal",
-                    marginBottom: 20,
-                  }}
-                >
-                  Participó y aprobó la capacitación:
+              {/* Nombre del colaborador */}
+              <View style={styles.collaboratorSection}>
+                <Text style={styles.collaboratorName}>{colFullname}</Text>
+                <Text style={styles.documentText}>
+                  Identificado con número de documento:{" "}
+                  <Text style={styles.documentNumber}>{colDoc}</Text>
                 </Text>
-                <Text
-                  style={{
-                    fontSize: 24,
-                    fontWeight: "bold",
-                    color: "#ff0000",
-                    textTransform: "uppercase",
-                  }}
-                >
-                  {courseName}
-             
-                </Text>
-                <Text style={{ fontSize: 20, fontWeight: "bold", color: "#ff0000" }}> Nivel: {courseLevelName}</Text>
-                <Text
-                  style={{ fontSize: 15, fontWeight: "bold", color: "#000000" }}
-                >
-                con duración de {courseHours} horas
+                <Text style={styles.courseParticipation}>
+                  Participó y aprobó el curso de formación nivel:
                 </Text>
               </View>
-              {/* --------Date and Resolution--------- */}
-              <View
-                style={{
-                  width: "100%",
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  marginTop: 26,
-                }}
-              >
-                <Text style={{ fontSize: 16, fontWeight: "bold" }}>
-                  Cumpliendo los Requerimientos de la Resolución 5018 de 2019
+
+              {/* Información del curso */}
+              <View style={styles.courseSection}>
+                <Text style={styles.courseName}>
+                  {courseLevelName ? courseLevelName : ""}
                 </Text>
-                <Text
-                  style={{
-                    fontSize: 16,
-                    fontWeight: "normal",
-                    marginTop: 20,
-                  }}
-                >
-                  {city === "Virtual"
-                    ? "Realizado en modalidad virtual,"
-                    : `Realizado en ciudad de ${city},`}{" "}
-                  <Text
+                <Text style={styles.courseName}>{courseName}</Text>
+                <Text style={styles.courseLevel}>
+                  INTENSIDAD {courseHours} HORAS
+                </Text>
+                <Text style={styles.arlText}>
+                  ARL: {certificate.collaboratorArlName || "BOLÍVAR"}
+                </Text>
+              </View>
+
+              {/* Información de cumplimiento */}
+              <View style={styles.complianceSection}>
+                <Text style={styles.complianceText}>
+                  Cumpliendo los Requerimientos de la Resolución 4272 de 2021
+                  del Ministerio del Trabajo
+                </Text>
+              </View>
+
+              {/* Información de lugar y fecha */}
+              <View style={styles.locationSection}>
+                <Text style={styles.locationText}>
+                  Realizado en <Text style={styles.bold}></Text> la ciudad de{" "}
+                  <Text style={styles.bold}>{city || "BOGOTÁ"}</Text>
+                </Text>
+                <Text style={styles.dateText}>
+                  del <Text style={styles.bold}>{startDate}</Text> al{" "}
+                  <Text style={styles.bold}>{endDate}</Text>
+                </Text>
+                <Text style={styles.signatureLocation}>
+                  En constancia se firma en {"BOGOTÁ"} el{" "}
+                  <Text style={styles.bold}>{dateCert}</Text>
+                </Text>
+              </View>
+
+              {/* Firmas */}
+              <View style={styles.signaturesSection}>
+                <View style={styles.signatureBlock}>
+                  <View
                     style={{
-                      fontSize: 16,
-                      fontWeight: "semibold",
-                      marginBottom: 5,
+                      width: 100,
+                      height: 100,
+                      alignItems: "center",
+                      justifyContent: "center",
                     }}
                   >
-                    el día {dateCert}
+                    {certificate.coachImgSignatureUrl && (
+                      <Image
+                        style={styles.signatureImage}
+                        src={certificate.coachImgSignatureUrl || ""}
+                      />
+                    )}
+                  </View>
+                  <Text style={styles.signatureName}>{coachName}</Text>
+                  <Text style={styles.signatureName}>{coachNumDoc}</Text>
+                  <Text style={styles.signatureId}>{coachLicense}</Text>
+
+                  <Text style={styles.signatureTitle}>{coachPosition}</Text>
+                </View>
+
+                <View style={styles.signatureBlock}>
+                  <View
+                    style={{
+                      width: 100,
+                      height: 100,
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <Image
+                      style={{ width: "40%", height: "70%" }}
+                      src={"/fernando-gonzalez.png"}
+                    />
+                  </View>
+                  <Text style={styles.signatureName}>
+                    FERNANDO GONZALEZ APANGO
                   </Text>
+                  <Text style={styles.signatureId}>C.E. 306817</Text>
+                  <Text style={styles.signatureTitle}>REPRESENTANTE LEGAL</Text>
+                </View>
+              </View>
+
+              {/* Footer */}
+              <View style={styles.footer}>
+                <Text style={styles.footerText}>
+                  La autenticidad de este documento puede ser consultado a
+                  través del área de seguridad, salud y ambiente (SST&A)de CLARO
+                  a través del correo{" "}
+                  <Text style={styles.emailLink}>
+                    trabajoenalturas@claro.com.co
+                  </Text>{" "}
+                  con el siguiente consecutivo:{" "}
+                  <Text style={styles.consecutive}>BOG2025RESC001381</Text>
                 </Text>
               </View>
             </View>
 
-            <Image
-              style={{ height: "75%", alignSelf: "flex-end" }}
-              src={`/user.png`}
-            />
+            {/* Lado derecho - Imagen */}
           </View>
-
-          {/* -------- Signature --------- */}
-          <View
-            style={{
-              width: "80%",
-              display: "flex",
-              flexDirection: "row",
-              justifyContent: "space-around",
-              marginLeft: 30,
-              marginBottom: 15,
-            }}
-          >
-            <View
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                marginLeft: 35,
-                marginRight: 5,
-                paddingTop: "5px",
-              }}
-            >
-              <Text style={{ fontWeight: "semibold", fontSize: 13 }}>
-                FERNANDO FORERO NAVARRETE
-              </Text>
-              <Text style={{ fontSize: 10 }}>JEFE SST&A</Text>
-            </View>
-            {/* --------------------------------------------------- */}
-            <View
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                justifyContent: "center",
-                position: "relative",
-                height: "100%",
-              }}
-            >
-              <View>
-                <Image
-                  style={{
-                    width: 100,
-                    height: 35,
-                    position: "absolute",
-                    top: -32,
-                    left: 50,
-                  }}
-                  src={`/jhonm.jpeg`}
-                />
-                <Text
-                  style={{
-                    fontWeight: "semibold",
-                    fontSize: 13,
-                  }}
-                >
-                  JOHN MERIÑO HERRÁN - Ing. Eléctrico.
-                </Text>
-              </View>
-              <Text style={{ fontSize: 10, fontWeight: "semibold" }}>
-                M. P AT205-178689
-              </Text>
-              <Text style={{ fontSize: 10, fontWeight: "semibold" }}></Text>
-              <Text style={{ fontSize: 10 }}>Instructor</Text>
-            </View>
-            <View
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                justifyContent: "center",
-                position: "relative",
-                height: "100%",
-                paddingTop: "5px",
-              }}
-            >
-              <View>
-                <Image
-                  style={{
-                    width: 80,
-                    height: 38,
-                    position: "absolute",
-                    top: -35,
-                    left: 60,
-                  }}
-                  src={`/yehidert-2.png`}
-                />
-                <Text
-                  style={{
-                    fontWeight: "semibold",
-                    fontSize: 13,
-                  }}
-                >
-                  YEHIDERT GARIZABALO MENDOZA
-                </Text>
-              </View>
-              <Text style={{ fontSize: 10, fontWeight: "semibold" }}>
-                Licencia SST 0797 DE 2019
-              </Text>
-              <Text style={{ fontSize: 10, fontWeight: "semibold" }}>
-                HSEQ-CGIR SAS Licencia SST 560 DE 2023
-              </Text>
-              <Text style={{ fontSize: 10 }}>
-                Jefe Operativo - Líder de formación.
-              </Text>
-            </View>
-          </View>
-          {/* -------- Footer --------- */}
-          <View
-            style={{
-              width: "88%",
-              display: "flex",
-              flexDirection: "row",
-              justifyContent: "space-around",
-              alignItems: "flex-start",
-              marginLeft: 40,
-              marginRight: 80,
-            }}
-          >
-            <View
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                marginBottom: 10,
-                justifyContent: "flex-start",
-              }}
-            >
-              <Image
-                style={{
-                  width: 125,
-                  height: 42,
-                  marginBottom: 20,
-                  marginLeft: 10,
-                }}
-                src={`/ssta.png`}
-              />
-            </View>
-            {/* --------------------------------------------------- */}
-            <View
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-              }}
-            >
-              <Text
-                style={{ fontSize: 12, color: "000000", fontStyle: "italic" }}
-              >
-                La autenticidad de este documento puede ser consultado a través
-                del área de seguridad, salud y ambiente (SST&A)
-              </Text>
-              <Text
-                style={{ fontSize: 12, color: "000000", fontStyle: "italic" }}
-              >
-                correo seguridadeneltrabajo@claro.com.co
-              </Text>
-            </View>
+          <View style={styles.rightContent}>
+            <Image style={styles.mainImage} src="/torre.png" />
           </View>
         </View>
       </Page>
     </Document>
   );
 };
+
 const styles = StyleSheet.create({
   page: {
     fontFamily: "calibri",
     backgroundColor: "#fff",
     padding: 0,
-    marginHorizontal: "auto",
+  },
+  container: {
+    display: "flex",
+    flexDirection: "row",
+    width: "100%",
+    height: "100%",
+    padding: 0,
+    position: "relative",
+  },
+  header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 5,
+    paddingHorizontal: 10,
+  },
+  logoClaro: {
+    width: 80,
+    height: 35,
+    opacity: 0.3,
+  },
+  logoSsta: {
+    width: 80,
+    height: 40,
+    opacity: 0.3,
+  },
+  mainContent: {
+    flexDirection: "column",
+    flex: 1,
+    gap: 10,
+    padding: 15,
+  },
+  leftContent: {
+    flex: 1,
+    paddingRight: 20,
+  },
+  rightContent: {
+    width: 230,
+    height: "100%",
+  },
+  mainImage: {
+    width: "100%",
+    height: "100%",
+    borderRadius: 8,
+  },
+  titleSection: {
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  mainTitle: {
+    fontSize: 16,
+    fontWeight: 700,
+    textAlign: "center",
+    color: "#000",
+    lineHeight: 1.2,
+  },
+  uvaeSection: {
+    alignItems: "center",
+    marginBottom: 15,
+  },
+  uvaeText: {
+    fontSize: 15,
+    fontWeight: 600,
+    textAlign: "center",
+    color: "#000",
+    lineHeight: 1.3,
+  },
+  haceConstar: {
+    fontSize: 14,
+    fontWeight: 400,
+    textAlign: "center",
+    color: "#000",
+    marginTop: 8,
+  },
+  collaboratorSection: {
+    alignItems: "center",
+    marginBottom: 15,
+  },
+  collaboratorName: {
+    fontSize: 24,
+    fontWeight: 700,
+    textAlign: "center",
+    color: "#000",
+    marginBottom: 8,
+    textTransform: "uppercase",
+  },
+  documentText: {
+    fontSize: 14,
+    fontWeight: 400,
+    textAlign: "center",
+    color: "#000",
+    marginBottom: 4,
+  },
+  documentNumber: {
+    fontSize: 16,
+    fontWeight: 700,
+  },
+  courseParticipation: {
+    fontSize: 14,
+    fontWeight: 400,
+    textAlign: "center",
+    color: "#000",
+    marginTop: 4,
+  },
+  courseSection: {
+    alignItems: "center",
+    marginBottom: 15,
+  },
+  courseName: {
+    fontSize: 16,
+    fontWeight: 700,
+    textAlign: "center",
+    color: "#000",
+    marginBottom: 4,
+    textTransform: "uppercase",
+  },
+  courseLevel: {
+    fontSize: 14,
+    fontWeight: 600,
+    textAlign: "center",
+    color: "#000",
+    marginBottom: 4,
+  },
+  arlText: {
+    fontSize: 14,
+    fontWeight: 600,
+    textAlign: "center",
+    color: "#000",
+  },
+  complianceSection: {
+    alignItems: "center",
+    marginBottom: 5,
+  },
+  complianceText: {
+    fontSize: 14,
+    fontWeight: 600,
+    textAlign: "center",
+    color: "#000",
+  },
+  locationSection: {
+    alignItems: "center",
+    marginBottom: 20,
+  },
+  locationText: {
+    fontSize: 14,
+    fontWeight: 400,
+    textAlign: "center",
+    color: "#000",
+    marginBottom: 2,
+  },
+  dateText: {
+    fontSize: 12,
+    fontWeight: 400,
+    textAlign: "center",
+    color: "#000",
+    marginBottom: 2,
+    marginTop: 5,
+  },
+  signatureLocation: {
+    fontSize: 12,
+    fontWeight: 400,
+    textAlign: "center",
+    color: "#000",
+    marginTop: 4,
+  },
+  bold: {
+    fontWeight: 700,
+  },
+  signaturesSection: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    marginBottom: 15,
+    paddingHorizontal: 20,
+  },
+  signatureBlock: {
+    alignItems: "center",
+    justifyContent: "flex-start",
+    flex: 1,
+  },
+  signatureImage: {
+    width: 100,
+    height: 100,
+    marginBottom: 2,
+  },
+  signatureName: {
+    fontSize: 11,
+    fontWeight: 700,
+    textAlign: "center",
+    color: "#000",
+    marginBottom: 2,
+    textTransform: "uppercase",
+  },
+  signatureId: {
+    fontSize: 11,
+    fontWeight: 400,
+    textAlign: "center",
+    color: "#000",
+    marginBottom: 1,
+    textTransform: "uppercase",
+  },
+  signatureLicense: {
+    fontSize: 11,
+    fontWeight: 400,
+    textAlign: "center",
+    color: "#000",
+    marginBottom: 1,
+    textTransform: "uppercase",
+  },
+  signatureTitle: {
+    fontSize: 11,
+    fontWeight: 600,
+    textAlign: "center",
+    color: "#000",
+    textTransform: "uppercase",
+  },
+  footer: {
+    alignItems: "center",
+    paddingHorizontal: 10,
+    marginTop: 15,
+  },
+  footerText: {
+    fontSize: 11,
+    fontWeight: 400,
+    textAlign: "center",
+    color: "#666",
+    fontStyle: "italic",
+    marginBottom: 2,
+  },
+  footerEmail: {
+    fontSize: 11,
+    fontWeight: 400,
+    textAlign: "center",
+    color: "#666",
+    fontStyle: "italic",
+  },
+  emailLink: {
+    color: "#0066cc",
+  },
+  consecutive: {
+    fontWeight: 700,
+    color: "#000",
   },
 });

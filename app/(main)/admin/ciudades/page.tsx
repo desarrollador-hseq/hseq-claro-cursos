@@ -1,6 +1,5 @@
 import Link from "next/link";
-import { getServerSession } from "next-auth";
-import { PlusCircle } from "lucide-react";
+import { Map, PlusCircle } from "lucide-react";
 import { db } from "@/lib/db";
 import { Button } from "@/components/ui/button";
 import { CitiesDataTable } from "./_components/cities-datatable";
@@ -8,12 +7,10 @@ import { citiesColumns } from "./_components/cities-datatable-columns";
 import { RegionalDataTable } from "./_components/regional-datatable";
 import { regionalColumns } from "./_components/regional-datatable-columns";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { authOptions } from "@/lib/auth-options";
 import { AdminOnly } from "@/components/rbac-wrapper";
+import TitlePage from "@/components/title-page";
 
 const InspectionsPage = async () => {
-  const session = await getServerSession(authOptions);
-
   const cities = await db.city.findMany({
     where: {
       active: true,
@@ -38,15 +35,12 @@ const InspectionsPage = async () => {
   return (
     <div className="max-w-[1500px] mx-auto p-1">
       <div className="grid lg:grid-cols-3 gap-3">
-        <Card className="col-span-2 rounded-sm">
-          <CardHeader className="flex flex-row justify-between gap-y-1">
-            <div className="flex flex-col">
-              <h1 className="text-2xl font-semibold">Listado de ciudades</h1>
-              <span className="text-sm text-slate-500 font-light">
-                Listado completo de ciudades registradas hasta la fecha
-              </span>
-            </div>
-
+        <div className="col-span-1 lg:col-span-2 rounded-sm">
+          <TitlePage
+            icon={<Map className="w-8 h-8" />}
+            title="Listado de ciudades"
+            description=""
+          >
             <AdminOnly>
               <Link href="/admin/ciudades/crear">
                 <Button>
@@ -55,11 +49,12 @@ const InspectionsPage = async () => {
                 </Button>
               </Link>
             </AdminOnly>
-          </CardHeader>
-          <CardContent>
+          </TitlePage>
+
+          <div className="p-4">
             <CitiesDataTable columns={citiesColumns} data={cities} />
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
         {/* Regionales */}
         <Card className="col-span-2 lg:col-span-1 rounded-sm">

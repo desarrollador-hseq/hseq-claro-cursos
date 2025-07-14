@@ -7,7 +7,7 @@ import { checkApiPermission } from "@/lib/permissions";
 export async function GET() {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session) {
       return new NextResponse("Unauthorized", { status: 401 });
     }
@@ -53,12 +53,12 @@ async function generateUniqueTrainingCode(): Promise<string> {
     // Generar número aleatorio de 6 dígitos (100000 - 999999)
     const randomNumber = Math.floor(Math.random() * 900000) + 100000;
     code = randomNumber.toString();
-    
+
     // Verificar si el código ya existe
     existingTraining = await db.training.findUnique({
       where: { code }
     });
-    
+
     attempts++;
   } while (existingTraining && attempts < maxAttempts);
 
@@ -74,27 +74,28 @@ async function generateUniqueTrainingCode(): Promise<string> {
 export async function POST(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     // COORDINATOR y ADMIN pueden crear capacitaciones
     if (!session || !checkApiPermission(session.user.role as any, "MANAGE_TRAININGS")) {
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
     const body = await req.json();
-    console.log("API received body:", { body });
-    console.log("API startDate type:", typeof body.startDate);
-    console.log("API startDate value:", body.startDate);
-    
-    const { courseId, startDate, location, instructor, coachId, maxCapacity, byCetar } = body;
+    const { courseId, startDate, endDate, location, instructor, coachId, maxCapacity, byCetar } = body;
 
     if (!courseId) {
       console.log("Missing courseId");
       return new NextResponse("Missing courseId", { status: 400 });
     }
-    
+
     if (!startDate) {
       console.log("Missing startDate");
       return new NextResponse("Missing startDate", { status: 400 });
+    }
+
+    if (!endDate) {
+      console.log("Missing endDate");
+      return new NextResponse("Missing endDate", { status: 400 });
     }
 
     const code = await generateUniqueTrainingCode();
@@ -105,6 +106,7 @@ export async function POST(req: NextRequest) {
         code,
         courseId,
         startDate,
+        endDate,
         location,
         instructor,
         coachId: coachId || null,

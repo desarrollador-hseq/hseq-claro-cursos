@@ -1,9 +1,9 @@
 import TitlePage from "@/components/title-page";
 
-import { getCertificate, getCertificates } from "@/actions/certificates.action";
+import { getCertificate } from "@/actions/certificates.action";
 import { CertificateInfo } from "../../../capacitaciones/[trainingId]/_components/certificate-info";
-import { AdminOnly } from "@/components/rbac-wrapper";
-import { EditCertificateModal } from "../../../capacitaciones/[trainingId]/_components/edit-certificate-modal";
+import { db } from "@/lib/db";
+
 
 const CertificadosPage = async ({
   params,
@@ -11,8 +11,18 @@ const CertificadosPage = async ({
   params: { certificateId: string };
 }) => {
   const { certificateId } = await params;
-  const certificate = await getCertificate(certificateId);
-  console.log({ certificate });
+  // const certificate = await getCertificate(certificateId);
+  const certificate = await db.certificate.findUnique({
+    where: {
+      id: certificateId,
+      active: true
+    },
+  });
+
+  if (!certificate) {
+    return <div>Certificado no encontrado</div>;
+  }
+  // console.log({ certificate });
   return (
     <div>
       <TitlePage
@@ -25,10 +35,8 @@ const CertificadosPage = async ({
       <div className="flex flex-col gap-4">
         <CertificateInfo
           collaboratorId={certificate?.collaboratorId || ""}
-          courseLevelId={certificate?.courseLevelId || ""}
-          collaboratorName={certificate?.collaboratorFullname || ""}
-          courseName={certificate?.courseName || ""}
-          canManage={true}
+   
+          certificate={certificate}
         />
       </div>
     </div>

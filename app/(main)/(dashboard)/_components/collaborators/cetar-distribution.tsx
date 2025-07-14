@@ -4,6 +4,7 @@ import { Chart } from "@/components/chart";
 
 interface CetarDistributionProps {
   trainingCollaborators: {
+    certificateIssued: boolean;
     training: {
       byCetar: boolean;
       status: string;
@@ -17,10 +18,10 @@ export const CetarDistribution = ({
   const processData = () => {
     // Contar colaboradores por tipo de capacitación
     const cetarCount = trainingCollaborators.filter(
-      (tc) => tc.training.byCetar
+      (tc) => tc.training.byCetar && tc.certificateIssued
     ).length;
     const uvaeCount = trainingCollaborators.filter(
-      (tc) => !tc.training.byCetar
+      (tc) => !tc.training.byCetar && tc.certificateIssued
     ).length;
 
     const total = cetarCount + uvaeCount;

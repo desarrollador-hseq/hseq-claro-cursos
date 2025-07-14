@@ -139,6 +139,8 @@ export const MassCertificationButton = ({
         }
       );
 
+      console.log({response})
+
       const { created, skipped, errors } = response.data;
 
       if (created > 0) {

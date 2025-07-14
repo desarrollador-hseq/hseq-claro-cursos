@@ -1,10 +1,15 @@
 "use client";
 
-import { Collaborator } from "@prisma/client";
+import { Collaborator, Certificate, TrainingCollaborator } from "@prisma/client";
 import { Chart } from "@/components/chart";
 
+interface CollaboratorWithFormated extends Collaborator {
+  certificates: Certificate[];
+  trainingCollaborators: TrainingCollaborator[];
+}
+
 interface CollaboratorsReportsProps {
-  collaborators: Collaborator[];
+  collaborators: CollaboratorWithFormated[];
   threshold: number;
 }
 
@@ -12,49 +17,90 @@ export const CollaboratorFormed = ({
   collaborators,
   threshold,
 }: CollaboratorsReportsProps) => {
-  const countFormedCollaborators = () => {
-    return collaborators.reduce((count, collaborator) => {
-      if (collaborator.email) {
-      // if (collaborator. >= threshold) {
-        return count + 1;
+  // Solo considerar colaboradores activos
+  const activeCollaborators = collaborators.filter(col => col.active === true);
+  console.log({activeCollaborators})
+
+  const getCollaboratorStatus = () => {
+    let formedCount = 0; // Tienen certificados
+    let inTrainingCount = 0; // Inscritos en capacitaciones pero sin certificados
+    let noActivityCount = 0; // Sin certificados ni capacitaciones
+
+    activeCollaborators.forEach(collaborator => {
+      const hasCertificates = collaborator.certificates.length > 0;
+      const hasTrainings = collaborator.trainingCollaborators.length > 0;
+      
+      if (hasCertificates) {
+        // Si tiene certificados, está formado
+        formedCount++;
+      } else if (hasTrainings) {
+        // Si no tiene certificados pero sí capacitaciones, está en formación
+        inTrainingCount++;
+      } else {
+        // Si no tiene certificados ni capacitaciones, sin actividad
+        noActivityCount++;
       }
-      return count;
-    }, 0);
+    });
+
+    return { formedCount, inTrainingCount, noActivityCount };
   };
 
-  const formedCount = countFormedCollaborators();
-  const totalCount = collaborators.length;
-  const notFormedCount = totalCount - formedCount;
+  const { formedCount, inTrainingCount, noActivityCount } = getCollaboratorStatus();
+  const totalCount = activeCollaborators.length;
 
-  const formedCountValue = (formedCount / totalCount) * 100;
-  const notFormedCountValue = 100 - formedCountValue;
+  // Calcular porcentajes
+  const formedPercentage = totalCount > 0 ? (formedCount / totalCount) * 100 : 0;
+  const inTrainingPercentage = totalCount > 0 ? (inTrainingCount / totalCount) * 100 : 0;
+  const noActivityPercentage = totalCount > 0 ? (noActivityCount / totalCount) * 100 : 0;
 
   const chartData = [
-    { value: formedCountValue.toFixed(0), name: "Formados" },
-    { value: notFormedCountValue.toFixed(0), name: "En formación" },
-  ];
+    { 
+      value: formedPercentage.toFixed(1), 
+      name: "Formados", 
+      count: formedCount,
+      itemStyle: { color: "#10b981" } // Verde
+    },
+    { 
+      value: inTrainingPercentage.toFixed(1), 
+      name: "En formación", 
+      count: inTrainingCount,
+      itemStyle: { color: "#f59e0b" } // Ámbar
+    },
+    { 
+      value: noActivityPercentage.toFixed(1), 
+      name: "Sin actividad", 
+      count: noActivityCount,
+      itemStyle: { color: "#6b7280" } // Gris
+    },
+  ].filter(item => parseFloat(item.value) > 0); // Solo mostrar categorías con datos
 
   const option = {
     tooltip: {
       trigger: "item",
-      formatter: "{b}: {d}%",
+      formatter: function(params: any) {
+        return `${params.name}: ${params.data.count} colaboradores (${params.percent}%)`;
+      },
     },
     legend: {
-      show: false,
-      top: "0%",
+      show: true,
+      bottom: "0%",
       left: "center",
+      textStyle: {
+        fontSize: 12,
+      },
     },
     series: [
       {
-        name: "",
+        name: "Estado de Formación",
         type: "pie",
-        radius: ["50%", "70%"],
+        radius: ["40%", "70%"],
         avoidLabelOverlap: false,
         label: {
           show: true,
           fontWeight: "bold",
+          fontSize: 12,
           formatter(param: any) {
-            return param.name + " (" + param.value + "%)";
+            return `${param.data.count}`;
           },
         },
         emphasis: {
@@ -65,14 +111,13 @@ export const CollaboratorFormed = ({
           },
         },
         labelLine: {
-          show: true,
+          show: false,
         },
-        data: collaborators.length !== 0 ? chartData : [],
-        color: ["#4e71b1", "#bae0fc"],
+        data: totalCount !== 0 ? chartData : [],
       },
     ],
     title: {
-      show: formedCount === 0 && notFormedCount === 0,
+      show: totalCount === 0,
       textStyle: {
         color: "grey",
         fontSize: 20,
@@ -83,5 +128,5 @@ export const CollaboratorFormed = ({
     },
   };
 
-  return <Chart option={option} title="Estados" />;
+  return <Chart option={option} title="Estado de Formación" />;
 };

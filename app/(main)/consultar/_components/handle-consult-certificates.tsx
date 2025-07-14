@@ -21,6 +21,8 @@ import {
   EyeOff,
   Ban,
   X,
+  Download,
+  Loader2,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
@@ -56,6 +58,7 @@ import {
 import { cn, formatDateCert } from "@/lib/utils";
 import { FormattedNumberInput } from "@/app/(main)/admin/colaboradores/[collaboratorId]/_components/formatted-input-form";
 import { LoadingButton } from "@/components/ui/loading-button";
+import { DownloadCertificate } from "@/components/certificates/download-certificate";
 
 const formSchema = z.object({
   numDoc: z.string().min(1, {
@@ -72,6 +75,9 @@ export const HandleConsultCertificates = () => {
   const [collaborator, setCollaborator] = useState<
     (Collaborator & { certificates: Certificate[] }) | null
   >();
+  const [downloadingCerts, setDownloadingCerts] = useState<Set<string>>(
+    new Set()
+  );
 
   const router = useRouter();
 
@@ -104,23 +110,53 @@ export const HandleConsultCertificates = () => {
     }
   };
 
-  const checkedCertificate = async (id: string) => {
-    try {
-      const { data } = await axios.patch(`/api/collaborators/${id}`, {
-        checkCertificate: true,
-      });
+  const handleDownloadCertificate = async (certificate: Certificate) => {
+    setDownloadingCerts((prev) => new Set(prev.add(certificate.id)));
 
-      console.log({ checkedCert: id });
-      console.log({ data });
+    try {
+      // Solo actualizar certificados regulares, no CETAR
+      if ((certificate as any).type !== "cetar") {
+        // Marcar como descargado en la base de datos
+        await axios.put(`/api/certificates/${certificate.id}`, {
+          downloaded: true,
+        });
+
+        // Actualizar el estado local del certificado
+        if (collaborator) {
+          const updatedCertificates = collaborator.certificates.map((cert) =>
+            cert.id === certificate.id ? { ...cert, downloaded: true } : cert
+          );
+          setCollaborator({
+            ...collaborator,
+            certificates: updatedCertificates,
+          });
+        }
+
+        // Actualizar el certificado seleccionado si es el mismo
+        if (selectedCertificate?.id === certificate.id) {
+          setSelectedCertificate({ ...selectedCertificate, downloaded: true });
+        }
+
+        toast.success("Certificado marcado como descargado");
+      } else {
+        // Para certificados CETAR, solo mostrar mensaje
+        toast.success("Certificado CETAR consultado");
+      }
     } catch (error) {
-      console.log("errorr", error);
+      console.error("Error al marcar como descargado:", error);
+      toast.error("Error al marcar el certificado como descargado");
+    } finally {
+      setDownloadingCerts((prev) => {
+        const newSet = new Set(prev);
+        newSet.delete(certificate.id);
+        return newSet;
+      });
     }
   };
 
   const handleViewCertificate = (certificate: Certificate) => {
     setSelectedCertificate(certificate);
     setIsModalOpen(true);
-    checkedCertificate(collaborator?.id || "");
   };
 
   const resetForm = () => {
@@ -315,6 +351,7 @@ export const HandleConsultCertificates = () => {
                           })
                           .map((certificate) => {
                             let isExpired = false;
+                            let isDownloaded = false;
 
                             if (
                               certificate.dueDate &&
@@ -323,13 +360,19 @@ export const HandleConsultCertificates = () => {
                               isExpired = true;
                             }
 
+                            if (certificate.downloaded) {
+                              isDownloaded = true;
+                            }
+
                             return (
                               <Card
                                 key={certificate.id}
                                 className={cn(
                                   "border border-gray-200 hover:border-blue-300 transition-colors cursor-pointer group",
                                   isExpired &&
-                                    "opacity-50 border-red-400 bg-red-200"
+                                    "opacity-50 border-red-400 bg-red-200",
+                                  isDownloaded &&
+                                    " border-green-400 bg-green-200"
                                 )}
                                 onClick={() =>
                                   isExpired
@@ -345,7 +388,9 @@ export const HandleConsultCertificates = () => {
                                           className={cn(
                                             "font-bold text-gray-900 group-hover:text-blue-600 transition-colors",
                                             isExpired &&
-                                              "text-red-600 group-hover:text-red-600"
+                                              "text-red-600 group-hover:text-red-600",
+                                            isDownloaded &&
+                                              "text-green-600 group-hover:text-green-600"
                                           )}
                                         >
                                           {certificate.courseName}
@@ -375,6 +420,8 @@ export const HandleConsultCertificates = () => {
                                     <div className="flex items-center gap-2">
                                       {isExpired ? (
                                         <Ban className="h-4 w-4 text-red-600" />
+                                      ) : isDownloaded ? (
+                                        <Download className="h-4 w-4 text-green-600" />
                                       ) : (
                                         <CheckCircle className="h-4 w-4 text-green-600" />
                                       )}
@@ -383,18 +430,37 @@ export const HandleConsultCertificates = () => {
                                           "text-sm font-medium",
                                           isExpired
                                             ? "text-red-600"
+                                            : isDownloaded
+                                            ? "text-green-600"
                                             : "text-green-600"
                                         )}
                                       >
                                         {isExpired
                                           ? "Certificado vencido"
+                                          : isDownloaded
+                                          ? "Certificado descargado"
                                           : "Certificado válido"}
                                       </span>
                                     </div>
+
+                                    {/* Botón de descarga - Solo para certificados regulares */}
+                                    {!isExpired &&
+                                      (certificate as any).type !== "cetar" && (
+                                        <div className="mt-2">
+                                          <DownloadCertificate
+                                            onDownload={
+                                              handleDownloadCertificate
+                                            }
+                                            certificate={certificate}
+                                          />
+                                        </div>
+                                      )}
                                   </div>
                                   <span className="absolute bottom-2 right-2">
                                     {isExpired ? (
                                       <EyeOff className="h-5 w-5 text-gray-400 group-hover:text-blue-600 transition-colors" />
+                                    ) : isDownloaded ? (
+                                      <Download className="h-5 w-5 text-green-400" />
                                     ) : (
                                       <Eye className="h-5 w-5 text-gray-400 group-hover:text-blue-600 transition-colors" />
                                     )}
@@ -428,34 +494,6 @@ export const HandleConsultCertificates = () => {
             )}
           </div>
         )}
-
-        {/* Certificate Modal */}
-        <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-          <DialogContent className="max-w-5xl max-h-[90vh] h-[90vh] overflow-y-auto bg-primary px-0">
-            <DialogHeader className="px-4 sticky top-0 z-50 text-white">
-              <DialogClose asChild className="absolute right-2 top-">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="absolute right-2 top-1 h-8 w-8 p-0 text-primary-foreground hover:bg-primary-foreground/20 hover:text-primary-foreground focus:ring-2 focus:ring-primary-foreground/50 rounded-full"
-                  onClick={() => setIsModalOpen(false)}
-                >
-                  <X className="h-4 w-4" />
-                  <span className="sr-only">Cerrar</span>
-                </Button>
-              </DialogClose>
-              <DialogTitle className="flex items-center gap-2">
-                <Award className="h-5 w-5 text-yellow-600" />
-                Certificado: {selectedCertificate?.courseName}
-              </DialogTitle>
-            </DialogHeader>
-            <div className="">
-              {selectedCertificate && (
-                <ShowCertificate certificateId={selectedCertificate.id} />
-              )}
-            </div>
-          </DialogContent>
-        </Dialog>
       </div>
     </div>
   );

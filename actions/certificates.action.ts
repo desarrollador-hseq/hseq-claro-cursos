@@ -40,3 +40,47 @@ export const getCertificate = async (certificateId: string) => {
         return null;
     }
 };
+
+// Nueva función para obtener certificados con información de cursos
+export const getCertificatesWithCourses = async () => {
+    try {
+        // Obtener certificados regulares
+        const certificates = await db.certificate.findMany({
+            where: {
+                active: true,
+            },
+            include: {
+                courseLevel: {
+                    include: {
+                        course: true,
+                    },
+                },
+            },
+        });
+
+        // Obtener certificados CETAR
+        const cetarCertificates = await db.cetarCertificate.findMany({
+            where: {
+                active: true,
+            },
+            include: {
+                courseLevel: {
+                    include: {
+                        course: true,
+                    },
+                },
+            },
+        });
+
+        return {
+            certificates,
+            cetarCertificates,
+        };
+    } catch (error) {
+        console.error(error);
+        return {
+            certificates: [],
+            cetarCertificates: [],
+        };
+    }
+};

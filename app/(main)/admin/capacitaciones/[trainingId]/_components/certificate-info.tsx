@@ -3,67 +3,31 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 import {
-  Award,
-  Calendar,
-  CheckCircle,
   AlertCircle,
-  Download,
-  Edit3,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+
 import { Card, CardContent } from "@/components/ui/card";
 import { EditCertificateModal } from "./edit-certificate-modal";
-import { toast } from "sonner";
-import { CertificateTemplate } from "../../../../../../components/certificates/certificate-template";
+
+
 import { Certificate } from "@prisma/client";
-import { formatDate, formatDateCert } from "@/lib/utils";
-import { PdfPreview } from "@/components/pdf-preview";
 import { AdminOnly } from "@/components/rbac-wrapper";
 import ShowCertificate from "@/components/certificates/show-certificate";
 
 interface CertificateInfoProps {
   collaboratorId: string;
-  courseLevelId: string;
-  collaboratorName: string;
-  courseName: string;
-  canManage: boolean;
+  certificate: Certificate;
 }
 
 export const CertificateInfo = ({
   collaboratorId,
-  courseLevelId,
-  collaboratorName,
-  courseName,
-  canManage,
+  certificate,
 }: CertificateInfoProps) => {
-  const [certificate, setCertificate] = useState<Certificate | null>(null);
+  // const [certificate, setCertificate] = useState<Certificate | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  useEffect(() => {
-    loadCertificate();
-  }, [collaboratorId, courseLevelId]);
 
-  const loadCertificate = async () => {
-    setIsLoading(true);
-    try {
-      // Buscar certificado por colaborador y nivel de curso
-      const response = await axios.get(`/api/certificates`, {
-        params: {
-          collaboratorId,
-          courseLevelId,
-        },
-      });
-
-      if (response.data.certificates && response.data.certificates.length > 0) {
-        setCertificate(response.data.certificates[0]);
-      }
-    } catch (error) {
-      console.error("Error loading certificate:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const isExpired = certificate?.dueDate
     ? new Date(certificate.dueDate) < new Date()
@@ -125,8 +89,8 @@ export const CertificateInfo = ({
           <div className="flex items-center justify-end bg-white m-3 p-3 text-secondary">
             <AdminOnly>
               <EditCertificateModal
-                certificateId={certificate.id}
-                onUpdate={() => loadCertificate()}
+                certificate={certificate}
+                onUpdate={() => {}}
               />
             </AdminOnly>
           </div>

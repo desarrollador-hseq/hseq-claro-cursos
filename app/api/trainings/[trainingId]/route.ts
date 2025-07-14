@@ -79,7 +79,7 @@ export async function PATCH(
     }
 
     const body = await req.json();
-    const { code, courseId, startDate, location, instructor, coachId, maxCapacity, status } = body;
+    const { code, courseId, startDate, endDate, location, instructor, coachId, maxCapacity, status } = body;
 
     const training = await db.training.update({
       where: {
@@ -89,6 +89,7 @@ export async function PATCH(
         ...(code && { code }),
         ...(courseId && { courseId }),
         ...(startDate && { startDate: new Date(startDate) }),
+        ...(endDate && { endDate: new Date(endDate) }),
         ...(location !== undefined && { location }),
         ...(instructor !== undefined && { instructor }),
         ...(coachId !== undefined && { coachId }),

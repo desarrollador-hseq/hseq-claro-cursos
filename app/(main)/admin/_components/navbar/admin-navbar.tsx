@@ -63,6 +63,17 @@ export const AdminNavbar = () => {
                 Entrenadores
               </Link>
             </AdminOnly>
+            <AdminOnly>
+              <Link
+                href="/admin/cetar"
+                className={cn(
+                  "w-fit p-2 rounded-sm hover:bg-secondary/30",
+                  pathname?.startsWith(`/admin/cetar`) && "bg-secondary"
+                )}
+              >
+                CETAR
+              </Link>
+            </AdminOnly>
             <Link
               href="/admin/inspecciones"
               className={cn(

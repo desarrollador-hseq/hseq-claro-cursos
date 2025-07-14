@@ -170,33 +170,15 @@ export const AddCollaboratorForm = ({
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
-      // Validar que todos los documentos requeridos estén subidos solo si NO es CETAR
-      if (
-        !byCetar &&
-        selectedLevel &&
-        selectedLevel.requiredDocuments.length > 0
-      ) {
-        const missingDocs = selectedLevel.requiredDocuments.filter(
-          (doc: any) => !uploadedDocuments[doc.id]
+      // Validar que no haya errores de tamaño de archivo (si hay documentos subidos)
+      const hasFileErrors = Object.keys(fileErrors).some(
+        (key) => fileErrors[key]
+      );
+      if (hasFileErrors) {
+        toast.error(
+          "Hay archivos con errores de tamaño. Por favor corrígelos antes de continuar"
         );
-
-        if (missingDocs.length > 0) {
-          toast.error(
-            "Debes subir todos los documentos requeridos antes de matricular"
-          );
-          return;
-        }
-
-        // Validar que no haya errores de tamaño de archivo
-        const hasFileErrors = Object.keys(fileErrors).some(
-          (key) => fileErrors[key]
-        );
-        if (hasFileErrors) {
-          toast.error(
-            "Hay archivos con errores de tamaño. Por favor corrígelos antes de continuar"
-          );
-          return;
-        }
+        return;
       }
 
       // Crear FormData para enviar archivos
@@ -337,13 +319,8 @@ export const AddCollaboratorForm = ({
 
   const isAtCapacity = maxCapacity !== null && currentCount >= maxCapacity;
 
-  // Verificar si todos los archivos están subidos y sin errores
-  const hasAllValidFiles =
-    byCetar || !selectedLevel || selectedLevel.requiredDocuments.length === 0
-      ? true
-      : selectedLevel.requiredDocuments.every(
-          (doc: any) => uploadedDocuments[doc.id] && !fileErrors[doc.id]
-        );
+  // Verificar si hay errores en archivos subidos (no importa si faltan documentos)
+  const hasValidUploadedFiles = Object.keys(fileErrors).length === 0;
 
   return (
     <Card>
@@ -704,6 +681,20 @@ export const AddCollaboratorForm = ({
                   </div>
                 )}
 
+                {/* Mensaje informativo sobre documentación para NO CETAR */}
+                {!byCetar && selectedLevel && selectedLevel.requiredDocuments.length > 0 && (
+                  <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                    <div className="flex items-center gap-2 text-amber-800 mb-2">
+                      <AlertCircle className="h-5 w-5" />
+                      <span className="font-semibold">Política de Documentación</span>
+                    </div>
+                    <p className="text-sm text-amber-700">
+                      Puedes matricular al colaborador sin completar la documentación, pero será <strong>obligatoria antes de poder certificarse</strong>. 
+                      Los documentos faltantes deberán subirse posteriormente durante el proceso de certificación.
+                    </p>
+                  </div>
+                )}
+
                 {/* Sección de documentos requeridos - Solo mostrar si NO es CETAR */}
                 {!byCetar &&
                   selectedLevel &&
@@ -714,10 +705,15 @@ export const AddCollaboratorForm = ({
                           Documentos Requeridos (
                           {selectedLevel.requiredDocuments.length})
                         </h3>
-                        <p className="text-sm text-gray-600 mb-4">
-                          Debes subir todos los documentos antes de matricular
-                          al colaborador (máximo 2MB por archivo)
-                        </p>
+                        <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                          <p className="text-sm text-blue-800 font-medium mb-1">
+                            📄 Documentación Opcional para Registro
+                          </p>
+                          <p className="text-sm text-blue-700">
+                            Puedes registrar al colaborador sin documentos, pero estos serán <strong>obligatorios para poder certificarse</strong>. 
+                            Máximo 2MB por archivo.
+                          </p>
+                        </div>
 
                         <div className="grid gap-4">
                           {selectedLevel.requiredDocuments.map((doc: any) => (
@@ -738,10 +734,7 @@ export const AddCollaboratorForm = ({
                                     Subido
                                   </Badge>
                                 ) : (
-                                  <Badge variant="destructive">
-                                    <AlertCircle className="h-3 w-3 mr-1" />
-                                    Requerido
-                                  </Badge>
+                                  <span />
                                 )}
                               </div>
 
@@ -922,17 +915,14 @@ export const AddCollaboratorForm = ({
                             </span>
                             <span
                               className={`${
-                                hasAllValidFiles
+                                Object.keys(uploadedDocuments).length === selectedLevel.requiredDocuments.length
                                   ? "text-green-600"
                                   : "text-orange-600"
                               }`}
                             >
-                              {hasAllValidFiles
+                              {Object.keys(uploadedDocuments).length === selectedLevel.requiredDocuments.length
                                 ? "Todos los documentos subidos ✓"
-                                : `Faltan ${
-                                    selectedLevel.requiredDocuments.length -
-                                    Object.keys(uploadedDocuments).length
-                                  } documentos`}
+                                : `Opcional: ${Object.keys(uploadedDocuments).length} de ${selectedLevel.requiredDocuments.length} documentos subidos`}
                             </span>
                           </div>
                           <div className="mt-2 w-full bg-gray-200 rounded-full h-2">
@@ -958,7 +948,7 @@ export const AddCollaboratorForm = ({
                     isSubmitting ||
                     !isValid ||
                     filteredCollaborators.length === 0 ||
-                    !hasAllValidFiles
+                    !hasValidUploadedFiles
                   }
                   loading={isSubmitting}
                   className="w-full bg-blue-600 hover:bg-blue-700 text-white"
@@ -967,7 +957,7 @@ export const AddCollaboratorForm = ({
                     ? "Matricular (CETAR - Sin documentos requeridos)"
                     : selectedLevel &&
                       selectedLevel.requiredDocuments.length > 0
-                    ? `Matricular con ${selectedLevel.requiredDocuments.length} documentos`
+                    ? `Matricular (${Object.keys(uploadedDocuments).length}/${selectedLevel.requiredDocuments.length} documentos subidos)`
                     : "Agregar Colaborador"}
                 </LoadingButton>
               </form>

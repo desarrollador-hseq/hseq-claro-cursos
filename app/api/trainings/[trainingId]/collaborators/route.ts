@@ -223,12 +223,13 @@ export async function POST(
       const documentEntries = [];
       
       if (!training.byCetar) {
-        // Solo procesar documentos si la capacitación NO es CETAR
+        // Solo procesar documentos que estén presentes (opcional)
         for (const requiredDoc of courseLevel.requiredDocuments) {
           const file = formData.get(`documents[${requiredDoc.id}]`) as File;
           
-          if (!file) {
-            throw new Error(`Missing required document: ${requiredDoc.name}`);
+          // Si no hay archivo, continuar con el siguiente (documentos son opcionales en registro)
+          if (!file || file.size === 0) {
+            continue;
           }
 
           // Crear FormData para processAndUploadFile
@@ -249,7 +250,7 @@ export async function POST(
             throw new Error(`Error uploading ${requiredDoc.name}: ${uploadResult.error}`);
           }
 
-          // 3. Crear entrada en la base de datos
+          // Crear entrada en la base de datos
           const documentEntry = await tx.trainingCollaboratorDocument.create({
             data: {
               trainingCollaboratorId: trainingCollaborator.id,

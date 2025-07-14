@@ -162,6 +162,7 @@ export async function POST(
           }
         } else {
           // Para no-CETAR, verificar nota aprobatoria
+          console.log({threshold})
           const finalScore = trainingCollaborator.finalScore;
           if (finalScore === null || finalScore === undefined || finalScore < threshold) {
             errors++;
@@ -169,12 +170,16 @@ export async function POST(
           }
         }
 
+        console.log({threshold})
+
+
         // Para no-CETAR, crear certificado en la tabla Certificate
         if (!training.byCetar) {
           // Calcular fechas
           const now = new Date();
           const certificateDate = now;
           const startDate = training.startDate;
+          const endDate = training.endDate;
           const expeditionDate = now;
           
           // Calcular fecha de vencimiento
@@ -192,7 +197,7 @@ export async function POST(
               coachId: training.coachId,
               
               // Información del colaborador (como strings)
-              collaboratorFullname: collaborator.name + " " + collaborator.lastname,
+              collaboratorFullname: collaborator.lastname + " " + collaborator.name,
               collaboratorNumDoc: collaborator.numDoc,
               collaboratorTypeDoc: collaborator.docType,
               collaboratorCityName: collaborator.city?.realName,
@@ -210,6 +215,7 @@ export async function POST(
               
               // Información del coach (como strings)
               coachName: training.coach?.fullname || training.instructor,
+              coachDoc: `${training.coach?.docType} ${training.coach?.numDoc}`,
               coachPosition: training.coach?.position,
               coachLicence: training.coach?.license,
               coachImgSignatureUrl: training.coach?.signatureUrl,
@@ -217,11 +223,12 @@ export async function POST(
               // Fechas
               certificateDate,
               startDate,
+              endDate,
               expeditionDate,
               dueDate,
               
               // Estado
-              wasSent: false,
+              
               active: true,
             },
           });

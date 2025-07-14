@@ -150,11 +150,11 @@ export const CollaboratorDocumentsModal = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-6xl max-h-[90vh] min-h-[50vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <User className="h-5 w-5" />
-            Documentos de {trainingCollaborator.collaborator.fullname}
+            Documentos de <span className="font-bold text-blue-600">{trainingCollaborator.collaborator.name} {trainingCollaborator.collaborator.lastname}</span>
           </DialogTitle>
           <div className="flex items-center gap-4 text-sm text-gray-600">
             <span className="flex items-center gap-1">

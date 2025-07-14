@@ -76,6 +76,25 @@ export const trainingDatatableColumn: ColumnDef<Training & { course: Course }>[]
     },
   },
   {
+    accessorKey: "endDate",
+    header: ({ column }) => {
+      return (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          Fecha final
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      );
+    },
+    cell: ({ row }) => {
+      const endDate = row.original.endDate;
+      const formattedDate = formatDate(endDate);
+      return <span className="capitalize">{formattedDate}</span>;
+    },
+  },
+  {
     accessorKey: "course",
     header: ({ column }) => {
       return (

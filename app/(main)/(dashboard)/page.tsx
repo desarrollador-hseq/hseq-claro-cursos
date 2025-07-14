@@ -8,14 +8,19 @@ import { ReportsChartReports } from "./_components/reports/reports-chart-reports
 import { Dashboardtitle } from "./_components/dashboard-title";
 import { MonthlyReportsSection } from "./_components/monthly-reports/monthly-reports-section";
 import { CetarDistribution } from "./_components/collaborators/cetar-distribution";
+import { getCertificatesWithCourses } from "@/actions/certificates.action";
 
 const DashboardPage = async () => {
   const collaborators = await db.collaborator.findMany({
     where: {
-      // Traemos todos los colaboradores para mostrar certificados emitidos
-      // independientemente de si están activos o no
+     active: true,
     },
-    include: {
+    select: {
+      id: true,
+      active: true,
+      name: true,
+      lastname: true,
+
       city: {
         include: {
           regional: true,
@@ -25,10 +30,22 @@ const DashboardPage = async () => {
         where: {
           active: true,
         },
+        select: {
+          id: true,
+          active: true,
+          certificateDate: true,
+          startDate: true,
+          dueDate: true,
+          downloaded: true,
+        },
       },
       trainingCollaborators: {
-        where: {
+        select: {
+          id: true,
           certificateIssued: true,
+          completionDate: true,
+          status: true,
+          createdAt: true,
         },
       },
     },
@@ -96,6 +113,9 @@ const DashboardPage = async () => {
     }
   })
 
+  // Obtener certificados para el gráfico por curso
+  const certificatesData = await getCertificatesWithCourses();
+
   return (
     <div className="w-full">
       <Card className="relative w-full max-w-[1500px] m-auto overflow-hidden bg-slate-50 border-2 border-primary">
@@ -110,6 +130,8 @@ const DashboardPage = async () => {
               threshold={threshold}
               collaborators={collaborators}
               regionalFull={regionalFull}
+              certificates={certificatesData.certificates}
+              cetarCertificates={certificatesData.cetarCertificates}
             />
           ) : (
             <div className="h-full w-full">

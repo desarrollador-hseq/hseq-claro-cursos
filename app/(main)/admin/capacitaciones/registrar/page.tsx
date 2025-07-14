@@ -48,6 +48,13 @@ const CreateTrainingPage = async () => {
     },
   });
 
+  // Obtener cetars disponibles
+  const cetars = await db.cetar.findMany({
+    where: {
+      active: true,
+    },
+  });
+
   return (
     <div className="container mx-auto">
       <TitlePage
@@ -57,7 +64,7 @@ const CreateTrainingPage = async () => {
       />
       <div className=" mx-auto py-6 space-y-6">
         {/* Header */}
-
+        rango de fechas
         {/* Formulario */}
         <div className="grid gap-6 lg:grid-cols-3">
           {/* Formulario principal */}
@@ -70,7 +77,7 @@ const CreateTrainingPage = async () => {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <CreateTrainingForm courses={courses} coaches={coaches} />
+                <CreateTrainingForm courses={courses} coaches={coaches} cetars={cetars} />
               </CardContent>
             </Card>
           </div>

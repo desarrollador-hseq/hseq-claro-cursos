@@ -35,7 +35,7 @@ enum Role {
 model Collaborator {
   id String @id @default(uuid())
 
-  name String
+  name     String
   lastname String
   numDoc   String  @unique
   docType  DocType @default(CC)
@@ -92,6 +92,7 @@ model City {
 
   collaborators Collaborator[]
   inspections   Inspection[]
+  cetars        Cetar[]
 
   @@index([regionalId])
 }
@@ -201,6 +202,24 @@ model CourseLevel {
   @@index([courseId])
 }
 
+model Cetar {
+  id String @id @default(uuid())
+
+  name String?
+
+  cityId String?
+  city   City?   @relation(fields: [cityId], references: [id])
+
+  active Boolean @default(true)
+
+  trainings Training[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([cityId])
+}
+
 model Course {
   id String @id @default(uuid())
 
@@ -246,7 +265,7 @@ enum DocType {
   CC
   TI
   CE
-  PP
+  PA
   PE
 }
 
@@ -282,15 +301,17 @@ model Certificate {
 
   coachName            String?
   coachPosition        String?
+  coachDoc             String?
   coachLicence         String?
   coachImgSignatureUrl String?
 
   certificateDate DateTime?
-  startDate       DateTime?
+  startDate       DateTime
+  endDate         DateTime
   expeditionDate  DateTime?
   dueDate         DateTime?
 
-  wasSent Boolean @default(false)
+  downloaded Boolean @default(false)
 
   // certificateEvent CertificateEvent[]
 
@@ -409,7 +430,7 @@ model Training {
   course   Course @relation(fields: [courseId], references: [id])
 
   startDate DateTime
-  // endDate   DateTime?
+  endDate   DateTime
 
   location    String?
   instructor  String?
@@ -420,6 +441,9 @@ model Training {
   // Relación con coach (instructor)
   coachId String?
   coach   Coach?  @relation(fields: [coachId], references: [id])
+
+  cetarId String?
+  cetar   Cetar?  @relation(fields: [cetarId], references: [id])
 
   status             TrainingStatus @default(PLANNED)
   statusChangeReason String?
@@ -435,6 +459,7 @@ model Training {
 
   @@index([courseId])
   @@index([coachId])
+  @@index([cetarId])
   @@index([status])
 }
 

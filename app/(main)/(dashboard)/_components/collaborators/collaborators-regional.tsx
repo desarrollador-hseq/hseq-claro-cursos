@@ -1,14 +1,24 @@
 "use client";
 
-import { Collaborator, City, Regional } from "@prisma/client";
+import {
+  Collaborator,
+  City,
+  Regional,
+  TrainingCollaborator,
+} from "@prisma/client";
 import { Chart } from "@/components/chart";
 import { CollaboratorsRegionalMenu } from "./collaborators-regional-menu";
 
 interface CollaboratorWithFormated extends Collaborator {
   city: (City & { regional: Regional | null }) | null;
+  trainingCollaborators: TrainingCollaborator[];
 }
 interface RegionalWithCollaborator extends Regional {
-  cities: (City & { collaborators: Collaborator[] | null | undefined } | null | undefined)[];
+  cities: (
+    | (City & { collaborators: Collaborator[] | null | undefined })
+    | null
+    | undefined
+  )[];
 }
 interface CollaboratorsReportsProps {
   collaborators: CollaboratorWithFormated[];
@@ -20,14 +30,16 @@ export const CollaboratorsRegional = ({
   regionalsFull,
 }: CollaboratorsReportsProps) => {
   const processDataForBarChart = () => {
-    const regionalData = collaborators.map((collaborator) => {
-      const regionalName = collaborator.city?.regional?.name || "Desconocida";
+    const regionalData = collaborators
+      .filter((c) => c.trainingCollaborators.some((tc) => tc.certificateIssued))
+      .map((collaborator) => {
+        const regionalName = collaborator.city?.regional?.name || "Desconocida";
 
-      return {
-        regionalName,
-        count: 1,
-      };
-    });
+        return {
+          regionalName,
+          count: 1,
+        };
+      });
 
     const countsByRegional = regionalData.reduce(
       (acc: any, { regionalName, count }) => {

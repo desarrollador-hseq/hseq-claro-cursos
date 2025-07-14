@@ -1,9 +1,10 @@
 "use client";
 import { useEffect, useState } from "react";
 import { Certificate } from "@prisma/client";
-import { AlertCircle, FileWarning, Loader2 } from "lucide-react";
+import { AlertCircle, FileWarning, Loader2, Download } from "lucide-react";
+import { PDFDownloadLink, PDFViewer } from "@react-pdf/renderer";
 
-import { formatDateCert } from "@/lib/utils";
+import { formatDateCert, cn } from "@/lib/utils";
 import { PdfPreview } from "../pdf-preview";
 import { CertificateTemplate } from "./certificate-template";
 import { getCertificate } from "@/actions/certificates.action";
@@ -22,9 +23,11 @@ const getCertificateByClient = async (certificateId: string) => {
 const ShowCertificate = ({
   certificateId,
   showButtons = true,
+  onDownload,
 }: {
   certificateId: string;
   showButtons?: boolean;
+  onDownload?: (certificate: Certificate) => void;
 }) => {
   const [certificate, setCertificate] = useState<Certificate | null>(null);
   const [pdfComponent, setPdfComponent] = useState<React.ReactNode | null>(

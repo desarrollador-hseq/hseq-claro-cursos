@@ -356,7 +356,8 @@ export const TrainingCollaboratorsList = ({
                         ? "opacity-60"
                         : !training.byCetar && isPending(tc)
                         ? "bg-red-50 border-red-200"
-                        : "bg-green-50 border-green-200"
+                        : "bg-green-50 border-green-200",
+                      tc.certificateIssued && "bg-blue-200 border-blue-400"
                     )}
                   >
                     <div className="flex-1">
@@ -560,38 +561,38 @@ export const TrainingCollaboratorsList = ({
                       {/* Estado del colaborador */}
                       {!training.byCetar && (
                         <div
-                        className={`flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 `}
-                      >
-                        <div className="flex flex-col">
-                          <span className="text-xs text-slate-500 font-medium">
-                            Estado
-                          </span>
-                          <div className="flex flex-col items-center">
-                            {getStatusBadge(tc.status)}
-                            <span className="text-[10px] text-slate-500">
-                              {/* {new Date(tc.registrationDate).toLocaleDateString(
+                          className={`flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 `}
+                        >
+                          <div className="flex flex-col">
+                            <span className="text-xs text-slate-500 font-medium">
+                              Estado
+                            </span>
+                            <div className="flex flex-col items-center">
+                              {getStatusBadge(tc.status)}
+                              <span className="text-[10px] text-slate-500">
+                                {/* {new Date(tc.registrationDate).toLocaleDateString(
                                 "es-ES"
                               )} */}
-                            </span>
-                            {tc.certificateIssued && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() =>
-                                  handleViewCertificate(
-                                    tc.collaborator.certificates
-                                  )
-                                }
-                                title="Ver certificado"
-                                className="h-6 w-auto px-2 mt-1 text-[10px] text-green-600 hover:text-green-700 hover:bg-green-50"
-                              >
-                                <Award className="h-3 w-3 mr-1" />
-                                Certificado
-                              </Button>
-                            )}
+                              </span>
+                              {tc.certificateIssued && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() =>
+                                    handleViewCertificate(
+                                      tc.collaborator.certificates
+                                    )
+                                  }
+                                  title="Ver certificado"
+                                  className="h-6 w-auto px-2 mt-1 text-[10px] text-green-600 hover:text-green-700 hover:bg-green-50"
+                                >
+                                  <Award className="h-3 w-3 mr-1" />
+                                  Certificado
+                                </Button>
+                              )}
+                            </div>
                           </div>
                         </div>
-                      </div>
                       )}
 
                       {training.byCetar && (

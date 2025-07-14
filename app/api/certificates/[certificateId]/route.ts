@@ -63,11 +63,6 @@ export async function PUT(
       return NextResponse.json({ message: "No autorizado" }, { status: 401 });
     }
 
-    // Solo coordinadores y admins pueden editar certificados
-    if (!["ADMIN", "COORDINATOR"].includes(session.user.role || "")) {
-      return NextResponse.json({ message: "Sin permisos" }, { status: 403 });
-    }
-
     const data = await request.json();
 
     // Verificar que el certificado existe
@@ -80,6 +75,40 @@ export async function PUT(
         { message: "Certificado no encontrado" },
         { status: 404 }
       );
+    }
+
+    // Si solo se está actualizando el campo downloaded, permitir a cualquier usuario autenticado
+    if (Object.keys(data).length === 1 && 'downloaded' in data) {
+      const updatedCertificate = await db.certificate.update({
+        where: { id: params.certificateId },
+        data: {
+          downloaded: data.downloaded,
+        },
+        include: {
+          collaborator: {
+            include: {
+              city: {
+                include: {
+                  regional: true,
+                },
+              },
+            },
+          },
+          courseLevel: {
+            include: {
+              course: true,
+            },
+          },
+          coach: true,
+        },
+      });
+
+      return NextResponse.json(updatedCertificate);
+    }
+
+    // Para otros campos, solo coordinadores y admins pueden editar certificados
+    if (!["ADMIN", "COORDINATOR"].includes(session.user.role || "")) {
+      return NextResponse.json({ message: "Sin permisos" }, { status: 403 });
     }
 
     // Actualizar certificado
@@ -106,17 +135,20 @@ export async function PUT(
         // Información del coach (como strings)
         coachName: data.coachName,
         coachPosition: data.coachPosition,
+        coachDoc: data.coachDoc || "",
         coachLicence: data.coachLicence,
         coachImgSignatureUrl: data.coachImgSignatureUrl,
         
         // Fechas
         certificateDate: data.certificateDate ? new Date(data.certificateDate) : undefined,
         startDate: data.startDate ? new Date(data.startDate) : undefined,
+        endDate: data.endDate ? new Date(data.endDate) : undefined,
         expeditionDate: data.expeditionDate ? new Date(data.expeditionDate) : undefined,
         dueDate: data.dueDate ? new Date(data.dueDate) : undefined,
         
         // Estado
-        wasSent: data.wasSent,
+        // wasSent: data.wasSent,
+        downloaded: data.downloaded,
         active: data.active,
       },
       include: {

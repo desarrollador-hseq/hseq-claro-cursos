@@ -2,7 +2,7 @@ import { type ClassValue, clsx } from "clsx"
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { twMerge } from "tailwind-merge"
- 
+
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
@@ -12,22 +12,29 @@ export function capitalizeFirstLetter(string: string): string {
   if (!string) return "";
   const words = string.split(" ");
 
-  const capitalize = words.map((word) => { 
-      return word[0].toUpperCase() + word.substring(1); 
-  }).join(" ");
 
-  return capitalize
+  try {
+    const capitalize = words.map((word) => {
+      return word[0].toUpperCase() + word.substring(1);
+    }).join(" ");
+
+    return capitalize;
+  } catch (error) {
+    return string;
+  }
+
 }
 
 
-export const formatDate = (date?: Date | null, formatString: string = "dd 'de' MMMM 'de' yyyy"): string => {
+export const formatDate = (date?: Date  | string | null, formatString: string = "dd 'de' MMMM 'de' yyyy"): string => {
   if (!date) return "-";
-  return format(date, formatString, { locale: es });
+  const dateFormatted = new Date(date);
+  return format(dateFormatted, formatString, { locale: es });
 };
 
 export const formatDateCert = (date?: Date | null) => {
   if (!date) return "-";
-  console.log({datetype: typeof date})
+  console.log({ datetype: typeof date })
   let formattedDate = format(date, "'día' dd' de' MMMM 'de' yyyy", {
     locale: es,
   });
@@ -73,12 +80,12 @@ export function resizeImage(
   img.onload = () => {
     // Calcular nuevas dimensiones manteniendo proporción
     let { width, height } = img;
-    
+
     if (width > maxWidth) {
       height = (height * maxWidth) / width;
       width = maxWidth;
     }
-    
+
     if (height > maxHeight) {
       width = (width * maxHeight) / height;
       height = maxHeight;
@@ -201,10 +208,10 @@ export async function compressImage(
  */
 export function formatFileSize(bytes: number): string {
   if (bytes === 0) return '0 Bytes';
-  
+
   const k = 1024;
   const sizes = ['Bytes', 'KB', 'MB', 'GB'];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
-  
+
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 }

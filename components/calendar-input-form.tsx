@@ -43,14 +43,14 @@ export const CalendarInputForm: React.FC<CalendarInputFormProps<any>> = ({
   setValue,
   icon,
 }) => {
+  console.log({name, value: control._getWatch(name)});
+
   return (
     <FormField
       disabled={isSubmitting || disabled}
       control={control}
       name={name}
       render={({ field }) => {
-        console.log(`CalendarInputForm ${name} - field.value:`, field.value);
-        console.log(`CalendarInputForm ${name} - field.value type:`, typeof field.value);
         return (
         <FormItem className="flex flex-col w-full">
           <FormLabel className="text-secondary flex items-center gap-x-2">{icon}{label}</FormLabel>
@@ -76,33 +76,14 @@ export const CalendarInputForm: React.FC<CalendarInputFormProps<any>> = ({
             <PopoverContent className="w-auto p-0" align="start">
               <Calendar
                 locale={es}
+                defaultMonth={field.value}
                 mode="single"
                 selected={field.value}
                 onSelect={(date) => {
-                  console.log(`Calendar onSelect - received date:`, date);
-                  console.log(`Calendar onSelect - date type:`, typeof date);
-                  if (date instanceof Date && !isNaN(date.getTime())) {
-                    console.log(`Calendar onSelect - calling field.onChange with:`, date);
-                    field.onChange(date);
-                    // Usar setValue como respaldo
-                    if (setValue) {
-                      console.log(`Calendar onSelect - also calling setValue with:`, date);
-                      setValue(name, date, { shouldValidate: true, shouldDirty: true });
-                    }
-                    console.log(`Calendar onSelect - field.value after onChange:`, field.value);
-                  } else if (date === undefined) {
-                    console.log(`Calendar onSelect - clearing date`);
-                    field.onChange(undefined);
-                    if (setValue) {
-                      setValue(name, undefined, { shouldValidate: true, shouldDirty: true });
-                    }
-                  }
+                  field.onChange(date);
                 }}
-                disabled={(date) => disabled || date < new Date("2010-01-01")}
-                initialFocus
-                fromYear={2000}
-                toYear={2050}
-                captionLayout="dropdown-buttons"
+                className="rounded-md border shadow-sm"
+                captionLayout="dropdown"
               />
             </PopoverContent>
           </Popover>

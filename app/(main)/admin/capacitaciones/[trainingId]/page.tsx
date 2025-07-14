@@ -18,12 +18,15 @@ import {
   User,
   FileStack,
   ThumbsDown,
+  ArrowLeft,
 } from "lucide-react";
 import { TrainingCollaboratorsList } from "./_components/training-collaborators-list";
 import { TrainingStatusManager } from "./_components/training-status-manager";
 import { formatDate } from "@/lib/utils";
 import TitlePage from "@/components/title-page";
 import { getFormationThreshold } from "@/actions/parameters";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
 
 interface TrainingPageProps {
   params: {
@@ -96,7 +99,24 @@ const TrainingPage = async ({ params }: TrainingPageProps) => {
   });
 
   if (!training) {
-    notFound();
+    return (
+      <div className="container text-center text-2xl font-bold h-screen flex items-center justify-center">
+        <div className="flex flex-col items-center justify-center gap-4">
+          <div className="flex flex-col items-center justify-center gap-2">
+            <div className="text-4xl font-bold">Capacitación no encontrada</div>
+            <div className="text-sm text-gray-500">
+              La capacitación que estás buscando no existe o ha sido eliminada.
+            </div>
+          </div>
+          <Link href="/admin/capacitaciones">
+            <Button>
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Volver a la lista de capacitaciones
+            </Button>
+          </Link>
+        </div>
+      </div>
+    );
   }
 
   // Obtener colaboradores disponibles para inscribir
@@ -310,14 +330,14 @@ const TrainingPage = async ({ params }: TrainingPageProps) => {
           </Card>
           {!training.byCetar && (
             <>
-            <Separator className="bg-gray-200 md:col-span-2 lg:col-span-4 my-0" />
+              <Separator className="bg-gray-200 md:col-span-2 lg:col-span-4 my-0" />
               <Card className="border-yellow-200 bg-yellow-50 pb-0">
                 <CardContent className="py-3">
                   <div className="flex items-center space-x-2">
                     <FileText className="h-5 w-5 text-purple-600" />
                     <div>
                       <p className="text-sm font-medium text-gray-600">
-                        Doc. faltantes
+                        Total documentos
                       </p>
                       <p className="text-lg font-semibold">
                         {collaboratorsWithCompleteDocuments} /{" "}

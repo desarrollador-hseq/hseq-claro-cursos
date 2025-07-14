@@ -1,10 +1,11 @@
 "use client";
 
-import { Collaborator, City } from "@prisma/client";
+import { Collaborator, City, TrainingCollaborator } from "@prisma/client";
 import { Chart } from "@/components/chart";
 
 interface CollaboratorWithFormated extends Collaborator {
   city: City | null;
+  trainingCollaborators: TrainingCollaborator[];
 }
 
 interface CollaboratorsReportsProps {
@@ -15,7 +16,7 @@ export const CollaboratorsCity = ({
   collaborators,
 }: CollaboratorsReportsProps) => {
   const processDataForBarChart = () => {
-    const cityData = collaborators.map((collaborator) => {
+    const cityData = collaborators.filter(c => c.trainingCollaborators.some(tc => tc.certificateIssued)).map((collaborator) => {
       const cityName = collaborator.city?.realName || "Desconocida";
 
       return {

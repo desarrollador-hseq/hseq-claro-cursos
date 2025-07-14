@@ -140,6 +140,9 @@ export async function POST(request: NextRequest) {
         collaboratorId: data.collaboratorId,
         courseLevelId: data.courseLevelId,
         coachId: data.coachId,
+
+        coachDoc: data.coachDoc || "",
+
         
         // Información del colaborador (como strings)
         collaboratorFullname: data.collaboratorFullname,
@@ -167,11 +170,12 @@ export async function POST(request: NextRequest) {
         // Fechas
         certificateDate: data.certificateDate ? new Date(data.certificateDate) : new Date(),
         startDate: data.startDate ? new Date(data.startDate) : new Date(),
+        endDate: data.endDate ? new Date(data.endDate) : new Date(),
         expeditionDate: data.expeditionDate ? new Date(data.expeditionDate) : new Date(),
         dueDate: data.dueDate ? new Date(data.dueDate) : null,
         
         // Estado
-        wasSent: data.wasSent || false,
+        // wasSent: data.wasSent || false,
         active: true,
       },
       include: {
