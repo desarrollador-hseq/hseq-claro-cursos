@@ -39,13 +39,13 @@ interface DataTableProps<TData, TValue> {
   data: TData[];
 }
 
-export function InspectionsDataTable<TData, TValue>({
+export function EppInspectionDataTable<TData, TValue>({
   columns: columnsAll,
   data,
 }: DataTableProps<TData, TValue>) {
   const { data: session } = useSession();
   const [sorting, setSorting] = useState<SortingState>([]);
-  const [itemFilter, setItemFilter] = useState("city");
+  // const [itemFilter, setItemFilter] = useState("city");
 
   const columns = columnsAll.filter((column) => {
     return !(
@@ -71,29 +71,29 @@ export function InspectionsDataTable<TData, TValue>({
     },
   });
 
-  const handleFilterItem = (e: string) => {
-    table.getColumn(itemFilter)?.setFilterValue("");
-    setItemFilter(e);
-  };
+  // const handleFilterItem = (e: string) => {
+  //   table.getColumn(itemFilter)?.setFilterValue("");
+  //   setItemFilter(e);
+  // };
 
-  const handleFiltering = (e: ChangeEvent<HTMLInputElement>) => {
-    table.getColumn(itemFilter)?.setFilterValue(e.target.value);
-  };
+  // const handleFiltering = (e: ChangeEvent<HTMLInputElement>) => {
+  //   table.getColumn(itemFilter)?.setFilterValue(e.target.value);
+  // };
 
   return (
     <div>
       <div className="flex items-center justify-between py-4">
         <div className="flex gap-2 w-full">
-          <Input
+          {/* <Input
             placeholder={`Buscar`}
             value={
               (table.getColumn(itemFilter)?.getFilterValue() as string) ?? ""
             }
             onChange={(event) => handleFiltering(event)}
             className="w-full min-w-[300px] max-w-[500px] bg-white"
-          />
+          /> */}
 
-          <Select value={itemFilter} onValueChange={(e) => handleFilterItem(e)}>
+          {/* <Select value={itemFilter} onValueChange={(e) => handleFilterItem(e)}>
             <SelectTrigger className="w-fit gap-2">
               <SelectValue placeholder="Filtrar por" />
             </SelectTrigger>
@@ -104,7 +104,7 @@ export function InspectionsDataTable<TData, TValue>({
                 <SelectItem value="isExecuted">Estado</SelectItem>
               </SelectGroup>
             </SelectContent>
-          </Select>
+          </Select> */}
         </div>
       </div>
       <div className="rounded-md border bg-white">

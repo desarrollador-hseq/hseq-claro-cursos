@@ -49,6 +49,7 @@ const formSchema = z.object({
   numDoc: z.string().min(1, {
     message: "Número de documento requerido",
   }),
+  email: z.string().email({ message: "Correo electrónico inválido" }).optional(),
   cityId: z.string().min(1, "Seleccione una ciudad"),
   docType: z.string().min(1, "Seleccione un tipo de documento"),
   // evaluationPass: z.boolean().default(false),
@@ -72,6 +73,7 @@ export const CreateCollaboratorForm = ({
     defaultValues: {
       name: collaborator?.name || "",
       lastname: collaborator?.lastname || "",
+      email: collaborator?.email || "",
       numDoc: collaborator?.numDoc
         ? new Intl.NumberFormat("es-ES").format(
             Number(collaborator.numDoc.toString().replace(/\./g, ""))
@@ -214,6 +216,31 @@ export const CreateCollaboratorForm = ({
                   numberFieldName="numDoc"
                 />
               </div>
+
+              <div>
+                <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="font-semibold" htmlFor="email">
+                        Correo electrónico
+                      </FormLabel>
+
+                      <FormControl>
+                        <Input
+                          id="email"
+                          disabled={isSubmitting}
+                          className="text-lg font-semibold"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage className="ml-6 text-[0.8rem] text-red-500 font-medium" />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
               <div>
                 <FormField
                   control={form.control}

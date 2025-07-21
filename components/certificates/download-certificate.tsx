@@ -4,7 +4,7 @@ import { useMemo, useCallback, useState } from "react";
 import { Certificate } from "@prisma/client";
 import { AlertCircle, FileWarning, Loader2, Download } from "lucide-react";
 import { pdf } from "@react-pdf/renderer";
-  
+
 import { CertificateTemplate } from "./certificate-template";
 import { Banner } from "../ui/banner";
 import { cn } from "@/lib/utils";
@@ -19,7 +19,7 @@ export const DownloadCertificate = ({
   certificate: Certificate;
 }) => {
   const [isDownloading, setIsDownloading] = useState(false);
-  
+
   const PdfComponent = useMemo(() => {
     if (!certificate) return null;
     return <CertificateTemplate certificate={certificate} />;
@@ -42,28 +42,28 @@ export const DownloadCertificate = ({
 
   const handleManualDownload = useCallback(async () => {
     if (!certificate || !PdfComponent || isDownloading) return;
-    
+
     setIsDownloading(true);
-    
+
     try {
       // Generar el PDF usando la función pdf() directamente
       const blob = await pdf(PdfComponent).toBlob();
-      
+
       // Crear URL para el blob
       const url = URL.createObjectURL(blob);
-      
+
       // Crear enlace de descarga
-      const link = document.createElement('a');
+      const link = document.createElement("a");
       link.href = url;
       link.download = `${fileName}.pdf`;
-      link.style.display = 'none';
+      link.style.display = "none";
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      
+
       // Limpiar URL
       URL.revokeObjectURL(url);
-      
+
       // Llamar a onDownload después de la descarga
       if (onDownload && certificate) {
         setTimeout(() => {
@@ -91,7 +91,7 @@ export const DownloadCertificate = ({
     certificate.dueDate && new Date(certificate.dueDate) < new Date();
 
   return (
-    <div className="flex flex-col items-center justify-center bg-white m-0 p-0 w-full mx-auto gap-4">
+    <div className="flex flex-col items-center justify-center m-0 p-0 w-full mx-auto gap-4">
       <div className="w-full">
         {isExpired && (
           <Banner
@@ -106,26 +106,24 @@ export const DownloadCertificate = ({
         <div className="flex flex-col gap-4 w-full">
           {/* Botón de descarga */}
           {showButtons && (
-            <div className="flex justify-end">
-              <div
-                onClick={handleManualDownload}
-                className={cn(
-                  "bg-slate-400 hover:bg-slate-500 text-white rounded-md px-10 py-7 text-lg flex items-center transition-colors cursor-pointer",
-                  isDownloading && "opacity-50 cursor-not-allowed"
-                )}
-              >
-                {isDownloading ? (
-                  <>
-                    <Loader2 className="mr-3 h-5 w-5 animate-spin" />
-                    Generando PDF...
-                  </>
-                ) : (
-                  <>
-                    <Download className="mr-3" />
-                    Descargar
-                  </>
-                )}
-              </div>
+            <div
+              onClick={handleManualDownload}
+              className={cn(
+                "bg-slate-400 hover:bg-slate-500 text-white rounded-md px-5 py-2 text-lg flex justify-center items-center transition-colors cursor-pointer",
+                isDownloading && "opacity-50 cursor-not-allowed"
+              )}
+            >
+              {isDownloading ? (
+                <>
+                  <Loader2 className="mr-3 h-5 w-5 animate-spin" />
+                  Generando PDF...
+                </>
+              ) : (
+                <>
+                  <Download className="mr-3 h-5 w-5" />
+                  Descargar
+                </>
+              )}
             </div>
           )}
         </div>

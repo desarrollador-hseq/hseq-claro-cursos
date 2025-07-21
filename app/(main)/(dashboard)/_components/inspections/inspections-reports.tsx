@@ -9,8 +9,8 @@ import { InspectionsKpi } from "./inspections-kpi";
 import { useDashboard } from "@/components/providers/dashboard-provider";
 import { InspectionsExecuted } from "./inspections-executed";
 import { ShowTableModal } from "../modals/show-table";
-import { InspectionsDataTable } from "@/app/(main)/admin/inspecciones/_components/inspections-datatable";
-import { InspectionColumns } from "@/app/(main)/admin/inspecciones/_components/inspections-datatable-column";
+import { InspectionsDataTable } from "@/app/(main)/admin/inspecciones/instalaciones/_components/inspections-datatable";
+import { InspectionColumns } from "@/app/(main)/admin/inspecciones/instalaciones/_components/inspections-datatable-column";
 
 interface InspectionWithCity extends Inspection {
   city: City | null;

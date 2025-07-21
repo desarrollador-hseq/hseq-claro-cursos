@@ -8,16 +8,21 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { EmployeeValidationDataRow } from "./employee-validation-data-row";
+import { City } from "@prisma/client";
 
 
 export const EmployeeValidationTable = ({
   loadedEmployees,
   handleDeleteCell,
   handleValidationChange,
+  cities,
+  employeeErrors = {},
 }: {
   loadedEmployees: unknown[];
   handleDeleteCell: (i: string) => void;
   handleValidationChange: (id: string, isValid: boolean, formData: any) => void;
+  cities: City[];
+  employeeErrors?: Record<string, string>;
 }) => {
 
 
@@ -27,13 +32,10 @@ export const EmployeeValidationTable = ({
         <TableRow>
           <TableHead>Nombres</TableHead>
           <TableHead>Apellidos</TableHead>
+          <TableHead>Tipo de documento</TableHead>
           <TableHead># Documento</TableHead>
-          {/* <TableHead>Correo Electrónico</TableHead>
-          <TableHead>Teléfono celular</TableHead>
-          <TableHead>Sede</TableHead>
-          <TableHead>Área</TableHead>
-          <TableHead>Cargo</TableHead>
-          <TableHead>Tipo de contrato</TableHead> */}
+          <TableHead>Correo electrónico</TableHead>
+          <TableHead>Ciudad</TableHead>
           <TableHead>Acción</TableHead>
         </TableRow>
       </TableHeader>
@@ -46,6 +48,8 @@ export const EmployeeValidationTable = ({
               row={row}
               deleteCell={handleDeleteCell}
               onValidationChange={handleValidationChange}
+              cities={cities}
+              apiError={employeeErrors[row.identificationNumber]}
             />
           );
         })}

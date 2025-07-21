@@ -53,15 +53,15 @@ const PdfFullscreen = ({
       </AlertDialogTrigger>
       <AlertDialogContent className="max-w-7xl w-full overflow-y-auto pt-1">
         <div>
-          <div className="flex justify-between my-1">
-            <a
+          <div className="flex justify-end my-1">
+            {/* <a
               href={fileUrl}
               download="Example-PDF-document"
               target="_blank"
               rel="noreferrer"
             >
               <Button><Download className="w-4 h-4" /></Button>
-            </a>
+            </a> */}
             <Button
               variant="destructive"
               className=""

@@ -1,7 +1,15 @@
 "use client";
 
 import { capitalizeFirstLetter } from "@/lib/utils";
-import { Document, Font, Image, Page, Text, View } from "@react-pdf/renderer";
+import {
+  Document,
+  Font,
+  Image,
+  Page,
+  StyleSheet,
+  Text,
+  View,
+} from "@react-pdf/renderer";
 
 interface SignaturePreviewProps {
   name: string;
@@ -52,56 +60,77 @@ export const SignaturePreview = ({
           fontFamily: "Open Sans",
         }}
       >
-        <View
-          style={{
-            width: "100%",
-            height: "100%",
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            paddingBottom: 10,
-          }}
-        >
-          <View
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              position: "relative",
-              paddingTop: 32,
-            }}
-          >
-            {imgSignatureUrl && (
-              <Image
-                src={imgSignatureUrl}
-                style={{
-                  width: 110,
-                  position: "absolute",
-                  top: -25,
-                  left: 15,
-                }}
-              />
-            )}
-            <Text
+        <View style={styles.signaturesSection}>
+          <View style={styles.signatureBlock}>
+            <View
               style={{
-                minWidth: 150,
-                borderTop: "1px solid #a30e0c",
-                fontSize: 10,
-                fontWeight: "bold",
+                width: 110,
+                height: 80,
+                alignItems: "center",
+                justifyContent: "center",
               }}
             >
-              {capitalizeFirstLetter(name)}
-            </Text>
-            <Text style={{ fontSize: 10 }}>
-              {capitalizeFirstLetter(position)}
-            </Text>
-            {licence && (
-              <Text style={{ fontSize: 10 }}>
-                {licence && capitalizeFirstLetter(licence)}
-              </Text>
-            )}
+              <Image
+                style={styles.signatureImage}
+                src={imgSignatureUrl || ""}
+              />
+            </View>
+            <Text style={styles.signatureName}>{name}</Text>
+            <Text style={styles.signatureId}>{licence}</Text>
+            <Text style={styles.signatureId}>{position}</Text>
           </View>
         </View>
       </Page>
     </Document>
   );
 };
+
+const styles = StyleSheet.create({
+  signaturesSection: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    marginBottom: 15,
+    paddingHorizontal: 20,
+  },
+  signatureBlock: {
+    alignItems: "center",
+    justifyContent: "flex-start",
+    flex: 1,
+  },
+  signatureImage: {
+    width: 100,
+    height: 100,
+    marginBottom: 2,
+  },
+  signatureName: {
+    fontSize: 11,
+    fontWeight: 700,
+    textAlign: "center",
+    color: "#000",
+    marginBottom: 2,
+    textTransform: "uppercase",
+  },
+  signatureId: {
+    fontSize: 11,
+    fontWeight: 400,
+    textAlign: "center",
+    color: "#000",
+    marginBottom: 1,
+    textTransform: "uppercase",
+  },
+  signatureLicense: {
+    fontSize: 11,
+    fontWeight: 400,
+    textAlign: "center",
+    color: "#000",
+    marginBottom: 1,
+    textTransform: "uppercase",
+  },
+  signatureTitle: {
+    fontSize: 11,
+    fontWeight: 600,
+    textAlign: "center",
+    color: "#000",
+    textTransform: "uppercase",
+  },
+});

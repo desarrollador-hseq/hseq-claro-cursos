@@ -5,6 +5,25 @@ import { getServerSession } from "next-auth"
 import { NextResponse } from "next/server"
 import { authOptions } from "@/lib/auth-options"
 
+export async function GET() {
+    try {
+        const regionals = await db.regional.findMany({
+            select: {
+                id: true,
+                name: true
+            },
+            orderBy: {
+                name: 'asc'
+            }
+        });
+
+        return NextResponse.json({ regionals });
+        
+    } catch (error) {
+        console.log("[REGIONAL-GET]", error)
+        return new NextResponse("Internal Error", { status: 500 })
+    }
+}
 
 export async function POST(req: Request) {
     const session = await getServerSession(authOptions)
@@ -23,6 +42,6 @@ export async function POST(req: Request) {
         
     } catch (error) {
         console.log("[REGIONAL-CREATE]", error)
-        return new NextResponse("Internal Errorr", { status: 500 })
+        return new NextResponse("Internal Error", { status: 500 })
     }
 }

@@ -575,20 +575,22 @@ export const TrainingCollaboratorsList = ({
                               )} */}
                               </span>
                               {tc.certificateIssued && (
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() =>
-                                    handleViewCertificate(
-                                      tc.collaborator.certificates
-                                    )
-                                  }
-                                  title="Ver certificado"
-                                  className="h-6 w-auto px-2 mt-1 text-[10px] text-green-600 hover:text-green-700 hover:bg-green-50"
-                                >
-                                  <Award className="h-3 w-3 mr-1" />
-                                  Certificado
-                                </Button>
+                               <SimpleModal
+                               title="Ver certificado"
+                               desc="Ver el certificado del colaborador"
+                               btnDisabled={isDisabled || training.status === "COMPLETED"}
+                               textBtn={
+                                <span className="flex items-center gap-2">
+                                  <Award className="h-6 w-6" /> Ver certificado
+                                </span>
+                               }
+                               >
+                                <ShowCertificate
+                                
+                                  courseLevelId={tc.courseLevel.id}
+                                  collaboratorId={tc.collaborator.id}
+                                />
+                               </SimpleModal>
                               )}
                             </div>
                           </div>

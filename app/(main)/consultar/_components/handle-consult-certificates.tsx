@@ -460,7 +460,7 @@ export const HandleConsultCertificates = () => {
                                     {isExpired ? (
                                       <EyeOff className="h-5 w-5 text-gray-400 group-hover:text-blue-600 transition-colors" />
                                     ) : isDownloaded ? (
-                                      <Download className="h-5 w-5 text-green-400" />
+                                      <span className="h-5 w-5 " />
                                     ) : (
                                       <Eye className="h-5 w-5 text-gray-400 group-hover:text-blue-600 transition-colors" />
                                     )}

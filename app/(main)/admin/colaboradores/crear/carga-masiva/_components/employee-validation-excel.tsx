@@ -2,24 +2,33 @@
 import React, { useEffect, useMemo, useState } from "react";
 import * as XLSX from "xlsx";
 import { useDropzone } from "react-dropzone";
-import { Cloud, FileSpreadsheet, Upload, AlertCircle, Check } from "lucide-react";
+import { Cloud, FileSpreadsheet, Upload, AlertCircle, Check, RefreshCw, Eye, EyeOff } from "lucide-react";
 import { EmployeeValidationTable } from "./bulk-upload-employees-table";
 import { HeaderBulkUploadEmployees } from "./header-bulk-upload-employees";
 import { toast } from "sonner";
 import { PiMicrosoftExcelLogoFill } from "react-icons/pi";
+import { City } from "@prisma/client";
+import { Button } from "@/components/ui/button";
+import { Banner } from "@/components/ui/banner";
 
 const isValidEmployee = (row: any) => {
   const {
     Nombres: name,
     Apellidos: lastName,
     "# Documento": identificationNumber,
+    "Tipo Documento": docType,
+    "Ciudad": city,
+    "Correo electrónico": email,
   } = row;
 
   // Quitamos phone de la validación
   return !!(
     name &&
     lastName &&
-    identificationNumber
+    identificationNumber &&
+    docType &&
+    city &&
+    email
   );
 };
 
@@ -28,11 +37,17 @@ const formatEmployeeData = (row: any) => {
     Nombres: name,
     Apellidos: lastName,
     "# Documento": identificationNumber,
+    "Tipo Documento": docType,
+    "Ciudad": city,
+    "Correo electrónico": email,
   } = row;
 
   return {
     name: (name || "").trim(),
     lastName: (lastName || "").trim(),
+    docType: (docType || "").trim(),
+    city: (city || "").trim(),
+    email: (email || "").trim(),
     identificationNumber: ("" + identificationNumber)
       .replace(/[.,]/g, "")
       .trim(),
@@ -45,15 +60,32 @@ const processEmployeeData = (rawData: any[]) => {
     .map(formatEmployeeData);
 };
 
-export const EmployeeValidationExcel = () => {
-  //   let parsedData: unknown[] = [];
+interface ApiError {
+  empleado: any;
+  error: string;
+}
+
+interface ProcessResult {
+  exitoso: boolean;
+  totalProcesados: number;
+  exitosos: number;
+  fallidos: number;
+  errores: ApiError[];
+}
+
+export const EmployeeValidationExcel = ({ cities }: { cities: City[] }) => {
   const [file, setFile] = useState<File | null>();
   const [loadedEmployees, setloadedEmployees] = useState<any[]>();
-
   const [validIds, setValidIds] = useState<string[]>([]);
   const [invalidIds, setInvalidIds] = useState<string[]>([]);
   const [parsedData, setParsedData] = useState<Array<any & { id: string }>>([]);
   const [validatedForms, setValidatedForms] = useState<Record<string, any>>({});
+  
+  // Estados para manejo de errores de la API
+  const [apiErrors, setApiErrors] = useState<ApiError[]>([]);
+  const [showOnlyFailed, setShowOnlyFailed] = useState(false);
+  const [employeeErrors, setEmployeeErrors] = useState<Record<string, string>>({});
+
   const validCount = useMemo(() => validIds.length, [validIds]);
   const invalidCount = useMemo(() => invalidIds.length, [invalidIds]);
 
@@ -68,9 +100,59 @@ export const EmployeeValidationExcel = () => {
     }
   }, [loadedEmployees]);
 
+  // Función para manejar errores de la API
+  const handleApiResponse = (result: ProcessResult) => {
+    setApiErrors(result.errores);
+    
+    if (result.errores.length > 0) {
+      // Mapear errores por número de documento para fácil búsqueda
+      const errorMap: Record<string, string> = {};
+      result.errores.forEach(error => {
+        errorMap[error.empleado.identificationNumber] = error.error;
+      });
+      setEmployeeErrors(errorMap);
+      
+      // Filtrar empleados: mantener solo los que fallaron
+      const failedEmployees = parsedData.filter(employee => 
+        errorMap[employee.identificationNumber]
+      );
+      
+      // Actualizar la lista principal para mostrar solo los empleados que fallaron
+      setParsedData(failedEmployees);
+      
+      // Recalcular validación para los empleados que fallaron
+      setValidIds([]);
+      setInvalidIds([]);
+      setValidatedForms({});
+      
+      // Mostrar solo los fallidos
+      setShowOnlyFailed(true);
+      
+      console.log(`Empleados exitosos removidos. Quedan ${failedEmployees.length} empleados con errores por corregir.`);
+    } else {
+      // Si todos fueron exitosos, limpiar toda la lista
+      setParsedData([]);
+      setValidIds([]);
+      setInvalidIds([]);
+      setValidatedForms([]);
+      setApiErrors([]);
+      setEmployeeErrors({});
+      setShowOnlyFailed(false);
+      
+      console.log("Todos los empleados fueron creados exitosamente. Lista limpiada.");
+    }
+  };
+
+  // Datos a mostrar (ahora parsedData ya contiene solo los empleados correctos)
+  const displayedEmployees = parsedData;
+
   const { getRootProps, getInputProps, isDragActive, isDragReject } = useDropzone({
     onDrop: (acceptedFiles) => {
       setFile(acceptedFiles[0]);
+      // Limpiar errores previos al cargar nuevo archivo
+      setApiErrors([]);
+      setShowOnlyFailed(false);
+      setEmployeeErrors({});
     },
     accept: { "application/vnd.ms-excel": [".xlsx", ".xls"] },
     maxFiles: 1,
@@ -112,6 +194,16 @@ export const EmployeeValidationExcel = () => {
 
     // Quitar de inválidos si existe
     setInvalidIds((prev) => prev.filter((invalidId) => invalidId !== id));
+    
+    // Quitar del mapa de errores si existe
+    setEmployeeErrors((prev) => {
+      const newErrors = { ...prev };
+      const employee = parsedData.find(emp => emp.id === id);
+      if (employee) {
+        delete newErrors[employee.identificationNumber];
+      }
+      return newErrors;
+    });
   };
 
   const handleValidationChange = (id: string, isValid: boolean, formData?: any) => {
@@ -151,6 +243,39 @@ export const EmployeeValidationExcel = () => {
       });
     }
   };
+
+  const handleReloadFile = () => {
+    if (file) {
+      // Recargar el archivo desde cero
+      setApiErrors([]);
+      setShowOnlyFailed(false);
+      setEmployeeErrors({});
+      setValidIds([]);
+      setInvalidIds([]);
+      setValidatedForms({});
+      
+      // Re-procesar el archivo
+      const parseExcelFile = (file: File) => {
+        const reader = new FileReader();
+
+        reader.onload = (e) => {
+          const data = e.target?.result;
+          const workbook = XLSX.read(data, { type: "binary" });
+          const sheetName = workbook.SheetNames[0];
+          const sheet = workbook.Sheets[sheetName];
+          const rawData = XLSX.utils.sheet_to_json(sheet);
+
+          const processedData = processEmployeeData(rawData);
+          setloadedEmployees(processedData);
+        };
+
+        reader.readAsBinaryString(file);
+      };
+
+      parseExcelFile(file);
+    }
+  };
+
   return (
     <div className="overflow-y-auto bg-white w-full">
       {file && parsedData.length > 0 && (
@@ -160,11 +285,58 @@ export const EmployeeValidationExcel = () => {
             file={file}
             invalidCount={invalidCount}
             validCount={validCount}
-            totalRecords={parsedData.length || 0}
+            totalRecords={displayedEmployees.length || 0}
+            onApiResponse={handleApiResponse}
           />
         </div>
       )}
-      {parsedData.length === 0 && (
+
+      {/* Mostrar información después del procesamiento */}
+      {apiErrors.length > 0 && parsedData.length > 0 && (
+        <div className="mb-4">
+          <Banner
+            variant="warning"
+            label={`${apiErrors.length} empleados fallaron. Los empleados exitosos han sido removidos. Corrige los errores y vuelve a intentarlo.`}
+            className="mb-3"
+          />
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleReloadFile}
+              className="flex items-center gap-2"
+            >
+              <RefreshCw className="h-4 w-4" />
+              Recargar archivo completo
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Mostrar mensaje cuando todos fueron exitosos */}
+      {apiErrors.length === 0 && file && parsedData.length === 0 && (
+        <div className="mb-4">
+          <Banner
+            variant="success"
+            label="¡Todos los empleados fueron creados exitosamente!"
+            className="mb-3"
+          />
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              setFile(null);
+              setloadedEmployees([]);
+            }}
+            className="flex items-center gap-2"
+          >
+            <Upload className="h-4 w-4" />
+            Cargar nuevo archivo
+          </Button>
+        </div>
+      )}
+
+      {!file && (
         <div
           {...getRootProps()}
           className={`dropzone w-full flex justify-center mb-5 cursor-pointer transition-all duration-200 ${
@@ -219,11 +391,13 @@ export const EmployeeValidationExcel = () => {
       )}
 
       <div className="overflow-auto">
-        {parsedData && parsedData.length > 0 && (
+        {displayedEmployees && displayedEmployees.length > 0 && (
           <EmployeeValidationTable
-            loadedEmployees={parsedData}
+            loadedEmployees={displayedEmployees}
             handleDeleteCell={handleDeleteCell}
             handleValidationChange={handleValidationChange}
+            cities={cities}
+            employeeErrors={employeeErrors}
           />
         )}
       </div>

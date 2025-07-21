@@ -65,6 +65,7 @@ const CreateTrainingPage = async () => {
       <div className=" mx-auto py-6 space-y-6">
         {/* Header */}
         rango de fechas
+        añadir el nivel del curso
         {/* Formulario */}
         <div className="grid gap-6 lg:grid-cols-3">
           {/* Formulario principal */}

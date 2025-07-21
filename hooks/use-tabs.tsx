@@ -2,12 +2,12 @@ import { useEffect, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import qs from "query-string";
 
-const useTabs = ({ initialTab = "validar" } = {}) => {
+const useTabs = <T extends string>({ initialTab = "" } = {}) => {
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
 
-  const [activeTab, setActiveTab] = useState(initialTab);
+  const [activeTab, setActiveTab] = useState<T>(initialTab as T);
 
   useEffect(() => {
     if (!searchParams.get("tab")) {
@@ -16,11 +16,11 @@ const useTabs = ({ initialTab = "validar" } = {}) => {
   }, [searchParams.get("tab"), initialTab]);
 
   useEffect(() => {
-    setActiveTab(searchParams.get("tab") || initialTab);
+    setActiveTab(searchParams.get("tab") as T || initialTab as T);
   }, [searchParams.get("tab"), initialTab]);
 
   const handleTabChange = (value: string) => {
-    setActiveTab(value);
+    setActiveTab(value as T);
     if (value) {
       const url = qs.stringifyUrl(
         {

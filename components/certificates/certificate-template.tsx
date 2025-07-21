@@ -53,6 +53,7 @@ export const CertificateTemplate = ({
   const colFullname = certificate.collaboratorFullname;
   const colDoc = certificate.collaboratorNumDoc;
   const courseName = certificate.courseName;
+  const courseResolution = certificate.resolution;
   const courseLevelName =
     certificate.levelName && certificate.levelName == certificate.courseName
       ? undefined
@@ -102,6 +103,7 @@ export const CertificateTemplate = ({
                 </Text>
                 <Text style={styles.uvaeText}>COMUNICACIÓN</Text>
                 <Text style={styles.uvaeText}>CELULAR COMCEL S.A.</Text>
+                <Text style={styles.uvaeText}>{courseResolution}</Text>
                 <Text style={styles.haceConstar}>Hace constar que:</Text>
               </View>
 
@@ -143,14 +145,14 @@ export const CertificateTemplate = ({
               <View style={styles.locationSection}>
                 <Text style={styles.locationText}>
                   Realizado en <Text style={styles.bold}></Text> la ciudad de{" "}
-                  <Text style={styles.bold}>{city || "BOGOTÁ"}</Text>
+                  <Text style={styles.bold}>{city || ""}</Text>
                 </Text>
                 <Text style={styles.dateText}>
                   del <Text style={styles.bold}>{startDate}</Text> al{" "}
                   <Text style={styles.bold}>{endDate}</Text>
                 </Text>
                 <Text style={styles.signatureLocation}>
-                  En constancia se firma en {"BOGOTÁ"} el{" "}
+                  En constancia se firma en {city || ""} el{" "}
                   <Text style={styles.bold}>{dateCert}</Text>
                 </Text>
               </View>
@@ -160,8 +162,8 @@ export const CertificateTemplate = ({
                 <View style={styles.signatureBlock}>
                   <View
                     style={{
-                      width: 100,
-                      height: 100,
+                      width: 110,
+                      height: 80,
                       alignItems: "center",
                       justifyContent: "center",
                     }}
@@ -174,17 +176,17 @@ export const CertificateTemplate = ({
                     )}
                   </View>
                   <Text style={styles.signatureName}>{coachName}</Text>
-                  <Text style={styles.signatureName}>{coachNumDoc}</Text>
+                  <Text style={styles.signatureId}>{coachNumDoc}</Text>
                   <Text style={styles.signatureId}>{coachLicense}</Text>
 
-                  <Text style={styles.signatureTitle}>{coachPosition}</Text>
+                  <Text style={styles.signatureId}>{coachPosition}</Text>
                 </View>
 
                 <View style={styles.signatureBlock}>
                   <View
                     style={{
-                      width: 100,
-                      height: 100,
+                      width: 110,
+                      height: 80,
                       alignItems: "center",
                       justifyContent: "center",
                     }}
@@ -198,7 +200,7 @@ export const CertificateTemplate = ({
                     FERNANDO GONZALEZ APANGO
                   </Text>
                   <Text style={styles.signatureId}>C.E. 306817</Text>
-                  <Text style={styles.signatureTitle}>REPRESENTANTE LEGAL</Text>
+                  <Text style={styles.signatureId}>REPRESENTANTE LEGAL</Text>
                 </View>
               </View>
 
@@ -246,24 +248,27 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 5,
+    marginBottom: 2,
     paddingHorizontal: 10,
+
   },
   logoClaro: {
-    width: 80,
-    height: 35,
+    width: 60,
+    height: 25,
     opacity: 0.3,
   },
   logoSsta: {
-    width: 80,
-    height: 40,
+    marginTop: 5,
+    width: 70,
+    height: 30,
     opacity: 0.3,
   },
   mainContent: {
     flexDirection: "column",
     flex: 1,
     gap: 10,
-    padding: 15,
+    paddingHorizontal: 15,
+    paddingTop: 4,
   },
   leftContent: {
     flex: 1,
@@ -298,7 +303,7 @@ const styles = StyleSheet.create({
     fontWeight: 600,
     textAlign: "center",
     color: "#000",
-    lineHeight: 1.3,
+    marginBottom: 4,
   },
   haceConstar: {
     fontSize: 14,
@@ -451,7 +456,8 @@ const styles = StyleSheet.create({
   footer: {
     alignItems: "center",
     paddingHorizontal: 10,
-    marginTop: 15,
+    marginTop: 10,
+    marginBottom: 10,
   },
   footerText: {
     fontSize: 11,

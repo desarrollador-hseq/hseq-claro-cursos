@@ -2,10 +2,22 @@ import { Banner } from "@/components/ui/banner";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import axios from "axios";
+import { toast } from "sonner";
 
 import { UploadCloud } from "lucide-react";
 import React, { useState } from "react";
 import { PiMicrosoftExcelLogo } from "react-icons/pi";
+
+interface ProcessResult {
+  exitoso: boolean;
+  totalProcesados: number;
+  exitosos: number;
+  fallidos: number;
+  errores: Array<{
+    empleado: any;
+    error: string;
+  }>;
+}
 
 export const HeaderBulkUploadEmployees = ({
   file,
@@ -13,32 +25,32 @@ export const HeaderBulkUploadEmployees = ({
   invalidCount,
   validCount,
   totalRecords,
+  onApiResponse,
 }: {
   file: File;
   validEmployees: Record<string, any>;
   invalidCount: number;
   validCount: number;
   totalRecords: number;
+  onApiResponse?: (result: ProcessResult) => void;
 }) => {
   const [listErrors, setListErrors] = useState<unknown[]>([]);
   const [wasError, setWasError] = useState(false);
-  // const { mutateAsync: mutationAsync, isPending } = useBulkUploadEmployees();
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleBulkUploadEmployees = async (values: any) => {
+  const handleBulkUploadEmployees = async (empleados: any[]) => {
     try {
-      console.log({ valuesvalues: values });
+      console.log({ empleadosToCreate: empleados });
       const { data } = await axios.post(
-        `api
-        
-        /colaboradores/mass-create`,
-        values
+        `/api/colaboradores/mass-create`,
+        empleados
       );
-      console.log({ bulkUploaddata: data });
+      console.log({ bulkUploadResponse: data });
       return data;
     } catch (error: any) {
       console.log({ bulkUploaderror: error });
-      console.log({ bulkUploaderrordata: error.response.data });
-      // handleAxiosError(error, "Ocurrió un error inesperado");
+      console.log({ bulkUploaderrordata: error.response?.data });
+      throw error;
     }
   };
 
@@ -47,17 +59,64 @@ export const HeaderBulkUploadEmployees = ({
 
     console.log("Datos validados a enviar:", validatedFormsArray);
 
+    if (validatedFormsArray.length === 0) {
+      toast.error("No hay empleados válidos para procesar");
+      return;
+    }
+
+    setIsLoading(true);
+    setWasError(false);
+    setListErrors([]);
+
     try {
-      const { data } = await handleBulkUploadEmployees({
-        values: validatedFormsArray,
+      toast.loading(`Procesando ${validatedFormsArray.length} empleados...`, {
+        id: "mass-create-loading"
       });
-      // setListErrors(data?.errors);
-      console.log({ masivodata: data });
-    } catch (error) {
-      // setWasError(true);
-      // const errors = error?.cause?.errors || [];
-      // // setListErrors(errors);
-      // console.log({ masivoerror: error, errors });
+
+      const response = await handleBulkUploadEmployees(validatedFormsArray);
+      
+      toast.dismiss("mass-create-loading");
+
+      
+      
+      // Llamar al callback con la respuesta
+      if (onApiResponse) {
+        onApiResponse(response);
+      }
+      
+      if (response.exitoso) {
+        toast.success(`✅ ¡Proceso completado! ${response.exitosos} empleados creados exitosamente`, {
+          duration: 5000
+        });
+        console.log(`✅ Creación masiva exitosa: ${response.exitosos}/${response.totalProcesados} empleados creados`);
+      } else {
+        toast.warning(`⚠️ Proceso completado con errores: ${response.exitosos} exitosos, ${response.fallidos} fallidos`, {
+          duration: 7000
+        });
+        console.log(`⚠️ Creación masiva con errores: ${response.exitosos} exitosos, ${response.fallidos} fallidos`);
+        console.log("Errores:", response.errores);
+      }
+      
+      setListErrors(response.errores);
+      console.log({ massCreateResponse: response });
+    } catch (error: any) {
+      toast.dismiss("mass-create-loading");
+      toast.error("Error al procesar empleados. Revisa los logs para más detalles.", {
+        duration: 7000
+      });
+      
+      setWasError(true);
+      console.log({ massCreateError: error });
+      
+      // Si hay errores en la respuesta del servidor
+      if (error.response?.data?.errores) {
+        setListErrors(error.response.data.errores);
+        if (onApiResponse) {
+          onApiResponse(error.response.data);
+        }
+      }
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -74,6 +133,22 @@ export const HeaderBulkUploadEmployees = ({
         <Banner
           variant="danger"
           label="Debes corregir los errores en la lista de colaboradores para poder subir los registros"
+          className="mb-5"
+        />
+      )}
+
+      {listErrors.length > 0 && (
+        <Banner
+          variant="warning"
+          label={`Se encontraron ${listErrors.length} errores durante el proceso de creación masiva. Revisa la consola para más detalles.`}
+          className="mb-5"
+        />
+      )}
+
+      {wasError && (
+        <Banner
+          variant="danger"
+          label="Ocurrió un error durante el proceso de creación masiva. Revisa la consola para más detalles."
           className="mb-5"
         />
       )}
@@ -111,13 +186,22 @@ export const HeaderBulkUploadEmployees = ({
         </div>
         <div className="col-span-4 lg:col-span-1 place-content-center place-items-center">
           <Button
-            disabled={invalidCount !== 0}
+            disabled={invalidCount !== 0 || isLoading}
             onClick={onClick}
             className={
               "gap-2 p-5 text-lg disabled:bg-slate-400 disabled:hover:bg-slate-300 disabled:cursor-not-allowed"
             }
           >
-            <UploadCloud /> Cargar
+            {isLoading ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                Procesando...
+              </>
+            ) : (
+              <>
+                <UploadCloud /> Cargar
+              </>
+            )}
           </Button>
         </div>
       </div>

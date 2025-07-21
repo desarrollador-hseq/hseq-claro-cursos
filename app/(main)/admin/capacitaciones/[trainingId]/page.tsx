@@ -47,6 +47,9 @@ const TrainingPage = async ({ params }: TrainingPageProps) => {
     where: {
       id: params.trainingId,
       active: true,
+      status: {
+        in: ["ACTIVE", "COMPLETED", "PLANNED"],
+      },
     },
     include: {
       course: {
@@ -72,7 +75,12 @@ const TrainingPage = async ({ params }: TrainingPageProps) => {
                   regional: true,
                 },
               },
-              certificates: true,
+              certificates: {
+                where: {
+                  
+                  active: true,
+                },
+              },
               cetarCertificates: {
                 where: {
                   trainingId: params.trainingId,

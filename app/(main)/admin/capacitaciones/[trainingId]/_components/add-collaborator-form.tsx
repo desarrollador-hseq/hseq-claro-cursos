@@ -682,7 +682,7 @@ export const AddCollaboratorForm = ({
                 )}
 
                 {/* Mensaje informativo sobre documentación para NO CETAR */}
-                {!byCetar && selectedLevel && selectedLevel.requiredDocuments.length > 0 && (
+                {/* {!byCetar && selectedLevel && selectedLevel.requiredDocuments.length > 0 && (
                   <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
                     <div className="flex items-center gap-2 text-amber-800 mb-2">
                       <AlertCircle className="h-5 w-5" />
@@ -693,7 +693,7 @@ export const AddCollaboratorForm = ({
                       Los documentos faltantes deberán subirse posteriormente durante el proceso de certificación.
                     </p>
                   </div>
-                )}
+                )} */}
 
                 {/* Sección de documentos requeridos - Solo mostrar si NO es CETAR */}
                 {!byCetar &&

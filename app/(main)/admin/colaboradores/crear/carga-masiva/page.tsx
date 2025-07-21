@@ -4,12 +4,13 @@ import { EmployeeValidationExcel } from "./_components/employee-validation-excel
 import {
   Card,
   CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
+import { getCities } from "@/actions/parameters";
 
-const UploadEmployee = () => {
+const UploadEmployee = async () => {
+
+  const cities = await getCities();
+
   return (
     <>
       <div className="p-5 w-full">
@@ -21,7 +22,7 @@ const UploadEmployee = () => {
         </TitlePage>
         <Card className="p-5">
           <CardContent>
-            <EmployeeValidationExcel />
+            <EmployeeValidationExcel cities={cities || []} />
           </CardContent>
         </Card>
       </div>

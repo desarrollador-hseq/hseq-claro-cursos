@@ -9,6 +9,7 @@ import { PdfPreview } from "../pdf-preview";
 import { CertificateTemplate } from "./certificate-template";
 import { getCertificate } from "@/actions/certificates.action";
 import { Banner } from "../ui/banner";
+import axios from "axios";
 
 const getCertificateByClient = async (certificateId: string) => {
   try {
@@ -20,14 +21,33 @@ const getCertificateByClient = async (certificateId: string) => {
   }
 };
 
+const getCertificateByCourseLevelAndCollaborator = async (
+  courseLevelId: string,
+  collaboratorId: string
+): Promise<Certificate | null> => {
+  try {
+    const certificateResponse = await axios.get(
+      `/api/certificates/find?collaboratorId=${collaboratorId}&courseLevelId=${courseLevelId}`
+    );
+    return certificateResponse.data;
+  } catch (error) {
+    console.error(error);
+    return null;
+  }
+};
+
 const ShowCertificate = ({
   certificateId,
   showButtons = true,
   onDownload,
+  courseLevelId,
+  collaboratorId,
 }: {
-  certificateId: string;
+  certificateId?: string;
   showButtons?: boolean;
   onDownload?: (certificate: Certificate) => void;
+  courseLevelId?: string;
+  collaboratorId?: string;
 }) => {
   const [certificate, setCertificate] = useState<Certificate | null>(null);
   const [pdfComponent, setPdfComponent] = useState<React.ReactNode | null>(
@@ -37,11 +57,25 @@ const ShowCertificate = ({
 
   useEffect(() => {
     const loadCertificate = async () => {
-      const certificate = await getCertificateByClient(certificateId);
+      const certificate = await getCertificateByClient(certificateId || "");
       setCertificate(certificate);
       setIsLoading(false);
     };
-    loadCertificate();
+
+    const loadCertificateByCourseLevelAndCollaborator = async () => {
+      const certificate = await getCertificateByCourseLevelAndCollaborator(
+        courseLevelId || "",
+        collaboratorId || ""
+      );
+      setCertificate(certificate);
+      setIsLoading(false);
+    };
+
+    if (certificateId) {
+      loadCertificate();
+    } else {
+      loadCertificateByCourseLevelAndCollaborator();
+    }
   }, [certificateId]);
 
   useEffect(() => {
@@ -89,11 +123,16 @@ const ShowCertificate = ({
 
   return (
     <div className="flex flex-col items-center justify-center bg-white m-0 p-0 w-full mx-auto gap-4">
-     <div className="w-full">
-     {isExpired && (
-        <Banner label="Certificado vencido" icon={AlertCircle} variant="danger" className="w-full" />
-      )}
-     </div>
+      <div className="w-full">
+        {isExpired && (
+          <Banner
+            label="Certificado vencido"
+            icon={AlertCircle}
+            variant="danger"
+            className="w-full"
+          />
+        )}
+      </div>
       {pdfComponent ? (
         <PdfPreview
           pdfComponent={pdfComponent as React.ReactElement}
