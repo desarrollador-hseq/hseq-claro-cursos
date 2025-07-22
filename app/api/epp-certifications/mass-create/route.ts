@@ -167,26 +167,33 @@ function processInspectionAnswers(rawData: any, eppType: string): any[] {
 
 // Función auxiliar para determinar la categoría basada en la clave de la pregunta
 function getCategoryFromQuestionKey(key: string): string {
-  if (key.includes('Quemaduras') || key.includes('Decoloración') || key.includes('Manchas')) {
-    return 'Inspección Visual';
-  } else if (key.includes('Costuras') || key.includes('Desgaste') || key.includes('Fibras') || key.includes('Agujeros')) {
-    return 'Inspección Estructural';
-  } else if (key.includes('Corrosión')) {
-    return 'Inspección Corrosión';
-  } else if (key.includes('Deformación')) {
-    return 'Inspección Estructural';
-  } else if (key.includes('Argollas') || key.includes('Ganchos')) {
-    return 'Inspección Hardware';
-  } else if (key.includes('Conexión')) {
-    return 'Inspección Conexión';
-  } else if (key.includes('Seguros') || key.includes('Indicador') || key.includes('Absorbedor')) {
-    return 'Inspección Seguridad';
-  } else if (key.includes('Cristalización') || key.includes('Rigidez')) {
-    return 'Inspección Material';
-  } else if (key.includes('Moho')) {
-    return 'Inspección Contaminación';
+  // Componente textil - todas las inspecciones relacionadas con material textil
+  if (key.includes('quemaduras') || key.includes('decoloracion') || key.includes('manchas_quimicos') ||
+      key.includes('costuras_sueltas') || key.includes('desgaste_abrasion') || key.includes('fibras_rotas') ||
+      key.includes('cristalizacion') || key.includes('rigidez_correa') || key.includes('presencia_moho') ||
+      key.includes('agujeros_perforaciones')) {
+    return 'Componente textil';
   }
-  return 'Inspección General';
+  
+  // Componente metálico - inspecciones de partes metálicas
+  else if (key.includes('corrosion') || key.includes('deformacion') || key.includes('argollas_hebillas_quiebres') ||
+           key.includes('argollas_quiebres_fracturas')) {
+    return 'Componente metálico';
+  }
+  
+  // Componente de funcionalidad - verificaciones de funcionamiento
+  else if (key.includes('conexion_adecuada') || key.includes('seguros_adecuados') || 
+           key.includes('ganchos_cierre_automatico')) {
+    return 'Componente de funcionalidad';
+  }
+  
+  // Componente de impacto - verificaciones específicas de absorbedores
+  else if (key.includes('indicador_impacto_activado') || key.includes('absorbedor_activado')) {
+    return 'Componente de impacto';
+  }
+  
+  // Categoría por defecto
+  return 'Componente de funcionalidad';
 }
 
 // Normalizar respuestas a formato estándar

@@ -16,6 +16,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { EppInspectionSection } from './_components/epp-inspection-section';
 import TitlePage from '@/components/title-page';
+import axios from 'axios';
 
 // Tipos de EPP disponibles
 const EPP_TYPES = [
@@ -81,9 +82,9 @@ const PublicEppInspection = () => {
   useEffect(() => {
     const fetchRegionals = async () => {
       try {
-        const response = await fetch('/api/regional');
-        if (response.ok) {
-          const data = await response.json();
+        const response = await axios.get('/api/regional');
+        if (response.status === 200) {
+          const data = response.data;
           setRegionals(data.regionals || []);
         } else {
           toast.error('Error al cargar las regionales');
@@ -199,19 +200,14 @@ const PublicEppInspection = () => {
     setIsSubmitting(true);
 
     try {
-      const response = await fetch('/api/epp-inspections/create', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      });
+      const response = await axios.post('/api/epp-inspections/create', formData);
+      
 
-      if (!response.ok) {
+      if (response.status !== 200) {
         throw new Error('Error al guardar la inspección');
       }
 
-      const result = await response.json();
+      const result = response.data;
       
       toast.success('Inspección guardada exitosamente');
       
