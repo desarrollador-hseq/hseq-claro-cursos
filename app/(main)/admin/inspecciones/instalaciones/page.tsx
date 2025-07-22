@@ -26,7 +26,7 @@ const InspectionsPage = async () => {
         title="Inspecciones"
         description="Listado completo de todas las inspecciones registradas hasta la fecha"
       >
-        <Link href="/admin/inspecciones/crear">
+        <Link href="/admin/inspecciones/instalaciones/crear">
           <Button>
             <PlusCircle className="w-4 h-4 mr-2" />
             Registrar inspección

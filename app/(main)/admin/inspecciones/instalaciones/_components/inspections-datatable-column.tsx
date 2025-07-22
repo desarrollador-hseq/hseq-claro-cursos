@@ -108,7 +108,7 @@ export const InspectionColumns: ColumnDef<InspectionTableType>[] = [
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <Link href={`/admin/inspecciones/${id}`}>
+            <Link href={`/admin/inspecciones/instalaciones/${id}`}>
               <DropdownMenuItem>
                 <Pencil className="w-4 h-4 mr-2" />
                 Editar

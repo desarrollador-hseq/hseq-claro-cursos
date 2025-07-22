@@ -65,7 +65,7 @@ const STATUS_CONFIG = {
   },
 };
 
- function EppInspectionsPage() {
+export function HandleEppInspectionList() {
   const router = useRouter();
   const { inspections, loading, error, stats, pagination, fetchInspections } =
     useEppInspections();
@@ -434,5 +434,3 @@ const STATUS_CONFIG = {
     </div>
   );
 }
-
-export default EppInspectionsPage;
