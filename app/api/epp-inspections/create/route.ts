@@ -41,11 +41,11 @@ interface InspectionFormData {
 
 export async function POST(req: Request) {
   try {
-    const session = await getServerSession(authOptions);
+    // const session = await getServerSession(authOptions);
     
-    if (!session) {
-      return new NextResponse("Unauthorized", { status: 401 });
-    }
+    // if (!session) {
+    //   return new NextResponse("Unauthorized", { status: 401 });
+    // }
 
     const formData: InspectionFormData = await req.json();
 
@@ -65,15 +65,15 @@ export async function POST(req: Request) {
       try {
         await db.$transaction(async (tx) => {
           // Validar que el inspector exista en Coach
-          const coach = await tx.coach.findFirst({
-            where: {
-              fullname: { contains: formData.inspectorName }
-            }
-          });
+          // const coach = await tx.coach.findFirst({
+          //   where: {
+          //     fullname: { contains: formData.inspectorName }
+          //   }
+          // });
 
-          if (!coach) {
-            throw new Error(`Inspector "${formData.inspectorName}" no encontrado`);
-          }
+          // if (!coach) {
+          //   throw new Error(`Inspector "${formData.inspectorName}" no encontrado`);
+          // }
 
           // Validar que la regional exista
           const regional = await tx.regional.findFirst({
@@ -117,6 +117,24 @@ export async function POST(req: Request) {
             throw new Error(`Tipo de documento "${formData.collaboratorTypeDoc}" no válido`);
           }
 
+          // Obtener preguntas desde la base de datos para este tipo de EPP
+          const questions = await tx.eppInspectionQuestion.findMany({
+            where: {
+              eppType: eppType,
+              active: true
+            },
+            select: {
+              questionCode: true,
+              questionText: true,
+              category: true
+            }
+          });
+
+          // Crear mapa de preguntas para lookup rápido
+          const questionMap = new Map(
+            questions.map(q => [q.questionCode, q])
+          );
+
           // Crear registro principal de inspección
           const inspection = await tx.eppCertificationInspection.create({
             data: {
@@ -131,7 +149,8 @@ export async function POST(req: Request) {
               eppSerialNumber: equipment.serialNumber,
               eppBrand: equipment.brand,
               eppModel: equipment.model || "",
-              inspectorName: coach.fullname,
+              inspectorName: formData.inspectorName,
+              // inspectorName: coach.fullname,
               isSuitable: equipment.isSuitable,
               status: 'PENDING', // Initial status
               observations: equipment.observations || null,
@@ -143,14 +162,17 @@ export async function POST(req: Request) {
                 answeredQuestions: Object.values(equipment.inspectionAnswers || {}).filter(a => a).length,
                 overallStatus: equipment.isSuitable ? 'apto' : 'no_apto',
                 position: formData.position || '',
-                // Respuestas completas con metadatos
+                // Respuestas completas con metadatos desde la base de datos
                 responses: Object.entries(equipment.inspectionAnswers || {})
                   .filter(([_, answer]) => answer)
-                  .map(([questionCode, answer]) => ({
-                    answer: answer as string,
-                    questionText: getQuestionText(equipment.eppType, questionCode),
-                    category: getQuestionCategory(equipment.eppType, questionCode)
-                  }))
+                  .map(([questionCode, answer]) => {
+                    const questionData = questionMap.get(questionCode);
+                    return {
+                      answer: answer as string,
+                      questionText: questionData?.questionText || questionCode,
+                      category: questionData?.category || 'General'
+                    };
+                  })
               }
             }
           });
@@ -189,127 +211,7 @@ export async function POST(req: Request) {
   }
 }
 
-// Funciones auxiliares para obtener metadatos de preguntas
-function getQuestionText(eppType: string, questionCode: string): string {
-  const questionMaps: Record<string, Record<string, string>> = {
-    "ARNES_CUERPO_COMPLETO": {
-      "quemaduras": "¿Presenta quemaduras?",
-      "decoloracion": "¿Presenta decoloración?",
-      "manchas_quimicos": "¿Presenta manchas de químicos?",
-      "costuras_sueltas": "¿Presenta costuras sueltas?",
-      "desgaste_abrasion": "¿Presenta desgaste por abrasión?",
-      "fibras_rotas": "¿Presenta fibras rotas?",
-      "cristalizacion": "¿Presenta cristalización?",
-      "rigidez_correa": "¿Presenta rigidez en la correa o cuerda?",
-      "presencia_moho": "¿Presenta presencia de moho?",
-      "agujeros_perforaciones": "¿Presenta agujeros o perforaciones?",
-      "corrosion": "¿Presenta corrosión?",
-      "deformacion": "¿Presenta deformación?",
-      "argollas_hebillas_quiebres": "¿Las argollas o hebillas presentan quiebres o fracturas?",
-      "conexion_adecuada_argollas": "¿La conexión es adecuada (Argollas y hebillas)?",
-      "seguros_adecuados": "¿Los seguros son adecuados?"
-    },
-    "ESLINGA_DOBLE_TERMINAL_EN_Y": {
-      "quemaduras2": "¿Presenta quemaduras?",
-      "decoloracion2": "¿Presenta decoloración?",
-      "manchas_quimicos2": "¿Presenta manchas de químicos?",
-      "costuras_sueltas2": "¿Presenta costuras sueltas?",
-      "desgaste_abrasion2": "¿Presenta desgaste por abrasión?",
-      "fibras_rotas2": "¿Presenta fibras rotas?",
-      "cristalizacion2": "¿Presenta cristalización?",
-      "rigidez_correa2": "¿Presenta rigidez en la correa o cuerda?",
-      "presencia_moho2": "¿Presenta presencia de moho?",
-      "agujeros_perforaciones2": "¿Presenta agujeros o perforaciones?",
-      "corrosion2": "¿Presenta corrosión?",
-      "deformacion2": "¿Presenta deformación?",
-      "argollas_hebillas_quiebres2": "¿Las argollas o hebillas presentan quiebres o fracturas?",
-      "conexion_adecuada_argollas2": "¿La conexión es adecuada (Argollas y hebillas)?",
-      "ganchos_cierre_automatico": "¿Los ganchos tienen cierre automático?",
-      "seguros_adecuados2": "¿Los seguros son adecuados?",
-      "indicador_impacto_activado": "¿El indicador de impacto está activado?",
-      "absorbedor_activado": "¿El absorbedor está activado?"
-    },
-    "ESLINGA_POSICIONAMIENTO": {
-      "quemaduras3": "¿Presenta quemaduras?",
-      "decoloracion3": "¿Presenta decoloración?",
-      "manchas_quimicos3": "¿Presenta manchas de químicos?",
-      "costuras_sueltas3": "¿Presenta costuras sueltas?",
-      "desgaste_abrasion3": "¿Presenta desgaste por abrasión?",
-      "fibras_rotas3": "¿Presenta fibras rotas?",
-      "cristalizacion3": "¿Presenta cristalización?",
-      "rigidez_correa3": "¿Presenta rigidez en la correa o cuerda?",
-      "presencia_moho3": "¿Presenta presencia de moho?",
-      "agujeros_perforaciones3": "¿Presenta agujeros o perforaciones?",
-      "corrosion3": "¿Presenta corrosión?",
-      "deformacion3": "¿Presenta deformación?",
-      "argollas_hebillas_quiebres3": "¿Las argollas o hebillas presentan quiebres o fracturas?",
-      "conexion_adecuada_argollas3": "¿La conexión es adecuada (Argollas y hebillas)?",
-      "ganchos_cierre_automatico2": "¿Los ganchos tienen cierre automático?",
-      "seguros_adecuados3": "¿Los seguros son adecuados?"
-    },
-    "FRENO_ARRESTADOR_CABLE": {
-      "corrosion4": "¿Presenta corrosión?",
-      "deformacion4": "¿Presenta deformación?",
-      "argollas_quiebres_fracturas": "¿Las argollas presentan quiebres o fracturas?",
-      "conexion_adecuada": "¿La conexión es adecuada?",
-      "seguros_adecuados4": "¿Los seguros son adecuados?"
-    },
-    "MOSQUETON": {
-      "corrosion5": "¿Presenta corrosión?",
-      "deformacion5": "¿Presenta deformación?",
-      "argollas_quiebres_fracturas2": "¿Las argollas presentan quiebres o fracturas?",
-      "conexion_adecuada2": "¿La conexión es adecuada?",
-      "seguros_adecuados5": "¿Los seguros son adecuados?"
-    },
-    "ANCLAJE_TIPO_TIE_OFF": {
-      "quemaduras4": "¿Presenta quemaduras?",
-      "decoloracion4": "¿Presenta decoloración?",
-      "manchas_quimicos4": "¿Presenta manchas de químicos?",
-      "costuras_sueltas4": "¿Presenta costuras sueltas?",
-      "desgaste_abrasion4": "¿Presenta desgaste por abrasión?",
-      "fibras_rotas4": "¿Presenta fibras rotas?",
-      "cristalizacion4": "¿Presenta cristalización?",
-      "rigidez_correa4": "¿Presenta rigidez en la correa o cuerda?",
-      "presencia_moho4": "¿Presenta presencia de moho?",
-      "agujeros_perforaciones4": "¿Presenta agujeros o perforaciones?",
-      "corrosion6": "¿Presenta corrosión?",
-      "deformacion6": "¿Presenta deformación?",
-      "argollas_quiebres_fracturas_final": "¿Las argollas presentan quiebres o fracturas?",
-      "conexion_adecuada_segura": "¿Permite conectarse de forma segura el equipo?"
-    }
-  };
-
-  return questionMaps[eppType]?.[questionCode] || questionCode;
-}
-
-function getQuestionCategory(eppType: string, questionCode: string): string {
-  if (questionCode.includes('quemaduras') || questionCode.includes('decoloracion') || questionCode.includes('manchas')) {
-    return 'Inspección Visual';
-  }
-  if (questionCode.includes('costuras') || questionCode.includes('fibras') || questionCode.includes('deformacion') || questionCode.includes('agujeros') || questionCode.includes('perforaciones')) {
-    return 'Inspección Estructural';
-  }
-  if (questionCode.includes('corrosion')) {
-    return 'Inspección Corrosión';
-  }
-  if (questionCode.includes('cristalizacion')) {
-    return 'Inspección Material';
-  }
-  if (questionCode.includes('rigidez')) {
-    return 'Inspección Flexibilidad';
-  }
-  if (questionCode.includes('moho')) {
-    return 'Inspección Contaminación';
-  }
-  if (questionCode.includes('argollas') || questionCode.includes('hebillas') || questionCode.includes('ganchos')) {
-    return 'Inspección Hardware';
-  }
-  if (questionCode.includes('conexion')) {
-    return 'Inspección Conexión';
-  }
-  if (questionCode.includes('indicador') || questionCode.includes('absorbedor') || questionCode.includes('seguros')) {
-    return 'Inspección Seguridad';
-  }
-  return 'General';
-}
+// Eliminamos las funciones hardcodeadas ya que ahora consultamos la base de datos
+// function getQuestionText(...) - REMOVIDO
+// function getQuestionCategory(...) - REMOVIDO
 

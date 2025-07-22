@@ -138,8 +138,75 @@ interface ProcessResult {
 // };
 
 // Función para procesar respuestas del Excel a formato estructurado
-function processInspectionAnswers(rawData: any, eppType: string): any[] {
+async function processInspectionAnswers(rawData: any, eppType: string, tx: any): Promise<any[]> {
   const answers: any[] = [];
+  
+  // Obtener preguntas desde la base de datos para este tipo de EPP
+  const questions = await tx.eppInspectionQuestion.findMany({
+    where: {
+      eppType: eppType as any,
+      active: true
+    },
+    select: {
+      questionCode: true,
+      questionText: true,
+      category: true
+    }
+  });
+
+  // Crear mapas para búsqueda eficiente
+  const questionByCode = new Map(questions.map((q: any) => [q.questionCode, q]));
+  const questionByText = new Map(questions.map((q: any) => [q.questionText.toLowerCase(), q]));
+  
+  // Función para encontrar la pregunta más cercana basada en el nombre de columna
+  function findMatchingQuestion(columnName: string) {
+    // 1. Buscar coincidencia exacta por código
+    if (questionByCode.has(columnName)) {
+      return questionByCode.get(columnName);
+    }
+    
+    // 2. Buscar coincidencia exacta por texto (case insensitive)
+    const normalizedColumn = columnName.toLowerCase();
+    if (questionByText.has(normalizedColumn)) {
+      return questionByText.get(normalizedColumn);
+    }
+    
+    // 3. Buscar coincidencia parcial en el texto de la pregunta
+    for (const question of questions) {
+      const questionTextLower = question.questionText.toLowerCase();
+      if (questionTextLower.includes(normalizedColumn) || normalizedColumn.includes(questionTextLower)) {
+        return question;
+      }
+    }
+    
+    // 4. Mapeo manual para casos específicos conocidos del Excel
+    const manualMappings: Record<string, string> = {
+      'quemaduras': 'quemaduras',
+      'decoloración': 'decoloracion',
+      'decoloracion': 'decoloracion',
+      'manchas de químicos': 'manchas_quimicos',
+      'costuras sueltas': 'costuras_sueltas',
+      'desgaste por abrasión': 'desgaste_abrasion',
+      'fibras rotas': 'fibras_rotas',
+      'cristalización': 'cristalizacion',
+      'rigidez en la correa': 'rigidez_correa',
+      'presencia de moho': 'presencia_moho',
+      'agujeros o perforaciones': 'agujeros_perforaciones',
+      'corrosión': 'corrosion',
+      'deformación': 'deformacion',
+      'argollas o hebillas': 'argollas_hebillas_quiebres',
+      'conexión adecuada': 'conexion_adecuada_argollas',
+      'seguros adecuados': 'seguros_adecuados'
+    };
+    
+    for (const [pattern, code] of Object.entries(manualMappings)) {
+      if (normalizedColumn.includes(pattern.toLowerCase())) {
+        return questionByCode.get(code);
+      }
+    }
+    
+    return null;
+  }
   
   // Procesar todas las propiedades del rawData que contengan respuestas
   Object.entries(rawData).forEach(([key, value]) => {
@@ -154,10 +221,13 @@ function processInspectionAnswers(rawData: any, eppType: string): any[] {
           'Motivo del Rechazo', 'Motivo del Rechazo2', 'Motivo del Rechazo3', 'Motivo del Rechazo4',
           'Motivo del Rechazo5', 'Motivo del Rechazo6'].includes(key)) {
       
+      const matchedQuestion = findMatchingQuestion(key);
+      
       answers.push({
         answer: normalizeAnswer(value),
-        questionText: key, // Usar el nombre de la columna como texto de la pregunta
-        category: getCategoryFromQuestionKey(key)
+        questionText: matchedQuestion?.questionText || key, // Usar texto de BD o nombre de columna como fallback
+        category: matchedQuestion?.category || 'General', // Usar categoría de BD o fallback
+        questionCode: matchedQuestion?.questionCode || key // Agregar código de pregunta para trazabilidad
       });
     }
   });
@@ -166,34 +236,10 @@ function processInspectionAnswers(rawData: any, eppType: string): any[] {
 }
 
 // Función auxiliar para determinar la categoría basada en la clave de la pregunta
+// ❌ FUNCIÓN DEPRECADA - Ya no se usa, mantenida por compatibilidad
 function getCategoryFromQuestionKey(key: string): string {
-  // Componente textil - todas las inspecciones relacionadas con material textil
-  if (key.includes('quemaduras') || key.includes('decoloracion') || key.includes('manchas_quimicos') ||
-      key.includes('costuras_sueltas') || key.includes('desgaste_abrasion') || key.includes('fibras_rotas') ||
-      key.includes('cristalizacion') || key.includes('rigidez_correa') || key.includes('presencia_moho') ||
-      key.includes('agujeros_perforaciones')) {
-    return 'Componente textil';
-  }
-  
-  // Componente metálico - inspecciones de partes metálicas
-  else if (key.includes('corrosion') || key.includes('deformacion') || key.includes('argollas_hebillas_quiebres') ||
-           key.includes('argollas_quiebres_fracturas')) {
-    return 'Componente metálico';
-  }
-  
-  // Componente de funcionalidad - verificaciones de funcionamiento
-  else if (key.includes('conexion_adecuada') || key.includes('seguros_adecuados') || 
-           key.includes('ganchos_cierre_automatico')) {
-    return 'Componente de funcionalidad';
-  }
-  
-  // Componente de impacto - verificaciones específicas de absorbedores
-  else if (key.includes('indicador_impacto_activado') || key.includes('absorbedor_activado')) {
-    return 'Componente de impacto';
-  }
-  
-  // Categoría por defecto
-  return 'Componente de funcionalidad';
+  // Esta función ya no se usa - se reemplazó por consulta a base de datos
+  return 'General';
 }
 
 // Normalizar respuestas a formato estándar
@@ -305,7 +351,7 @@ export async function POST(req: Request) {
                 overallStatus: inspectionData.isSuitable ? 'apto' : 'no_apto',
                 // Respuestas completas con metadatos desde Excel
                 responses: inspectionData.inspectionDetails ? 
-                  processInspectionAnswers(inspectionData.inspectionDetails, eppType) : []
+                  await processInspectionAnswers(inspectionData.inspectionDetails, eppType, tx) : []
               }
             }
           });

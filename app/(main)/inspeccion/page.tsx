@@ -1,31 +1,51 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
-import { Badge } from '@/components/ui/badge';
-import { CalendarIcon, Save, Plus, Trash2, CheckCircle, AlertCircle } from 'lucide-react';
-import { toast } from 'sonner';
-import { format } from 'date-fns';
-import { es } from 'date-fns/locale';
-import { Calendar } from '@/components/ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { EppInspectionSection } from './_components/epp-inspection-section';
-import TitlePage from '@/components/title-page';
-import axios from 'axios';
+import React, { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
+import {
+  CalendarIcon,
+  Save,
+  Plus,
+  Trash2,
+  CheckCircle,
+  AlertCircle,
+} from "lucide-react";
+import { toast } from "sonner";
+import { format } from "date-fns";
+import { es } from "date-fns/locale";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { EppInspectionSection } from "./_components/epp-inspection-section";
+import TitlePage from "@/components/title-page";
+import axios from "axios";
 
 // Tipos de EPP disponibles
 const EPP_TYPES = [
-  { value: 'ARNES_CUERPO_COMPLETO', name: 'ARNÉS CUERPO COMPLETO' },
-  { value: 'ESLINGA_DOBLE_TERMINAL_EN_Y', name: 'ESLINGA DE DOBLE TERMINAL EN Y' },
-  { value: 'ESLINGA_POSICIONAMIENTO', name: 'ESLINGA DE POSICIONAMIENTO' },
-  { value: 'FRENO_ARRESTADOR_CABLE', name: 'FRENO O ARRESTADOR DE CABLE' },
-  { value: 'MOSQUETON', name: 'MOSQUETÓN' },
-  { value: 'ANCLAJE_TIPO_TIE_OFF', name: 'ANCLAJE TIPO TIE OFF' }
+  { value: "ARNES_CUERPO_COMPLETO", name: "ARNÉS CUERPO COMPLETO" },
+  {
+    value: "ESLINGA_DOBLE_TERMINAL_EN_Y",
+    name: "ESLINGA DE DOBLE TERMINAL EN Y",
+  },
+  { value: "ESLINGA_POSICIONAMIENTO", name: "ESLINGA DE POSICIONAMIENTO" },
+  { value: "FRENO_ARRESTADOR_CABLE", name: "FRENO O ARRESTADOR DE CABLE" },
+  { value: "MOSQUETON", name: "MOSQUETÓN" },
+  { value: "ANCLAJE_TIPO_TIE_OFF", name: "ANCLAJE TIPO TIE OFF" },
 ];
 
 interface EppEquipment {
@@ -47,51 +67,53 @@ interface InspectionForm {
   collaboratorLastName: string;
   collaboratorNumDoc: string;
   collaboratorTypeDoc: string;
-  
+
   // Información de la inspección
   inspectorName: string;
   inspectionDate: Date;
   city: string;
   regional: string;
   position: string;
-  
+
   // Equipos EPP (hasta 6)
   equipment: EppEquipment[];
 }
 
 const PublicEppInspection = () => {
   const [formData, setFormData] = useState<InspectionForm>({
-    collaboratorName: '',
-    collaboratorLastName: '',
-    collaboratorNumDoc: '',
-    collaboratorTypeDoc: 'CC',
-    inspectorName: '',
+    collaboratorName: "",
+    collaboratorLastName: "",
+    collaboratorNumDoc: "",
+    collaboratorTypeDoc: "CC",
+    inspectorName: "",
     inspectionDate: new Date(),
-    city: '',
-    regional: '',
-    position: '',
-    equipment: []
+    city: "",
+    regional: "",
+    position: "",
+    equipment: [],
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [regionals, setRegionals] = useState<Array<{id: string, name: string}>>([]);
+  const [regionals, setRegionals] = useState<
+    Array<{ id: string; name: string }>
+  >([]);
   const [loadingRegionals, setLoadingRegionals] = useState(true);
 
   // Cargar regionales al montar el componente
   useEffect(() => {
     const fetchRegionals = async () => {
       try {
-        const response = await axios.get('/api/regional');
+        const response = await axios.get("/api/regional");
         if (response.status === 200) {
           const data = response.data;
           setRegionals(data.regionals || []);
         } else {
-          toast.error('Error al cargar las regionales');
+          toast.error("Error al cargar las regionales");
         }
       } catch (error) {
-        console.error('Error fetching regionals:', error);
-        toast.error('Error al cargar las regionales');
+        console.error("Error fetching regionals:", error);
+        toast.error("Error al cargar las regionales");
       } finally {
         setLoadingRegionals(false);
       }
@@ -103,43 +125,46 @@ const PublicEppInspection = () => {
   // Agregar nuevo equipo
   const addEquipment = () => {
     if (formData.equipment.length >= 6) {
-      toast.error('Máximo 6 equipos por inspección');
+      toast.error("Máximo 6 equipos por inspección");
       return;
     }
 
     const newEquipment: EppEquipment = {
       id: crypto.randomUUID(),
-      eppType: '',
-      eppName: '',
-      brand: '',
-      model: '',
-      serialNumber: '',
+      eppType: "",
+      eppName: "",
+      brand: "",
+      model: "",
+      serialNumber: "",
       isSuitable: true, // Por defecto APTO, el usuario puede cambiarlo
-      observations: '',
-      inspectionAnswers: {}
+      observations: "",
+      inspectionAnswers: {},
     };
 
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      equipment: [...prev.equipment, newEquipment]
+      equipment: [...prev.equipment, newEquipment],
     }));
   };
 
   // Remover equipo
   const removeEquipment = (equipmentId: string) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      equipment: prev.equipment.filter(eq => eq.id !== equipmentId)
+      equipment: prev.equipment.filter((eq) => eq.id !== equipmentId),
     }));
   };
 
   // Actualizar equipo
-  const updateEquipment = (equipmentId: string, updates: Partial<EppEquipment>) => {
-    setFormData(prev => ({
+  const updateEquipment = (
+    equipmentId: string,
+    updates: Partial<EppEquipment>
+  ) => {
+    setFormData((prev) => ({
       ...prev,
-      equipment: prev.equipment.map(eq => 
+      equipment: prev.equipment.map((eq) =>
         eq.id === equipmentId ? { ...eq, ...updates } : eq
-      )
+      ),
     }));
   };
 
@@ -149,40 +174,40 @@ const PublicEppInspection = () => {
 
     // Validar información del colaborador
     if (!formData.collaboratorName.trim()) {
-      newErrors.collaboratorName = 'Nombre es requerido';
+      newErrors.collaboratorName = "Nombre es requerido";
     }
     if (!formData.collaboratorLastName.trim()) {
-      newErrors.collaboratorLastName = 'Apellidos son requeridos';
+      newErrors.collaboratorLastName = "Apellidos son requeridos";
     }
     if (!formData.collaboratorNumDoc.trim()) {
-      newErrors.collaboratorNumDoc = 'Número de documento es requerido';
+      newErrors.collaboratorNumDoc = "Número de documento es requerido";
     }
 
     // Validar información de inspección
     if (!formData.inspectorName.trim()) {
-      newErrors.inspectorName = 'Inspector es requerido';
+      newErrors.inspectorName = "Inspector es requerido";
     }
     if (!formData.city.trim()) {
-      newErrors.city = 'Ciudad es requerida';
+      newErrors.city = "Ciudad es requerida";
     }
     if (!formData.regional.trim()) {
-      newErrors.regional = 'Regional es requerida';
+      newErrors.regional = "Regional es requerida";
     }
 
     // Validar equipos
     if (formData.equipment.length === 0) {
-      newErrors.equipment = 'Debe agregar al menos un equipo';
+      newErrors.equipment = "Debe agregar al menos un equipo";
     }
 
     formData.equipment.forEach((eq, index) => {
       if (!eq.eppType) {
-        newErrors[`equipment_${eq.id}_type`] = 'Tipo de EPP es requerido';
+        newErrors[`equipment_${eq.id}_type`] = "Tipo de EPP es requerido";
       }
       if (!eq.brand.trim()) {
-        newErrors[`equipment_${eq.id}_brand`] = 'Marca es requerida';
+        newErrors[`equipment_${eq.id}_brand`] = "Marca es requerida";
       }
       if (!eq.serialNumber.trim()) {
-        newErrors[`equipment_${eq.id}_serial`] = 'Número de serie es requerido';
+        newErrors[`equipment_${eq.id}_serial`] = "Número de serie es requerido";
       }
     });
 
@@ -193,41 +218,48 @@ const PublicEppInspection = () => {
   // Enviar formulario
   const handleSubmit = async () => {
     if (!validateForm()) {
-      toast.error('Por favor corrija los errores en el formulario');
+      toast.error("Por favor corrija los errores en el formulario");
       return;
     }
 
     setIsSubmitting(true);
 
     try {
-      const response = await axios.post('/api/epp-inspections/create', formData);
-      
+      const response = await axios.post(
+        "/api/epp-inspections/create",
+        formData
+      );
 
       if (response.status !== 200) {
-        throw new Error('Error al guardar la inspección');
+        throw new Error("Error al guardar la inspección");
       }
 
       const result = response.data;
-      
-      toast.success('Inspección guardada exitosamente');
-      
+
+      toast.success("Inspección guardada exitosamente");
+
       // Limpiar formulario
       setFormData({
-        collaboratorName: '',
-        collaboratorLastName: '',
-        collaboratorNumDoc: '',
-        collaboratorTypeDoc: 'CC',
-        inspectorName: '',
+        collaboratorName: "",
+        collaboratorLastName: "",
+        collaboratorNumDoc: "",
+        collaboratorTypeDoc: "CC",
+        inspectorName: "",
         inspectionDate: new Date(),
-        city: '',
-        regional: '',
-        position: '',
-        equipment: []
+        city: "",
+        regional: "",
+        position: "",
+        equipment: [],
       });
-
     } catch (error) {
-      console.error('Error:', error);
-      toast.error('Error al guardar la inspección');
+      console.error("Error:", error);
+      if (axios.isAxiosError(error)) {
+        if (error.response?.data.message.includes("No equipment provided")) {
+          toast.error("No se especificó ningún equipo");
+        }
+      } else {
+        toast.error("Error al guardar la inspección");
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -256,12 +288,19 @@ const PublicEppInspection = () => {
                 <Input
                   id="collaboratorName"
                   value={formData.collaboratorName}
-                  onChange={(e) => setFormData(prev => ({ ...prev, collaboratorName: e.target.value }))}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      collaboratorName: e.target.value,
+                    }))
+                  }
                   placeholder="Nombres del colaborador"
-                  className={errors.collaboratorName ? 'border-red-500' : ''}
+                  className={errors.collaboratorName ? "border-red-500" : ""}
                 />
                 {errors.collaboratorName && (
-                  <p className="text-red-500 text-sm mt-1">{errors.collaboratorName}</p>
+                  <p className="text-red-500 text-sm mt-1">
+                    {errors.collaboratorName}
+                  </p>
                 )}
               </div>
 
@@ -270,12 +309,21 @@ const PublicEppInspection = () => {
                 <Input
                   id="collaboratorLastName"
                   value={formData.collaboratorLastName}
-                  onChange={(e) => setFormData(prev => ({ ...prev, collaboratorLastName: e.target.value }))}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      collaboratorLastName: e.target.value,
+                    }))
+                  }
                   placeholder="Apellidos del colaborador"
-                  className={errors.collaboratorLastName ? 'border-red-500' : ''}
+                  className={
+                    errors.collaboratorLastName ? "border-red-500" : ""
+                  }
                 />
                 {errors.collaboratorLastName && (
-                  <p className="text-red-500 text-sm mt-1">{errors.collaboratorLastName}</p>
+                  <p className="text-red-500 text-sm mt-1">
+                    {errors.collaboratorLastName}
+                  </p>
                 )}
               </div>
 
@@ -283,7 +331,12 @@ const PublicEppInspection = () => {
                 <Label htmlFor="collaboratorTypeDoc">Tipo de Documento</Label>
                 <Select
                   value={formData.collaboratorTypeDoc}
-                  onValueChange={(value) => setFormData(prev => ({ ...prev, collaboratorTypeDoc: value }))}
+                  onValueChange={(value) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      collaboratorTypeDoc: value,
+                    }))
+                  }
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -301,16 +354,25 @@ const PublicEppInspection = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="collaboratorNumDoc">Número de Documento *</Label>
+                <Label htmlFor="collaboratorNumDoc">
+                  Número de Documento *
+                </Label>
                 <Input
                   id="collaboratorNumDoc"
                   value={formData.collaboratorNumDoc}
-                  onChange={(e) => setFormData(prev => ({ ...prev, collaboratorNumDoc: e.target.value }))}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      collaboratorNumDoc: e.target.value,
+                    }))
+                  }
                   placeholder="Número de documento"
-                  className={errors.collaboratorNumDoc ? 'border-red-500' : ''}
+                  className={errors.collaboratorNumDoc ? "border-red-500" : ""}
                 />
                 {errors.collaboratorNumDoc && (
-                  <p className="text-red-500 text-sm mt-1">{errors.collaboratorNumDoc}</p>
+                  <p className="text-red-500 text-sm mt-1">
+                    {errors.collaboratorNumDoc}
+                  </p>
                 )}
               </div>
 
@@ -319,7 +381,12 @@ const PublicEppInspection = () => {
                 <Input
                   id="position"
                   value={formData.position}
-                  onChange={(e) => setFormData(prev => ({ ...prev, position: e.target.value }))}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      position: e.target.value,
+                    }))
+                  }
                   placeholder="Cargo del colaborador"
                 />
               </div>
@@ -342,12 +409,19 @@ const PublicEppInspection = () => {
                 <Input
                   id="inspectorName"
                   value={formData.inspectorName}
-                  onChange={(e) => setFormData(prev => ({ ...prev, inspectorName: e.target.value }))}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      inspectorName: e.target.value,
+                    }))
+                  }
                   placeholder="Nombre del inspector"
-                  className={errors.inspectorName ? 'border-red-500' : ''}
+                  className={errors.inspectorName ? "border-red-500" : ""}
                 />
                 {errors.inspectorName && (
-                  <p className="text-red-500 text-sm mt-1">{errors.inspectorName}</p>
+                  <p className="text-red-500 text-sm mt-1">
+                    {errors.inspectorName}
+                  </p>
                 )}
               </div>
 
@@ -355,16 +429,27 @@ const PublicEppInspection = () => {
                 <Label>Fecha de Inspección</Label>
                 <Popover>
                   <PopoverTrigger asChild>
-                    <Button variant="outline" className="w-full justify-start text-left font-normal">
+                    <Button
+                      variant="outline"
+                      className="w-full justify-start text-left font-normal"
+                    >
                       <CalendarIcon className="mr-2 h-4 w-4" />
-                      {format(formData.inspectionDate, "dd/MM/yyyy", { locale: es })}
+                      {format(formData.inspectionDate, "dd/MM/yyyy", {
+                        locale: es,
+                      })}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0">
                     <Calendar
                       mode="single"
                       selected={formData.inspectionDate}
-                      onSelect={(date) => date && setFormData(prev => ({ ...prev, inspectionDate: date }))}
+                      onSelect={(date) =>
+                        date &&
+                        setFormData((prev) => ({
+                          ...prev,
+                          inspectionDate: date,
+                        }))
+                      }
                       initialFocus
                     />
                   </PopoverContent>
@@ -375,11 +460,21 @@ const PublicEppInspection = () => {
                 <Label htmlFor="regional">Regional *</Label>
                 <Select
                   value={formData.regional}
-                  onValueChange={(value) => setFormData(prev => ({ ...prev, regional: value }))}
+                  onValueChange={(value) =>
+                    setFormData((prev) => ({ ...prev, regional: value }))
+                  }
                   disabled={loadingRegionals}
                 >
-                  <SelectTrigger className={errors.regional ? 'border-red-500' : ''}>
-                    <SelectValue placeholder={loadingRegionals ? "Cargando regionales..." : "Seleccionar regional"} />
+                  <SelectTrigger
+                    className={errors.regional ? "border-red-500" : ""}
+                  >
+                    <SelectValue
+                      placeholder={
+                        loadingRegionals
+                          ? "Cargando regionales..."
+                          : "Seleccionar regional"
+                      }
+                    />
                   </SelectTrigger>
                   <SelectContent>
                     {regionals.map((regional) => (
@@ -400,9 +495,11 @@ const PublicEppInspection = () => {
               <Input
                 id="city"
                 value={formData.city}
-                onChange={(e) => setFormData(prev => ({ ...prev, city: e.target.value }))}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, city: e.target.value }))
+                }
                 placeholder="Ciudad de la inspección"
-                className={errors.city ? 'border-red-500' : ''}
+                className={errors.city ? "border-red-500" : ""}
               />
               {errors.city && (
                 <p className="text-red-500 text-sm mt-1">{errors.city}</p>
@@ -460,18 +557,20 @@ const PublicEppInspection = () => {
           <Button
             type="button"
             variant="outline"
-            onClick={() => setFormData({
-              collaboratorName: '',
-              collaboratorLastName: '',
-              collaboratorNumDoc: '',
-              collaboratorTypeDoc: 'CC',
-              inspectorName: '',
-              inspectionDate: new Date(),
-              city: '',
-              regional: '',
-              position: '',
-              equipment: []
-            })}
+            onClick={() =>
+              setFormData({
+                collaboratorName: "",
+                collaboratorLastName: "",
+                collaboratorNumDoc: "",
+                collaboratorTypeDoc: "CC",
+                inspectorName: "",
+                inspectionDate: new Date(),
+                city: "",
+                regional: "",
+                position: "",
+                equipment: [],
+              })
+            }
           >
             Limpiar Formulario
           </Button>
