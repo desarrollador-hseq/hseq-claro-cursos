@@ -7,6 +7,7 @@ import { DashboardSidebar } from "./dashboard-sidebar";
 import { Button } from "@/components/ui/button";
 import { TitleApp } from "@/components/title-app";
 import { authOptions } from "@/lib/auth-options";
+import { ButtonLogout } from "@/components/button-logout";
 
 export const DashboardNavbar = async () => {
   const session = await getServerSession(authOptions);
@@ -40,12 +41,7 @@ export const DashboardNavbar = async () => {
             </div>
           )}
 
-          <Link href="/logout" className="w-fit h-full flex items-center">
-            <Button variant="ghost" className=" gap-2 bg-slate-500">
-              Salir
-              <LogOut className="h-4 w-4" />
-            </Button>
-          </Link>
+          <ButtonLogout />
         </div>
       </div>
     </div>

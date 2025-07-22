@@ -43,7 +43,7 @@ export const ButtonLogout = ({
   const onClickAcept = async () => {
     try {
       await signOut({
-        callbackUrl: "/auth/login",
+        callbackUrl: "/auth",
         redirect: true,
       });
     } catch (error) {
