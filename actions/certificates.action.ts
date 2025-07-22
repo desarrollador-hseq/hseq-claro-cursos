@@ -84,3 +84,19 @@ export const getCertificatesWithCourses = async () => {
         };
     }
 };
+
+
+export const getEppCertificationInspection = async (eppInspectionId: string) => {
+    try {
+        const eppInspection = await db.eppCertificationInspection.findUnique({
+            where: { id: eppInspectionId, status: "VALIDATED" },
+            include: {
+                inspectionDetails: true,
+            },
+        });
+        return eppInspection;
+    } catch (error) {
+        console.error(error);
+        return null;
+    }
+};

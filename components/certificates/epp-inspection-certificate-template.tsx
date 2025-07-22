@@ -1,224 +1,490 @@
-"use client"
+"use client";
+
+import { formatDate, formatDateCert } from "@/lib/utils";
+import {
+  EppCertificationInspection,
+  EppInspectionDetail,
+} from "@prisma/client";
+import {
+  Document,
+  Page,
+  Text,
+  StyleSheet,
+  View,
+  Font,
+} from "@react-pdf/renderer";
+
+Font.register({
+  family: "calibri",
+  fonts: [
+    {
+      src: "/font/calibrii.ttf",
+      fontStyle: "italic",
+    },
+    {
+      src: "/font/calibri.ttf",
+      fontWeight: 300,
+    },
+    {
+      src: "/font/calibri.ttf",
+      fontWeight: 400,
+    },
+    {
+      src: "/font/calibrib.ttf",
+      fontWeight: 500,
+    },
+    {
+      src: "/font/calibrib.ttf",
+      fontWeight: 600,
+    },
+    {
+      src: "/font/calibrib.ttf",
+      fontWeight: 700,
+    },
+  ],
+});
 
 interface EppInspectionCertificateProps {
-  certificateNumber?: string;
-  companyName?: string;
-  inspector?: string;
-  inspectionDate?: string;
-  elementType?: string;
-  color?: string;
-  manufacturer?: string;
-  reference?: string;
-  manufacturingDate?: string;
-  // Componentes de verificación
-  metallicBody?: string;
-  connectionRing?: string;
-  securityPins?: string;
-  structure?: string;
-  labels?: string;
-  improvementAspect?: string;
-  continuesInService?: boolean;
-  justification?: string;
-  inspectorSignature?: string;
-  photos?: string[];
+  eppInspection:
+    | (EppCertificationInspection & {
+        inspectionDetails: EppInspectionDetail[];
+      })
+    | null;
 }
 
 export const EppInspectionCertificateTemplate = ({
-  certificateNumber = "XXXXX",
-  companyName = "CONSTRUCRISMA S.A.S",
-  inspector = "",
-  inspectionDate = "8 DE MAYO 2025",
-  elementType = "ARRESTADOR",
-  color = "PLATEADO",
-  manufacturer = "YOKE",
-  reference = "YN 610 ADP / 16AUY",
-  manufacturingDate = "NO DESCRIBE",
-  metallicBody = "B",
-  connectionRing = "B",
-  securityPins = "B",
-  structure = "B",
-  labels = "B",
-  improvementAspect = "LIMPIEZA Y MANTENIMIENTO PREVENTIVO",
-  continuesInService = true,
-  justification = "Al momento de la Inspección visual el equipo NO presenta daño, cumpliendo las condiciones y características del fabricante.",
-  inspectorSignature = "",
-  photos = []
+  eppInspection,
 }: EppInspectionCertificateProps) => {
+  const inspectionDate = formatDate(eppInspection?.inspectionDate);
+  const eppType = eppInspection?.eppType || "-";
+  const eppName = eppInspection?.eppName || "-";
+  const eppSerialNumber = eppInspection?.eppSerialNumber || "-";
+  const eppBrand = eppInspection?.eppBrand || "-";
+  const eppModel = eppInspection?.eppModel || "-";
+  const manufacturingDate = formatDate(eppInspection?.manufacturingDate);
+  const validationNotes = eppInspection?.validationNotes || "";
+  const isSuitable = eppInspection?.isSuitable ? "SI" : "NO";
+
+  const inspectionSummary = eppInspection?.inspectionSummary as any;
+  const eppCategories = inspectionSummary?.categories || [];
+
+  // Extraer las categorías y respuestas desde el formato [{"Categoria": "Respuesta"}]
+  const categoryNames = eppCategories.map((cat: any) => Object.keys(cat)[0]);
+  const categoryAnswers = eppCategories.map(
+    (cat: any) => Object.values(cat)[0]
+  );
+
+  console.log({ eppCategories, eppInspection });
+
   return (
-    <div className="w-full max-w-4xl mx-auto bg-white p-6 font-sans text-xs">
-      {/* Header */}
-      <div className="border-2 border-black">
-        {/* Logo and Title Section */}
-        <div className="flex items-center justify-between p-4 border-b border-black">
-          <div className="flex items-center">
-            <div className="w-16 h-16 bg-orange-500 rounded mr-4 flex items-center justify-center">
-              <span className="text-white font-bold text-lg">HSEQ</span>
-            </div>
-          </div>
-          <div className="text-center flex-1">
-            <h1 className="text-lg font-bold text-red-600">HSEQ – CGIR S.A.S.</h1>
-            <h2 className="text-sm font-bold text-red-600">CONSULTORIA EN GESTION INTEGRAL DE RIESGOS</h2>
-          </div>
-        </div>
+    <Document style={{ height: "100%", width: "100%" }}>
+      <Page size="A4" style={styles.page} orientation="landscape">
+        {/* Main Container with Border */}
+        <View style={styles.mainContainer}>
+          {/* Header Section */}
+          <View style={styles.headerSection}>
+            {/* Logo and Title */}
+            <View style={styles.headerContent}>
+              <View style={styles.logoContainer}>
+                <View style={styles.logoBox}>
+                  <Text style={styles.logoText}>HSEQ</Text>
+                </View>
+              </View>
+              <View style={styles.titleContainer}>
+                <Text style={styles.mainTitle}>HSEQ – CGIR S.A.S.</Text>
+                <Text style={styles.subtitle}>
+                  CONSULTORIA EN GESTION INTEGRAL DE RIESGOS
+                </Text>
+              </View>
+            </View>
+          </View>
 
-        {/* Certificate Info Section */}
-        <div className="p-4">
-          <div className="flex justify-between items-start mb-4">
-            <div className="flex-1">
-              <div className="mb-2">
-                <span className="font-bold">CERTIFICADO</span>
-                <div className="ml-8">FOR-HSEQ-CGIR-155</div>
-              </div>
-              <div className="mb-2">
-                <span className="font-bold">Denominación:</span>
-                <div className="font-bold">Inspección de equipos y elementos para trabajo seguro en alturas</div>
-              </div>
-            </div>
-            <div className="text-right">
-              <div className="mb-1">Emisión: 08/11/2021</div>
-              <div className="mb-1">Versión: 01</div>
-              <div className="mb-1">Revisión:</div>
-              <div className="border border-black p-2 mt-2">
-                <div className="font-bold">CERTIFICADO No</div>
-                <div className="text-center font-bold text-lg">{certificateNumber}</div>
-              </div>
-            </div>
-          </div>
+          {/* Certificate Info Section */}
+          <View style={styles.contentSection}>
+            {/* Certificate Info Header */}
+            <View style={styles.infoHeader}>
+              <View style={styles.leftInfo}>
+                <View style={styles.infoRow}>
+                  <Text style={styles.boldText}>CERTIFICADO</Text>
+                  <Text style={styles.normalText}>FOR-HSEQ-CGIR-155</Text>
+                </View>
+                <View style={styles.infoRow}>
+                  <Text style={styles.boldText}>Denominación:</Text>
+                  <Text style={styles.boldText}>
+                    Inspección de equipos y elementos para trabajo seguro en
+                    alturas
+                  </Text>
+                </View>
+              </View>
+              <View style={styles.rightInfo}>
+                <Text style={styles.smallText}>Emisión: 08/11/2021</Text>
+                <Text style={styles.smallText}>Versión: 01</Text>
+                <Text style={styles.smallText}>Revisión:</Text>
+                <View style={styles.certificateNumberBox}>
+                  <Text style={styles.boldText}>CERTIFICADO No</Text>
+                  <Text style={styles.certificateNumber}>
+                    {eppInspection?.id}
+                  </Text>
+                </View>
+              </View>
+            </View>
 
-          {/* Company and Inspector Info */}
-          <div className="grid grid-cols-2 gap-4 mb-4">
-            <div>
-              <div className="flex items-center mb-2">
-                <span className="font-bold mr-2">EMPRESA USUARIA:</span>
-                <div className="border border-black px-2 py-1 flex-1 text-center font-bold">
-                  {companyName}
-                </div>
-              </div>
-              <div className="flex items-center">
-                <span className="font-bold mr-2">INSPECTOR ENCARGADO:</span>
-                <div className="border border-black px-2 py-1 flex-1">
-                  {inspector}
-                </div>
-              </div>
-            </div>
-            <div>
-              <div className="flex items-center">
-                <span className="font-bold mr-2">FECHA DE INSPECCIÓN:</span>
-                <div className="border border-black px-2 py-1 flex-1 text-center font-bold">
-                  {inspectionDate}
-                </div>
-              </div>
-              {/* Photos Section */}
-              <div className="mt-4">
-                <div className="font-bold text-center mb-2">Registros Fotográficos</div>
-                <div className="grid grid-cols-2 gap-2">
-                  {photos.length > 0 ? (
-                    photos.slice(0, 2).map((photo, index) => (
-                      <div key={index} className="border border-gray-300 h-20 bg-gray-100">
-                        <img src={photo} alt={`Foto ${index + 1}`} className="w-full h-full object-cover" />
-                      </div>
-                    ))
-                  ) : (
-                    <>
-                      <div className="border border-gray-300 h-20 bg-gray-100"></div>
-                      <div className="border border-gray-300 h-20 bg-gray-100"></div>
-                    </>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
+            {/* Company and Inspector Info */}
+            <View style={styles.companyInfo}>
+              <View style={styles.infoGrid}>
+                <View style={styles.gridLeft}>
+                  <View style={styles.fieldRow}>
+                    <Text style={styles.boldText}>EMPRESA USUARIA:</Text>
+                    <View style={styles.inputBox}>
+                      <Text style={styles.boldCenterText}>
+                        {eppInspection?.collaboratorName}
+                      </Text>
+                    </View>
+                  </View>
+                  <View style={styles.fieldRow}>
+                    <Text style={styles.boldText}>INSPECTOR ENCARGADO:</Text>
+                    <View style={styles.inputBox}>
+                      <Text style={styles.normalText}>
+                        {eppInspection?.inspectorName}
+                      </Text>
+                    </View>
+                  </View>
+                </View>
+                <View style={styles.gridRight}>
+                  <View style={styles.fieldRow}>
+                    <Text style={styles.boldText}>FECHA DE INSPECCIÓN:</Text>
+                    <View style={styles.inputBox}>
+                      <Text style={styles.boldCenterText}>
+                        {inspectionDate}
+                      </Text>
+                    </View>
+                  </View>
+                </View>
+              </View>
+            </View>
 
-          {/* Element Description */}
-          <div className="mb-4">
-            <h3 className="font-bold mb-2">1. DESCRIPCIÓN DEL ELEMENTO/EQUIPO</h3>
-            <table className="w-full border border-black">
-              <thead>
-                <tr className="bg-gray-200">
-                  <th className="border border-black p-2 text-xs">TIPO DE ELEMENTO</th>
-                  <th className="border border-black p-2 text-xs">COLOR</th>
-                  <th className="border border-black p-2 text-xs">FABRICANTE</th>
-                  <th className="border border-black p-2 text-xs">REFERENCIA/SERIAL</th>
-                  <th className="border border-black p-2 text-xs">FECHA MANUFACTURA</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td className="border border-black p-2 text-center font-bold">{elementType}</td>
-                  <td className="border border-black p-2 text-center">{color}</td>
-                  <td className="border border-black p-2 text-center font-bold">{manufacturer}</td>
-                  <td className="border border-black p-2 text-center">{reference}</td>
-                  <td className="border border-black p-2 text-center">{manufacturingDate}</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
+            {/* Element Description Table */}
+            <View style={styles.sectionContainer}>
+              <Text style={styles.sectionTitle}>
+                1. DESCRIPCIÓN DEL ELEMENTO/EQUIPO
+              </Text>
+              <View style={styles.table}>
+                {/* Table Header */}
+                <View style={styles.tableRow}>
+                  <View style={[styles.tableHeader, styles.column1]}>
+                    <Text style={styles.tableHeaderText}>TIPO DE ELEMENTO</Text>
+                  </View>
+                  <View style={[styles.tableHeader, styles.column2]}>
+                    <Text style={styles.tableHeaderText}>MARCA</Text>
+                  </View>
+                  <View style={[styles.tableHeader, styles.column2]}>
+                    <Text style={styles.tableHeaderText}>LOTE</Text>
+                  </View>
+                  <View style={[styles.tableHeader, styles.column2]}>
+                    <Text style={styles.tableHeaderText}>
+                      REFERENCIA/SERIAL
+                    </Text>
+                  </View>
+                  <View style={[styles.tableHeader, styles.column2]}>
+                    <Text style={styles.tableHeaderText}>
+                      FECHA MANUFACTURA
+                    </Text>
+                  </View>
+                </View>
+                {/* Table Content */}
+                <View style={styles.tableRow}>
+                  <View style={[styles.tableCell, styles.column1]}>
+                    <Text style={styles.tableCellBoldText}>{eppType}</Text>
+                  </View>
+                  <View style={[styles.tableCell, styles.column2]}>
+                    <Text style={styles.tableCellText}>{eppBrand}</Text>
+                  </View>
+                  <View style={[styles.tableCell, styles.column2]}>
+                    <Text style={styles.tableCellBoldText}>{eppModel}</Text>
+                  </View>
+                  <View style={[styles.tableCell, styles.column2]}>
+                    <Text style={styles.tableCellText}>{eppSerialNumber}</Text>
+                  </View>
+                  <View style={[styles.tableCell, styles.column2]}>
+                    <Text style={styles.tableCellText}>{manufacturingDate}</Text>
+                  </View>
+                </View>
+              </View>
+            </View>
 
-          {/* Component Verification */}
-          <div className="mb-4">
-            <h3 className="font-bold mb-2">2. VERIFICACIÓN DE LOS COMPONENTES DEL ELEMENTO/EQUIPO (B: Bueno, M: Malo, NA: No aplica)</h3>
-            <table className="w-full border border-black">
-              <thead>
-                <tr className="bg-gray-200">
-                  <th className="border border-black p-2 text-xs">Cuerpo metálico</th>
-                  <th className="border border-black p-2 text-xs">Argolla de conexión</th>
-                  <th className="border border-black p-2 text-xs">Seguros, tornillo, platina de seguridad</th>
-                  <th className="border border-black p-2 text-xs">Estructura, Platinas, resortes</th>
-                  <th className="border border-black p-2 text-xs">Etiquetas</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td className="border border-black p-2 text-center font-bold">{metallicBody}</td>
-                  <td className="border border-black p-2 text-center font-bold">{connectionRing}</td>
-                  <td className="border border-black p-2 text-center font-bold">{securityPins}</td>
-                  <td className="border border-black p-2 text-center font-bold">{structure}</td>
-                  <td className="border border-black p-2 text-center font-bold">{labels}</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
+            {/* Component Verification */}
+            <View style={styles.sectionContainer}>
+              <Text style={styles.sectionTitle}>
+                2. 2. VERIFICACIÓN DE LOS COMPONENTES DEL ELEMENTO/EQUIPO (B:
+                Bueno, M: Malo)
+              </Text>
+              <View style={styles.table}>
+                {/* Table Header */}
+                <View style={styles.tableRow}>
+                  {categoryNames?.map((category: string, index: number) => (
+                    <View
+                      key={index}
+                      style={[styles.tableHeader, styles.column1]}
+                    >
+                      <Text style={styles.tableHeaderText}>{category}</Text>
+                    </View>
+                  ))}
+                </View>
+                {/* Table Content */}
+                <View style={styles.tableRow}>
+                  {categoryAnswers?.map((response: any, index: number) => (
+                    <View
+                      key={index}
+                      style={[styles.tableCell, styles.column1]}
+                    >
+                      <Text style={styles.tableCellBoldText}>{response}</Text>
+                    </View>
+                  ))}
+                </View>
+              </View>
+            </View>
 
-          {/* Improvement Aspect */}
-          <div className="mb-4">
-            <h3 className="font-bold mb-2">3. ASPECTO POR MEJORAR</h3>
-            <div className="border border-black p-2 min-h-[40px]">
-              {improvementAspect}
-            </div>
-          </div>
+            {/* Improvement Aspect */}
+            <View style={styles.sectionContainer}>
+              <Text style={styles.sectionTitle}>3. ASPECTO POR MEJORAR</Text>
+              <View style={styles.textBox}>
+                <Text style={styles.normalText}>
+                  {eppInspection?.observations}
+                </Text>
+              </View>
+            </View>
 
-          {/* Determination */}
-          <div className="mb-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="font-bold mb-2">4. DETERMINACIÓN</h3>
-                <div className="flex items-center">
-                  <span className="font-bold mr-4">CONTINUA EN SERVICIO:</span>
-                  <div className="border border-black px-4 py-1">
-                    <span className="font-bold">{continuesInService ? "SI" : "NO"}</span>
-                  </div>
-                </div>
-              </div>
-              <div className="text-center">
-                <div className="font-bold mb-2">FIRMA DEL INSPECTOR CERTIFICADO:</div>
-                <div className="border-b border-black w-48 h-12 flex items-end justify-center">
-                  {inspectorSignature && (
-                    <span className="text-xs">{inspectorSignature}</span>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
+            {/* Determination */}
+            <View style={styles.sectionContainer}>
+              <View style={styles.determinationRow}>
+                <View style={styles.determinationLeft}>
+                  <Text style={styles.sectionTitle}>4. DETERMINACIÓN</Text>
+                  <View style={styles.determinationField}>
+                    <Text style={styles.boldText}>CONTINUA EN SERVICIO:</Text>
+                    <View style={styles.determinationBox}>
+                      <Text style={styles.boldText}>{isSuitable}</Text>
+                    </View>
+                  </View>
+                </View>
+              </View>
+            </View>
 
-          {/* Justification */}
-          <div className="mb-4">
-            <div className="border border-black p-2">
-              <div className="font-bold mb-1">JUSTIFICACIÓN:</div>
-              <div>{justification}</div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+            {/* Justification */}
+            <View style={styles.sectionContainer}>
+              <View style={styles.justificationBox}>
+                <Text style={styles.boldText}>JUSTIFICACIÓN:</Text>
+                <Text style={styles.normalText}>{validationNotes}</Text>
+              </View>
+            </View>
+          </View>
+        </View>
+      </Page>
+    </Document>
   );
 };
+
+const styles = StyleSheet.create({
+  page: {
+    fontFamily: "calibri",
+    backgroundColor: "#fff",
+    padding: 15,
+    fontSize: 10,
+  },
+  mainContainer: {
+    border: "2px solid black",
+    width: "100%",
+    height: "100%",
+  },
+  headerSection: {
+    borderBottom: "1px solid black",
+    padding: 10,
+  },
+  headerContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  logoContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  logoBox: {
+    width: 50,
+    height: 50,
+    backgroundColor: "#f97316",
+    borderRadius: 4,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 10,
+  },
+  logoText: {
+    color: "white",
+    fontWeight: 700,
+    fontSize: 14,
+  },
+  titleContainer: {
+    flex: 1,
+    alignItems: "center",
+  },
+  mainTitle: {
+    fontSize: 14,
+    fontWeight: 700,
+    color: "#dc2626",
+    textAlign: "center",
+  },
+  subtitle: {
+    fontSize: 11,
+    fontWeight: 700,
+    color: "#dc2626",
+    textAlign: "center",
+  },
+  contentSection: {
+    padding: 10,
+    flex: 1,
+  },
+  infoHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 10,
+  },
+  leftInfo: {
+    flex: 1,
+  },
+  rightInfo: {
+    alignItems: "flex-end",
+  },
+  infoRow: {
+    marginBottom: 5,
+  },
+  boldText: {
+    fontWeight: 700,
+    fontSize: 10,
+  },
+  normalText: {
+    fontWeight: 400,
+    fontSize: 10,
+  },
+  smallText: {
+    fontSize: 9,
+    marginBottom: 2,
+  },
+  certificateNumberBox: {
+    border: "1px solid black",
+    padding: 5,
+    marginTop: 5,
+    alignItems: "center",
+    minWidth: 80,
+  },
+  certificateNumber: {
+    textAlign: "center",
+    fontWeight: 700,
+    fontSize: 12,
+  },
+  companyInfo: {
+    marginBottom: 10,
+  },
+  infoGrid: {
+    flexDirection: "row",
+    gap: 10,
+  },
+  gridLeft: {
+    flex: 1,
+  },
+  gridRight: {
+    flex: 1,
+  },
+  fieldRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 5,
+  },
+  inputBox: {
+    border: "1px solid black",
+    padding: 3,
+    marginLeft: 5,
+    flex: 1,
+    minHeight: 15,
+    justifyContent: "center",
+  },
+  boldCenterText: {
+    fontWeight: 700,
+    textAlign: "center",
+    fontSize: 10,
+  },
+  sectionContainer: {
+    marginBottom: 10,
+  },
+  sectionTitle: {
+    fontWeight: 700,
+    marginBottom: 5,
+    fontSize: 10,
+  },
+  table: {
+    width: "100%",
+    border: "1px solid black",
+  },
+  tableRow: {
+    flexDirection: "row",
+  },
+  tableHeader: {
+    backgroundColor: "#e5e7eb",
+    border: "1px solid black",
+    padding: 5,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  tableCell: {
+    border: "1px solid black",
+    padding: 5,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  column1: {
+    flex: 1.2,
+  },
+  column2: {
+    flex: 1,
+  },
+  tableHeaderText: {
+    fontSize: 9,
+    fontWeight: 700,
+    textAlign: "center",
+  },
+  tableCellText: {
+    fontSize: 9,
+    textAlign: "center",
+  },
+  tableCellBoldText: {
+    fontSize: 9,
+    fontWeight: 700,
+    textAlign: "center",
+  },
+  textBox: {
+    border: "1px solid black",
+    padding: 5,
+    minHeight: 30,
+  },
+  determinationRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+  determinationLeft: {
+    flex: 1,
+  },
+  determinationField: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 5,
+  },
+  determinationBox: {
+    border: "1px solid black",
+    padding: 5,
+    marginLeft: 10,
+    minWidth: 30,
+    alignItems: "center",
+  },
+  justificationBox: {
+    border: "1px solid black",
+    padding: 5,
+  },
+});

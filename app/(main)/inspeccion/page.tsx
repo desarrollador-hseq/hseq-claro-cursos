@@ -2,7 +2,13 @@
 
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -14,6 +20,9 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import LogoClaro from "@/public/logo-claro.png";
+import LogoGrupoHseq from "@/public/logo-grupohseq.png";
+import Image from "next/image";
 import {
   CalendarIcon,
   Save,
@@ -21,6 +30,8 @@ import {
   Trash2,
   CheckCircle,
   AlertCircle,
+  Info,
+  FileText,
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -32,8 +43,11 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { EppInspectionSection } from "./_components/epp-inspection-section";
+import { InspectionSummaryModal } from "./_components/epp-inspection-section";
 import TitlePage from "@/components/title-page";
 import axios from "axios";
+import { FaCalendarCheck, FaHelmetSafety, FaUser } from "react-icons/fa6";
+import { Banner } from "@/components/ui/banner";
 
 // Tipos de EPP disponibles
 const EPP_TYPES = [
@@ -55,7 +69,7 @@ interface EppEquipment {
   brand: string;
   model: string;
   serialNumber: string;
-  manufactureDate?: Date;
+  manufacturingDate?: Date;
   isSuitable: boolean;
   observations: string;
   inspectionAnswers: Record<string, any>;
@@ -79,7 +93,7 @@ interface InspectionForm {
   equipment: EppEquipment[];
 }
 
-const PublicEppInspection = () => {
+export default function InspectionPage() {
   const [formData, setFormData] = useState<InspectionForm>({
     collaboratorName: "",
     collaboratorLastName: "",
@@ -93,8 +107,9 @@ const PublicEppInspection = () => {
     equipment: [],
   });
 
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showSummaryModal, setShowSummaryModal] = useState(false); // Estado para el modal
   const [regionals, setRegionals] = useState<
     Array<{ id: string; name: string }>
   >([]);
@@ -136,6 +151,7 @@ const PublicEppInspection = () => {
       brand: "",
       model: "",
       serialNumber: "",
+      manufacturingDate: undefined, // Inicializar fecha de fabricación como undefined
       isSuitable: true, // Por defecto APTO, el usuario puede cambiarlo
       observations: "",
       inspectionAnswers: {},
@@ -169,7 +185,7 @@ const PublicEppInspection = () => {
   };
 
   // Validar formulario
-  const validateForm = (): boolean => {
+  const validateForm = async (): Promise<boolean> => {
     const newErrors: Record<string, string> = {};
 
     // Validar información del colaborador
@@ -199,7 +215,8 @@ const PublicEppInspection = () => {
       newErrors.equipment = "Debe agregar al menos un equipo";
     }
 
-    formData.equipment.forEach((eq, index) => {
+    // Validar cada equipo
+    for (const eq of formData.equipment) {
       if (!eq.eppType) {
         newErrors[`equipment_${eq.id}_type`] = "Tipo de EPP es requerido";
       }
@@ -209,22 +226,74 @@ const PublicEppInspection = () => {
       if (!eq.serialNumber.trim()) {
         newErrors[`equipment_${eq.id}_serial`] = "Número de serie es requerido";
       }
-    });
+
+      // Validar que todas las preguntas de inspección estén respondidas
+      if (eq.eppType) {
+        try {
+          // Obtener preguntas reales desde la API
+          const response = await axios.get(`/api/epp-questions?eppType=${encodeURIComponent(eq.eppType)}`);
+          const questions = response.data.questions || [];
+          
+          if (questions.length === 0) {
+            newErrors[`equipment_${eq.id}_questions`] = "No se pudieron cargar las preguntas para este tipo de EPP";
+            continue;
+          }
+
+          const answeredQuestions = questions.filter((q: any) => 
+            eq.inspectionAnswers?.[q.questionCode] && 
+            eq.inspectionAnswers[q.questionCode].trim() !== ""
+          );
+
+          if (answeredQuestions.length < questions.length) {
+            newErrors[`equipment_${eq.id}_questions`] = 
+              `Debe responder todas las preguntas de inspección (${answeredQuestions.length}/${questions.length})`;
+          }
+
+          // Validar cada pregunta individual
+          questions.forEach((question: any) => {
+            if (!eq.inspectionAnswers?.[question.questionCode] || 
+                eq.inspectionAnswers[question.questionCode].trim() === "") {
+              newErrors[`equipment_${eq.id}_question_${question.questionCode}`] = 
+                `Pregunta es obligatoria`;
+            }
+          });
+
+        } catch (error) {
+          console.error("Error validando preguntas:", error);
+          newErrors[`equipment_${eq.id}_questions`] = "Error al validar las preguntas de inspección";
+        }
+      }
+    }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  // Enviar formulario
-  const handleSubmit = async () => {
-    if (!validateForm()) {
+  // Función para abrir el modal de resumen
+  const handleShowSummary = async () => {
+    const isValid = await validateForm();
+    if (!isValid) {
       toast.error("Por favor corrija los errores en el formulario");
       return;
     }
+    setShowSummaryModal(true);
+  };
 
+  // Función para confirmar y enviar el formulario desde el modal
+  const handleConfirmSubmit = async () => {
     setIsSubmitting(true);
 
     try {
+      // Debug: Log data being sent to API
+      console.log("Data being sent to API:", {
+        ...formData,
+        equipment: formData.equipment.map((eq) => ({
+          ...eq,
+          manufacturingDate:
+            eq.manufacturingDate?.toISOString() || "No date set",
+        })),
+      });
+
       const response = await axios.post(
         "/api/epp-inspections/create",
         formData
@@ -238,7 +307,8 @@ const PublicEppInspection = () => {
 
       toast.success("Inspección guardada exitosamente");
 
-      // Limpiar formulario
+      // Cerrar modal y limpiar formulario
+      setShowSummaryModal(false);
       setFormData({
         collaboratorName: "",
         collaboratorLastName: "",
@@ -265,19 +335,60 @@ const PublicEppInspection = () => {
     }
   };
 
+  // Modificar handleSubmit original (mantener por compatibilidad pero no usar)
+  const handleSubmit = async () => {
+    handleShowSummary(); // Redirigir al modal de resumen
+  };
+
   return (
-    <div className="container mx-auto py-6 px-4 max-w-4xl bg-primary">
-      <TitlePage
-        title="Formulario de Inspección EPP"
-        description="Complete la información del colaborador y registre la inspección de equipos de protección personal"
+    <div className="container mx-auto py-2 px-1 lg:px-4 max-w-6xl bg-primary my-1 rounded-lg">
+      <div className="flex justify-between gap-2">
+        <div className="h-10 flex justify-start items-center">
+          <Image
+            priority
+            src={LogoClaro}
+            alt="logo de Claro"
+            height={40}
+            width={70}
+          />
+          {/* <LogoClaro goRoot className="flex" /> */}
+        </div>
+        <div className="h-8 flex">
+          <Image
+            priority
+            src={LogoGrupoHseq}
+            alt="logo de Grupo HSEQ"
+            height={20}
+            width={70}
+          />
+          {/* <LogoClaro goRoot className="flex" /> */}
+        </div>
+      </div>
+      <Card className="mb-2 bg-primary border-none py-0">
+        <CardHeader className="py-2 px-4">
+          <CardTitle className="text-white font-bold text-2xl text-center">
+            Formulario de Inspección EPP
+          </CardTitle>
+          <CardDescription className="text-slate-100 mt-2 text-center">
+            Complete la información del colaborador y registre la inspección de
+            equipos de protección personal
+          </CardDescription>
+        </CardHeader>
+      </Card>
+
+      <Banner
+        icon={Info}
+        className="mb-3 rounded-md"
+        variant="info"
+        label="Registra hasta 6 equipos de protección personal asignados al mismo tiempo."
       />
 
       <div className="space-y-6">
         {/* Información del Colaborador */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <CheckCircle className="h-5 w-5 text-blue-600" />
+            <CardTitle className="flex items-center gap-2 text-primary">
+              <FaUser className="h-5 w-5" />
               Información del Colaborador
             </CardTitle>
           </CardHeader>
@@ -397,8 +508,8 @@ const PublicEppInspection = () => {
         {/* Información de la Inspección */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <AlertCircle className="h-5 w-5 text-orange-600" />
+            <CardTitle className="flex items-center gap-2 text-primary">
+              <FaCalendarCheck className="h-5 w-5" />
               Información de la Inspección
             </CardTitle>
           </CardHeader>
@@ -442,6 +553,7 @@ const PublicEppInspection = () => {
                   <PopoverContent className="w-auto p-0">
                     <Calendar
                       mode="single"
+                      locale={es}
                       selected={formData.inspectionDate}
                       onSelect={(date) =>
                         date &&
@@ -450,7 +562,6 @@ const PublicEppInspection = () => {
                           inspectionDate: date,
                         }))
                       }
-                      initialFocus
                     />
                   </PopoverContent>
                 </Popover>
@@ -511,11 +622,9 @@ const PublicEppInspection = () => {
         {/* Equipos EPP */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center justify-between">
+            <CardTitle className="flex items-center justify-between text-primary">
               <div className="flex items-center gap-2">
-                <div className="p-2 bg-emerald-100 rounded-lg">
-                  <AlertCircle className="h-5 w-5 text-emerald-600" />
-                </div>
+                <FaHelmetSafety className="h-5 w-5" />
                 Equipos de Protección Personal
               </div>
               <Badge variant="outline">
@@ -553,7 +662,7 @@ const PublicEppInspection = () => {
         </Card>
 
         {/* Botones de Acción */}
-        <div className="flex justify-end gap-4">
+        <div className="flex justify-between gap-4 w-full">
           <Button
             type="button"
             variant="outline"
@@ -577,8 +686,9 @@ const PublicEppInspection = () => {
 
           <Button
             onClick={handleSubmit}
-            disabled={isSubmitting}
+            disabled={isSubmitting || formData.equipment.length === 0}
             className="min-w-[140px]"
+            variant="secondary"
           >
             {isSubmitting ? (
               <div className="flex items-center gap-2">
@@ -587,15 +697,23 @@ const PublicEppInspection = () => {
               </div>
             ) : (
               <div className="flex items-center gap-2">
-                <Save className="h-4 w-4" />
-                Guardar Inspección
+                <FileText className="h-4 w-4" />
+                Revisar y Guardar{" "}
+                {formData.equipment.length > 1 ? "Inspecciones" : "Inspección"}
               </div>
             )}
           </Button>
         </div>
       </div>
+
+      {/* Modal de Resumen */}
+      <InspectionSummaryModal
+        isOpen={showSummaryModal}
+        onClose={() => setShowSummaryModal(false)}
+        onConfirm={handleConfirmSubmit}
+        formData={formData}
+        isSubmitting={isSubmitting}
+      />
     </div>
   );
-};
-
-export default PublicEppInspection;
+}

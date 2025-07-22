@@ -540,6 +540,7 @@ model EppCertificationInspection {
   eppSerialNumber String
   eppBrand        String
   eppModel        String
+  manufacturingDate DateTime?
 
   inspectorName String
 

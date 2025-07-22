@@ -33,6 +33,7 @@ import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import axios from "axios";
 import TitlePage from "@/components/title-page";
+import ShowEppInspectionCertificate from "@/components/certificates/show-epp-inspection-certificate";
 
 interface InspectionResponse {
   answer: string;
@@ -112,6 +113,9 @@ function EditEppInspectionPage() {
   >("PENDING");
   const [validationNotes, setValidationNotes] = useState("");
   const [updatingStatus, setUpdatingStatus] = useState(false);
+  const [categoriesEvaluation, setCategoriesEvaluation] = useState<
+    Record<string, string>
+  >({});
 
   const eppInspectionId = params.eppInspectionId as string;
 
@@ -128,6 +132,36 @@ function EditEppInspectionPage() {
         setInspection(detail.data);
         setNewStatus(detail.data?.status);
         setValidationNotes(detail.data?.validationNotes || "");
+
+        // Inicializar categorías: cargar existentes o crear con "B" por defecto
+        if (
+          detail.data?.inspectionSummary?.categories &&
+          detail.data.inspectionSummary.categories.length > 0
+        ) {
+          // Cargar categorías ya evaluadas
+          const existingCategories =
+            detail.data.inspectionSummary.categories.reduce(
+              (acc: Record<string, string>, catObj: any) => {
+                const [category, value] = Object.entries(catObj)[0];
+                acc[category] = value as string;
+                return acc;
+              },
+              {}
+            );
+          setCategoriesEvaluation(existingCategories);
+        } else if (detail.data?.inspectionSummary?.responses) {
+          // Crear categorías nuevas con valor "B" por defecto
+          const categories = detail.data.inspectionSummary.responses.reduce(
+            (acc: Record<string, string>, response: any) => {
+              if (response.category) {
+                acc[response.category] = "B"; // Valor por defecto "Bueno"
+              }
+              return acc;
+            },
+            {}
+          );
+          setCategoriesEvaluation(categories);
+        }
 
         console.log({ detail });
       } catch (error) {
@@ -150,7 +184,26 @@ function EditEppInspectionPage() {
 
     setUpdatingStatus(true);
     try {
-      await updateInspectionStatus(inspection.id, newStatus, validationNotes);
+      // Crear el array de categorías en el formato requerido
+      const categoriesArray = Object.entries(categoriesEvaluation).map(
+        ([category, value]) => ({
+          [category]: value,
+        })
+      );
+
+      // Llamar directamente a la API para incluir las categorías
+      const response = await axios.patch(
+        `/api/epp-inspections/${inspection.id}/status`,
+        {
+          status: newStatus,
+          validationNotes: validationNotes,
+          categories: categoriesArray,
+        }
+      );
+
+      if (!response.data.success) {
+        throw new Error(response.data.error || "Error al actualizar el estado");
+      }
 
       // Actualizar el estado local
       setInspection((prev) =>
@@ -292,8 +345,64 @@ function EditEppInspectionPage() {
           </CardContent>
         </Card>
 
+        {/* Fechas de Inspección */}
+        <Card className="">
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <FileText className="w-5 h-5 mr-2" />
+              Fechas y Registro
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label className="text-sm font-medium text-gray-600">
+                  Fecha de Inspección
+                </Label>
+                <p className="font-medium">
+                  {format(new Date(inspection.inspectionDate), "dd/MM/yyyy", {
+                    locale: es,
+                  })}
+                </p>
+              </div>
+              <div>
+                <Label className="text-sm font-medium text-gray-600">
+                  Fecha de Certificación
+                </Label>
+                <p className="font-medium">
+                  {format(
+                    new Date(inspection.certificationDate),
+                    "dd/MM/yyyy",
+                    { locale: es }
+                  )}
+                </p>
+              </div>
+              <div>
+                <Label className="text-sm font-medium text-gray-600">
+                  Creado
+                </Label>
+                <p className="font-medium">
+                  {format(new Date(inspection.createdAt), "dd/MM/yyyy HH:mm", {
+                    locale: es,
+                  })}
+                </p>
+              </div>
+              <div>
+                <Label className="text-sm font-medium text-gray-600">
+                  Última Actualización
+                </Label>
+                <p className="font-medium">
+                  {format(new Date(inspection.updatedAt), "dd/MM/yyyy HH:mm", {
+                    locale: es,
+                  })}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Información del Equipo */}
-        <Card>
+        <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle className="flex items-center">
               <HardHat className="w-5 h-5 mr-2" />
@@ -359,143 +468,6 @@ function EditEppInspectionPage() {
                 </Badge>
               </div>
             </div>
-          </CardContent>
-        </Card>
-
-        {/* Fechas de Inspección */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <FileText className="w-5 h-5 mr-2" />
-              Fechas y Registro
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label className="text-sm font-medium text-gray-600">
-                  Fecha de Inspección
-                </Label>
-                <p className="font-medium">
-                  {format(new Date(inspection.inspectionDate), "dd/MM/yyyy", {
-                    locale: es,
-                  })}
-                </p>
-              </div>
-              <div>
-                <Label className="text-sm font-medium text-gray-600">
-                  Fecha de Certificación
-                </Label>
-                <p className="font-medium">
-                  {format(
-                    new Date(inspection.certificationDate),
-                    "dd/MM/yyyy",
-                    { locale: es }
-                  )}
-                </p>
-              </div>
-              <div>
-                <Label className="text-sm font-medium text-gray-600">
-                  Creado
-                </Label>
-                <p className="font-medium">
-                  {format(new Date(inspection.createdAt), "dd/MM/yyyy HH:mm", {
-                    locale: es,
-                  })}
-                </p>
-              </div>
-              <div>
-                <Label className="text-sm font-medium text-gray-600">
-                  Última Actualización
-                </Label>
-                <p className="font-medium">
-                  {format(new Date(inspection.updatedAt), "dd/MM/yyyy HH:mm", {
-                    locale: es,
-                  })}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Gestión de Estado */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <Eye className="w-5 h-5 mr-2" />
-              Gestión de Estado
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <Label htmlFor="status">Estado de la Inspección</Label>
-              <Select
-                value={newStatus}
-                onValueChange={(value: any) => setNewStatus(value)}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="PENDING">
-                    <div className="flex items-center">
-                      <Clock className="w-4 h-4 mr-2 text-yellow-600" />
-                      Pendiente
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="VALIDATED">
-                    <div className="flex items-center">
-                      <CheckCircle className="w-4 h-4 mr-2 text-green-600" />
-                      Validado
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="CANCELED">
-                    <div className="flex items-center">
-                      <XCircle className="w-4 h-4 mr-2 text-red-600" />
-                      Cancelado
-                    </div>
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <Label htmlFor="validationNotes">Notas de Validación</Label>
-              <Textarea
-                id="validationNotes"
-                value={validationNotes}
-                onChange={(e) => setValidationNotes(e.target.value)}
-                placeholder="Agregar comentarios sobre la validación..."
-                className="min-h-[80px]"
-              />
-            </div>
-
-            {inspection.validatedBy && (
-              <div className="p-3 bg-gray-50 rounded-lg">
-                <Label className="text-sm font-medium text-gray-600">
-                  Validado por
-                </Label>
-                <p className="font-medium">{inspection.validatedBy}</p>
-                {inspection.validatedAt && (
-                  <p className="text-sm text-gray-600">
-                    {format(
-                      new Date(inspection.validatedAt),
-                      "dd/MM/yyyy HH:mm",
-                      { locale: es }
-                    )}
-                  </p>
-                )}
-              </div>
-            )}
-
-            <Button
-              onClick={handleStatusUpdate}
-              disabled={updatingStatus || newStatus === inspection.status}
-              className="w-full"
-            >
-              <Save className="w-4 h-4 mr-2" />
-              {updatingStatus ? "Actualizando..." : "Actualizar Estado"}
-            </Button>
           </CardContent>
         </Card>
       </div>
@@ -564,6 +536,156 @@ function EditEppInspectionPage() {
             </p>
           </CardContent>
         </Card>
+      )}
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {/* Evaluación de Categorías */}
+        <Card className="lg:col-span-2">
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <CheckCircle className="w-5 h-5 mr-2" />
+              Evaluación de Categorías
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-sm text-gray-600 mb-4">
+              Seleccione la evaluación para cada categoría antes de cambiar el
+              estado de la inspección.
+            </p>
+            {Object.keys(categoriesEvaluation).length > 0 ? (
+              <div className="grid gap-4">
+                {Object.entries(categoriesEvaluation).map(
+                  ([category, value]) => (
+                    <div
+                      key={category}
+                      className="flex items-center justify-between p-3 border rounded-lg"
+                    >
+                      <Label className="font-medium text-gray-700 flex-1">
+                        {category}
+                      </Label>
+                      <Select
+                        value={value}
+                        onValueChange={(newValue) =>
+                          setCategoriesEvaluation((prev) => ({
+                            ...prev,
+                            [category]: newValue,
+                          }))
+                        }
+                      >
+                        <SelectTrigger className="w-20">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="B">
+                            <div className="flex items-center">
+                              <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
+                              B - Bueno
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="M">
+                            <div className="flex items-center">
+                              <div className="w-2 h-2 bg-red-500 rounded-full mr-2"></div>
+                              M - Malo
+                            </div>
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )
+                )}
+              </div>
+            ) : (
+              <p className="text-gray-500 text-center py-4">
+                No hay categorías disponibles para evaluar
+              </p>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Gestión de Estado */}
+        <Card className="lg:col-span-2">
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <Eye className="w-5 h-5 mr-2" />
+              Gestión de Estado
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <Label htmlFor="status">Estado de la Inspección</Label>
+              <Select
+                value={newStatus}
+                onValueChange={(value: any) => setNewStatus(value)}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="PENDING">
+                    <div className="flex items-center">
+                      <Clock className="w-4 h-4 mr-2 text-yellow-600" />
+                      Pendiente
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="VALIDATED">
+                    <div className="flex items-center">
+                      <CheckCircle className="w-4 h-4 mr-2 text-green-600" />
+                      Validado
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="CANCELED">
+                    <div className="flex items-center">
+                      <XCircle className="w-4 h-4 mr-2 text-red-600" />
+                      Cancelado
+                    </div>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label htmlFor="validationNotes">Notas de Validación (Justificación)</Label>
+              <Textarea
+                id="validationNotes"
+                value={validationNotes}
+                onChange={(e) => setValidationNotes(e.target.value)}
+                placeholder="Agregar comentarios sobre la validación..."
+                className="min-h-[80px]"
+              />
+            </div>
+
+            {inspection.validatedBy && (
+              <div className="p-3 bg-gray-50 rounded-lg">
+                <Label className="text-sm font-medium text-gray-600">
+                  Validado por
+                </Label>
+                <p className="font-medium">{inspection.validatedBy}</p>
+                {inspection.validatedAt && (
+                  <p className="text-sm text-gray-600">
+                    {format(
+                      new Date(inspection.validatedAt),
+                      "dd/MM/yyyy HH:mm",
+                      { locale: es }
+                    )}
+                  </p>
+                )}
+              </div>
+            )}
+
+            <Button
+              onClick={handleStatusUpdate}
+              disabled={updatingStatus || newStatus === inspection.status}
+              className="w-full"
+            >
+              <Save className="w-4 h-4 mr-2" />
+              {updatingStatus ? "Actualizando..." : "Actualizar Estado"}
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+
+      {inspection.status === "VALIDATED" && (
+        <ShowEppInspectionCertificate eppInspectionId={eppInspectionId} />
       )}
     </div>
   );

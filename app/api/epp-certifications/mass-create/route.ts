@@ -27,6 +27,7 @@ interface InspectionData {
   eppBrand: string;
   eppModel: string;
   eppSerialNumber: string;
+  manufacturingDate?: string | Date; // Agregar fecha de fabricación
   isSuitable: boolean;
   observations: string;
   inspectionDate: string | Date;
@@ -140,7 +141,7 @@ interface ProcessResult {
 // Función para procesar respuestas del Excel a formato estructurado
 async function processInspectionAnswers(rawData: any, eppType: string, tx: any): Promise<any[]> {
   const answers: any[] = [];
-  
+
   // Obtener preguntas desde la base de datos para este tipo de EPP
   const questions = await tx.eppInspectionQuestion.findMany({
     where: {
@@ -157,20 +158,20 @@ async function processInspectionAnswers(rawData: any, eppType: string, tx: any):
   // Crear mapas para búsqueda eficiente
   const questionByCode = new Map(questions.map((q: any) => [q.questionCode, q]));
   const questionByText = new Map(questions.map((q: any) => [q.questionText.toLowerCase(), q]));
-  
+
   // Función para encontrar la pregunta más cercana basada en el nombre de columna
   function findMatchingQuestion(columnName: string) {
     // 1. Buscar coincidencia exacta por código
     if (questionByCode.has(columnName)) {
       return questionByCode.get(columnName);
     }
-    
+
     // 2. Buscar coincidencia exacta por texto (case insensitive)
     const normalizedColumn = columnName.toLowerCase();
     if (questionByText.has(normalizedColumn)) {
       return questionByText.get(normalizedColumn);
     }
-    
+
     // 3. Buscar coincidencia parcial en el texto de la pregunta
     for (const question of questions) {
       const questionTextLower = question.questionText.toLowerCase();
@@ -178,7 +179,7 @@ async function processInspectionAnswers(rawData: any, eppType: string, tx: any):
         return question;
       }
     }
-    
+
     // 4. Mapeo manual para casos específicos conocidos del Excel
     const manualMappings: Record<string, string> = {
       'quemaduras': 'quemaduras',
@@ -198,31 +199,31 @@ async function processInspectionAnswers(rawData: any, eppType: string, tx: any):
       'conexión adecuada': 'conexion_adecuada_argollas',
       'seguros adecuados': 'seguros_adecuados'
     };
-    
+
     for (const [pattern, code] of Object.entries(manualMappings)) {
       if (normalizedColumn.includes(pattern.toLowerCase())) {
         return questionByCode.get(code);
       }
     }
-    
+
     return null;
   }
-  
+
   // Procesar todas las propiedades del rawData que contengan respuestas
   Object.entries(rawData).forEach(([key, value]) => {
-    if (value !== undefined && value !== null && value !== "" && 
-        !['ID', 'Hora de inicio', 'Hora de finalización', 'Correo electrónico', 'Nombre', 'Hora de la última modificación', 
-          'Fecha', 'Nombre del inspector asignado (Entrenador que se encuentra desarrollando la formación)', 'Nombre2', 
-          'Apellidos', 'Cargo', 'Ciudad', 'Regional', 'Marca', 'Lote', 'Serial', 'Fecha de fabricación',
-          'Marca2', 'Lote2', 'Serial2', 'Fecha de fabricación2', 'Marca3', 'Lote3', 'Serial3', 'Fecha de fabricación3',
-          'Marca4', 'Lote4', 'Serial4', 'Fecha de fabricación4', 'Marca5', 'Lote5', 'Serial5', 'Fecha de fabricación5',
-          'Marca6', 'Lote6', 'Serial6', 'Fecha de fabricación6', 'Estado del equipo', 'Estado del equipo2', 
-          'Estado del equipo3', 'Estado del equipo4', 'Estado del equipo5', 'Estado del equipo6',
-          'Motivo del Rechazo', 'Motivo del Rechazo2', 'Motivo del Rechazo3', 'Motivo del Rechazo4',
-          'Motivo del Rechazo5', 'Motivo del Rechazo6'].includes(key)) {
-      
+    if (value !== undefined && value !== null && value !== "" &&
+      !['ID', 'Hora de inicio', 'Hora de finalización', 'Correo electrónico', 'Nombre', 'Hora de la última modificación',
+        'Fecha', 'Nombre del inspector asignado (Entrenador que se encuentra desarrollando la formación)', 'Nombre2',
+        'Apellidos', 'Cargo', 'Ciudad', 'Regional', 'Marca', 'Lote', 'Serial', 'Fecha de fabricación',
+        'Marca2', 'Lote2', 'Serial2', 'Fecha de fabricación2', 'Marca3', 'Lote3', 'Serial3', 'Fecha de fabricación3',
+        'Marca4', 'Lote4', 'Serial4', 'Fecha de fabricación4', 'Marca5', 'Lote5', 'Serial5', 'Fecha de fabricación5',
+        'Marca6', 'Lote6', 'Serial6', 'Fecha de fabricación6', 'Estado del equipo', 'Estado del equipo2',
+        'Estado del equipo3', 'Estado del equipo4', 'Estado del equipo5', 'Estado del equipo6',
+        'Motivo del Rechazo', 'Motivo del Rechazo2', 'Motivo del Rechazo3', 'Motivo del Rechazo4',
+        'Motivo del Rechazo5', 'Motivo del Rechazo6'].includes(key)) {
+
       const matchedQuestion = findMatchingQuestion(key);
-      
+
       answers.push({
         answer: normalizeAnswer(value),
         questionText: matchedQuestion?.questionText || key, // Usar texto de BD o nombre de columna como fallback
@@ -231,7 +232,7 @@ async function processInspectionAnswers(rawData: any, eppType: string, tx: any):
       });
     }
   });
-  
+
   return answers;
 }
 
@@ -256,7 +257,7 @@ function normalizeAnswer(rawAnswer: any): string {
 export async function POST(req: Request) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session) {
       return new NextResponse("Unauthorized", { status: 401 });
     }
@@ -282,7 +283,7 @@ export async function POST(req: Request) {
           // Validaciones previas...
           const eppType = inspectionData.eppType as EppType;
           const docType = inspectionData.collaboratorTypeDoc as DocType;
-          
+
           // Validar coach
           const coach = await tx.coach.findFirst({
             where: {
@@ -304,7 +305,7 @@ export async function POST(req: Request) {
           if (!regional) {
             throw new Error(`Regional "${inspectionData.regional}" no encontrada`);
           }
-          
+
           // Buscar ciudad
           const city = await tx.city.findFirst({
             where: {
@@ -338,6 +339,7 @@ export async function POST(req: Request) {
               eppSerialNumber: inspectionData.eppSerialNumber,
               eppBrand: inspectionData.eppBrand,
               eppModel: inspectionData.eppModel || "",
+              manufacturingDate: inspectionData.manufacturingDate ? new Date(inspectionData.manufacturingDate) : null, // Guardar fecha de fabricación
               inspectorName: coach.fullname,
               isSuitable: inspectionData.isSuitable,
               status: 'PENDING', // Initial status
@@ -350,7 +352,7 @@ export async function POST(req: Request) {
                 answeredQuestions: Object.values(inspectionData.inspectionDetails || {}).filter(a => a).length,
                 overallStatus: inspectionData.isSuitable ? 'apto' : 'no_apto',
                 // Respuestas completas con metadatos desde Excel
-                responses: inspectionData.inspectionDetails ? 
+                responses: inspectionData.inspectionDetails ?
                   await processInspectionAnswers(inspectionData.inspectionDetails, eppType, tx) : []
               }
             }

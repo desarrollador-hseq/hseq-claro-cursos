@@ -13,6 +13,7 @@ enum EppInspectionStatus {
 interface UpdateStatusRequest {
   status: 'PENDING' | 'VALIDATED' | 'CANCELED';
   validationNotes?: string;
+  categories?: Array<Record<string, string>>;
 }
 
 export async function PATCH(
@@ -38,15 +39,17 @@ export async function PATCH(
       );
     }
 
-    // Verificar que la inspección existe
+    // Verificar que la inspección existe y obtener detalles de inspección
     const existingInspection = await db.eppCertificationInspection.findUnique({
       where: { id: inspectionId },
-      select: { 
-        id: true, 
-        status: true,
-        collaboratorName: true,
-        eppName: true,
-        eppSerialNumber: true
+      include: {
+        inspectionDetails: {
+          select: {
+            category: true,
+            answer: true,
+            questionText: true
+          }
+        }
       }
     });
 
@@ -57,6 +60,33 @@ export async function PATCH(
       );
     }
 
+    // Usar las categorías enviadas desde el frontend o generar automáticamente como fallback
+    let inspectionCategories: Array<Record<string, string>> = [];
+    
+    if (body.categories && body.categories.length > 0) {
+      // Usar las categorías enviadas desde el frontend
+      inspectionCategories = body.categories;
+    } else {
+      // Fallback: generar automáticamente desde inspectionDetails
+      const categoriesMap: Record<string, string> = {};
+      existingInspection.inspectionDetails.forEach(detail => {
+        if (detail.category) {
+          categoriesMap[detail.category] = detail.answer;
+        }
+      });
+
+      inspectionCategories = Object.keys(categoriesMap).length > 0 
+        ? Object.entries(categoriesMap).map(([category, answer]) => ({ [category]: answer }))
+        : [];
+    }
+
+    // Obtener el inspectionSummary actual y agregar las categorías
+    const currentSummary = existingInspection.inspectionSummary as any || {};
+    const updatedSummary = {
+      ...currentSummary,
+      categories: inspectionCategories
+    };
+
     // Actualizar estado de la inspección
     const updatedInspection = await db.eppCertificationInspection.update({
       where: { id: inspectionId },
@@ -64,7 +94,8 @@ export async function PATCH(
         status: body.status,
         validatedBy: session.user?.email || session.user?.name || "Usuario desconocido",
         validatedAt: new Date(),
-        validationNotes: body.validationNotes || null
+        validationNotes: body.validationNotes || null,
+        inspectionSummary: updatedSummary
       },
       select: {
         id: true,

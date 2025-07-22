@@ -21,6 +21,7 @@ interface EppEquipment {
   brand: string;
   model: string;
   serialNumber: string;
+  manufacturingDate?: Date; // Agregar fecha de fabricación
   isSuitable: boolean;
   observations: string;
   inspectionAnswers: Record<string, any>;
@@ -33,6 +34,7 @@ interface InspectionFormData {
   collaboratorTypeDoc: string;
   inspectorName: string;
   inspectionDate: Date;
+
   city: string;
   regional: string;
   position: string;
@@ -42,7 +44,7 @@ interface InspectionFormData {
 export async function POST(req: Request) {
   try {
     // const session = await getServerSession(authOptions);
-    
+
     // if (!session) {
     //   return new NextResponse("Unauthorized", { status: 401 });
     // }
@@ -85,25 +87,25 @@ export async function POST(req: Request) {
           if (!regional) {
             throw new Error(`Regional "${formData.regional}" no encontrada`);
           }
-          
-          // Buscar ciudad en la regional correspondiente
-          const city = await tx.city.findFirst({
-            where: {
-              AND: [
-                {
-                  OR: [
-                    { formated: { contains: formData.city } },
-                    { realName: { contains: formData.city } }
-                  ]
-                },
-                { regionalId: regional.id }
-              ]
-            }
-          });
 
-          if (!city) {
-            throw new Error(`Ciudad "${formData.city}" no encontrada en la regional "${formData.regional}"`);
-          }
+          // Buscar ciudad en la regional correspondiente
+          // const city = await tx.city.findFirst({
+          //   where: {
+          //     AND: [
+          //       {
+          //         OR: [
+          //           { formated: { contains: formData.city } },
+          //           { realName: { contains: formData.city } }
+          //         ]
+          //       },
+          //       { regionalId: regional.id }
+          //     ]
+          //   }
+          // });
+
+          // if (!city) {
+          //   throw new Error(`Ciudad "${formData.city}" no encontrada en la regional "${formData.regional}"`);
+          // }
 
           // Validar tipo de EPP
           const eppType = equipment.eppType as EppType;
@@ -132,7 +134,7 @@ export async function POST(req: Request) {
 
           // Crear mapa de preguntas para lookup rápido
           const questionMap = new Map(
-            questions.map(q => [q.questionCode, q])
+            questions.map((q: any) => [q.questionCode, q])
           );
 
           // Crear registro principal de inspección
@@ -143,19 +145,20 @@ export async function POST(req: Request) {
               collaboratorName: `${formData.collaboratorName} ${formData.collaboratorLastName}`.trim(),
               collaboratorNumDoc: formData.collaboratorNumDoc || "",
               collaboratorTypeDoc: docType,
-              collaboratorCityName: city.realName,
+              collaboratorCityName: formData.city,
               eppType: eppType,
               eppName: equipment.eppName,
               eppSerialNumber: equipment.serialNumber,
               eppBrand: equipment.brand,
               eppModel: equipment.model || "",
-              inspectorName: formData.inspectorName,
+              manufacturingDate: equipment.manufacturingDate ? new Date(equipment.manufacturingDate) : null, // Guardar fecha de fabricación
               // inspectorName: coach.fullname,
+              inspectorName: formData.inspectorName,
               isSuitable: equipment.isSuitable,
               status: 'PENDING', // Initial status
               observations: equipment.observations || null,
               regionalId: regional.id,
-              cityName: city.realName,
+              cityName: formData.city,
               // Resumen JSON con todas las respuestas y metadatos
               inspectionSummary: {
                 totalQuestions: Object.keys(equipment.inspectionAnswers || {}).length,
@@ -172,8 +175,22 @@ export async function POST(req: Request) {
                       questionText: questionData?.questionText || questionCode,
                       category: questionData?.category || 'General'
                     };
-                  })
-              }
+                  }),
+
+                categories: (() => {
+                  const categoriesMap: Record<string, string> = {};
+                  Object.entries(equipment.inspectionAnswers || {}).forEach(([questionCode, answer]) => {
+                    const questionData = questionMap.get(questionCode);
+                    const category = questionData?.category || 'General';
+                    if (!categoriesMap[category]) {
+                      categoriesMap[category] = "B"; // Valor por defecto "Bueno"
+                    }
+                  });
+                  return Object.entries(categoriesMap).map(([category, value]) => ({
+                    [category]: value
+                  }));
+                })()
+              },
             }
           });
 
