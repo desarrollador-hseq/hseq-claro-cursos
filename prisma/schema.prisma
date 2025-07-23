@@ -176,34 +176,6 @@ enum DocumentStatus {
   MISSING // Faltante
 }
 
-model CourseLevel {
-  id String @id @default(uuid())
-
-  name String?
-
-  courseId String
-  course   Course @relation(fields: [courseId], references: [id])
-
-  hours Int?
-
-  requiredDocuments RequiredDocument[]
-
-  certificates      Certificate[]
-  cetarCertificates CetarCertificate[]
-
-  // Relación con programaciones
-  trainingCollaborators TrainingCollaborator[]
-
-  monthsToExpire Int? @default(0)
-
-  active Boolean @default(true)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([courseId])
-}
-
 model Cetar {
   id String @id @default(uuid())
 
@@ -238,6 +210,36 @@ model Course {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model CourseLevel {
+  id String @id @default(uuid())
+
+  name String?
+
+  courseId String
+  course   Course @relation(fields: [courseId], references: [id])
+
+  hours Int?
+
+  requiredDocuments RequiredDocument[]
+
+  certificates      Certificate[]
+  cetarCertificates CetarCertificate[]
+
+  trainings Training[]
+
+  // Relación con programaciones
+  trainingCollaborators TrainingCollaborator[]
+
+  monthsToExpire Int? @default(0)
+
+  active Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([courseId])
 }
 
 model Coach {
@@ -444,6 +446,9 @@ model Training {
   coachId String?
   coach   Coach?  @relation(fields: [coachId], references: [id])
 
+  courseLevelId String
+  courseLevel   CourseLevel @relation(fields: [courseLevelId], references: [id])
+
   cetarId String?
   cetar   Cetar?  @relation(fields: [cetarId], references: [id])
 
@@ -460,6 +465,7 @@ model Training {
   updatedAt DateTime @updatedAt
 
   @@index([courseId])
+  @@index([courseLevelId])
   @@index([coachId])
   @@index([cetarId])
   @@index([status])
@@ -535,11 +541,11 @@ model EppCertificationInspection {
   collaboratorCityName String
 
   // Equipo
-  eppType         EppType
-  eppName         String
-  eppSerialNumber String
-  eppBrand        String
-  eppModel        String
+  eppType           EppType
+  eppName           String
+  eppSerialNumber   String
+  eppBrand          String
+  eppModel          String
   manufacturingDate DateTime?
 
   inspectorName String
@@ -550,8 +556,8 @@ model EppCertificationInspection {
   status EppInspectionStatus @default(PENDING)
 
   // Usuario que validó/canceló la inspección
-  validatedBy String?
-  validatedAt DateTime?
+  validatedBy     String?
+  validatedAt     DateTime?
   validationNotes String?
 
   // Observaciones generales
@@ -564,6 +570,10 @@ model EppCertificationInspection {
   regional   Regional? @relation(fields: [regionalId], references: [id])
 
   cityName String
+
+  // Campos para agrupar inspecciones de la misma sesión
+  sessionId     String?
+  equipmentIndex Int?
 
   // Relación con detalles de inspección
   inspectionDetails EppInspectionDetail[]
@@ -578,81 +588,83 @@ model EppCertificationInspection {
   @@index([status])
   @@index([validatedBy])
   @@index([status, validatedAt])
+  @@index([sessionId])
+  @@index([sessionId, equipmentIndex])
 }
 
 model EppInspectionDetail {
   id String @id @default(uuid())
-  
+
   inspectionId String
   inspection   EppCertificationInspection @relation(fields: [inspectionId], references: [id], onDelete: Cascade)
-  
+
   // Código de la pregunta (ej: "quemaduras", "decoloracion")
   questionCode String
-  
+
   // Texto completo de la pregunta
   questionText String
-  
+
   // Respuesta (Si/No/N/A/Valor específico)
   answer String
-  
+
   // Severidad o nivel (1-5, null si no aplica)
   severity Int?
-  
+
   // Notas específicas de esta pregunta
   notes String?
-  
+
   // Categoría de la pregunta
   category String? // "visual", "funcional", "estructural", "seguridad"
-  
+
   // Si esta pregunta afecta la aptitud del equipo
   affectsSuitability Boolean @default(false)
-  
+
   createdAt DateTime @default(now())
-  
+
+  @@unique([inspectionId, questionCode])
   @@index([inspectionId])
   @@index([questionCode])
   @@index([category])
   @@index([affectsSuitability])
-  @@unique([inspectionId, questionCode])
 }
 
 // Plantilla de preguntas por tipo de EPP
 model EppInspectionQuestion {
   id String @id @default(uuid())
-  
+
   // Tipo de EPP al que aplica
   eppType EppType
-  
+
   // Código único de la pregunta
   questionCode String
-  
+
   // Texto de la pregunta
   questionText String
-  
+
   // Si es obligatoria responder
   isRequired Boolean @default(true)
-  
+
   // Orden de presentación
   displayOrder Int
-  
+
   // Categoría de la pregunta
   category String
-  
+
   // Tipo de respuesta esperada
   answerType EppAnswerType @default(YES_NO)
-  
+
   // Si una respuesta negativa afecta la aptitud
   affectsSuitability Boolean @default(false)
-  
+
   // Texto de ayuda
   helpText String?
-  
+
   // Si está activa
   active Boolean @default(true)
-  
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  
+
   @@unique([eppType, questionCode])
   @@index([eppType])
   @@index([category])
@@ -669,16 +681,16 @@ enum EppType {
 }
 
 enum EppInspectionStatus {
-  PENDING     // Recently created, pending validation
-  VALIDATED   // Validated and approved
-  CANCELED    // Canceled or rejected
+  PENDING // Recently created, pending validation
+  VALIDATED // Validated and approved
+  CANCELED // Canceled or rejected
 }
 
 enum EppAnswerType {
-  YES_NO          // Si/No
-  YES_NO_NA       // Si/No/N/A
-  NUMERIC         // Valor numérico
-  TEXT            // Texto libre
-  SCALE_1_5       // Escala 1-5
+  YES_NO // Si/No
+  YES_NO_NA // Si/No/N/A
+  NUMERIC // Valor numérico
+  TEXT // Texto libre
+  SCALE_1_5 // Escala 1-5
   MULTIPLE_CHOICE // Opción múltiple
 }

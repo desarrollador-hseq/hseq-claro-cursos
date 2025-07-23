@@ -83,9 +83,9 @@ export const MassCertificationButton = ({
     }
   });
 
-  const alreadyCertified = trainingCollaborators.filter(
-    (tc) => tc.certificateIssued
-  ).length;
+  // const alreadyCertified = trainingCollaborators.filter(
+  //   (tc) => tc.certificateIssued
+  // ).length;
   const pendingDocuments = trainingCollaborators.filter((tc) => {
     const requiredDocsCount = tc.courseLevel.requiredDocuments.length;
     const approvedDocsCount = tc.documents.filter(
@@ -106,24 +106,24 @@ export const MassCertificationButton = ({
   ).length;
 
   const handleMassCertification = async () => {
-    if (pendingDocuments > 0) {
-      toast.error(
-        `Hay ${pendingDocuments} colaboradores con documentos pendientes, por favor revise los documentos de los colaboradores`
-      );
-      return;
-    }
-    if (noScore > 0) {
-      toast.error(
-        `Hay ${noScore} colaboradores sin nota asignada, por favor califique a todos los colaboradores`
-      );
-      return;
-    }
-    if (insufficientScore > 0) {
-      toast.error(
-        `Hay ${insufficientScore} colaboradores con nota insuficiente (menor a ${threshold}%), por favor verifique las notas`
-      );
-      return;
-    }
+    // if (pendingDocuments > 0) {
+    //   toast.error(
+    //     `Hay ${pendingDocuments} colaboradores con documentos pendientes, por favor revise los documentos de los colaboradores`
+    //   );
+    //   return;
+    // }
+    // if (noScore > 0) {
+    //   toast.error(
+    //     `Hay ${noScore} colaboradores sin nota asignada, por favor califique a todos los colaboradores`
+    //   );
+    //   return;
+    // }
+    // if (insufficientScore > 0) {
+    //   toast.error(
+    //     `Hay ${insufficientScore} colaboradores con nota insuficiente (menor a ${threshold}%), por favor verifique las notas`
+    //   );
+    //   return;
+    // }
     if (eligibleCollaborators.length === 0) {
       toast.error("No hay colaboradores elegibles para certificar");
       return;
@@ -192,7 +192,7 @@ export const MassCertificationButton = ({
                 : "bg-green-700 hover:bg-green-800"
             } text-white relative`}
             size="lg"
-            disabled={hasDisabled}
+            // disabled={hasDisabled}
           >
             <Award className="h-5 w-5 mr-2" />
             Certificar Colaboradores
@@ -380,9 +380,10 @@ export const MassCertificationButton = ({
               <LoadingButton
                 onClick={handleMassCertification}
                 loading={isProcessing}
-                disabled={hasDisabled}
+                // disabled={hasDisabled}
+                disabled={eligibleCollaborators.length === 0}
                 className={`${
-                  hasDisabled
+                  eligibleCollaborators.length === 0
                     ? "bg-gray-400 cursor-not-allowed hover:bg-gray-400"
                     : "bg-green-600 hover:bg-green-700"
                 }`}

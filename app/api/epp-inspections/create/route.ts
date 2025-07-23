@@ -39,6 +39,8 @@ interface InspectionFormData {
   regional: string;
   position: string;
   equipment: EppEquipment[];
+  sessionId?: string; // ID de sesión para agrupar inspecciones
+  equipmentIndex?: number; // Índice del equipo en la sesión
 }
 
 export async function POST(req: Request) {
@@ -159,6 +161,8 @@ export async function POST(req: Request) {
               observations: equipment.observations || null,
               regionalId: regional.id,
               cityName: formData.city,
+              sessionId: formData.sessionId || null, // ID de sesión para agrupar inspecciones
+              equipmentIndex: formData.equipmentIndex || null, // Índice del equipo en la sesión
               // Resumen JSON con todas las respuestas y metadatos
               inspectionSummary: {
                 totalQuestions: Object.keys(equipment.inspectionAnswers || {}).length,

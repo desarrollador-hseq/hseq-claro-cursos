@@ -7,7 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { date, z } from "zod";
 import axios from "axios";
 import { toast } from "sonner";
-import {  Users, User, CalendarIcon } from "lucide-react";
+import { Users, User, CalendarIcon } from "lucide-react";
 import {
   Course,
   CourseLevel,
@@ -49,7 +49,11 @@ import { cn } from "@/lib/utils";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { addDays, format } from "date-fns";
 import { DateRange } from "react-day-picker";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { es } from "date-fns/locale";
 import { Calendar } from "@/components/ui/calendar";
 
@@ -68,6 +72,7 @@ interface CreateTrainingFormProps {
 const formSchema = z
   .object({
     courseId: z.string().min(1, "Debe seleccionar un curso"),
+    courseLevelId: z.string().min(1, "Debe seleccionar un nivel"),
     startDate: z.date().or(z.string()),
     endDate: z.date().or(z.string()),
     location: z.string().optional(),
@@ -107,7 +112,7 @@ export const CreateTrainingForm = ({
   );
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
-    from: new Date(),
+    from: undefined,
     to: undefined,
   });
 
@@ -115,7 +120,8 @@ export const CreateTrainingForm = ({
     resolver: zodResolver(formSchema),
     defaultValues: {
       courseId: "",
-      startDate: new Date(),
+      courseLevelId: "",
+      startDate: undefined,
       endDate: undefined,
       location: "",
       coachId: "",
@@ -140,19 +146,15 @@ export const CreateTrainingForm = ({
   }, [watch, courses]);
 
   useEffect(() => {
-  
     if (dateRange?.from !== undefined && dateRange.to !== undefined) {
       setValue("startDate", dateRange.from!, { shouldValidate: true });
       setValue("endDate", dateRange.to!, { shouldValidate: true });
     }
   }, [calendarOpen, setDateRange, dateRange?.from, dateRange?.to, setValue]);
 
-
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
       const currentValues = form.getValues();
-
-
 
       const body = {
         ...currentValues,
@@ -216,7 +218,6 @@ export const CreateTrainingForm = ({
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
                   <Calendar
-                    initialFocus
                     mode="range"
                     defaultMonth={new Date()}
                     selected={dateRange}
@@ -289,88 +290,91 @@ export const CreateTrainingForm = ({
               </FormItem>
             )}
           />
-          {/* Curso */}
-          <FormField
-            control={form.control}
-            name="courseId"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel className="flex items-center gap-2 font-semibold">
-                  <FaChalkboardUser className="h-4 w-4" />
-                  Curso
-                </FormLabel>
-                <Select
-                  onValueChange={(value) => {
-                    field.onChange(value);
-                  }}
-                  defaultValue={field.value}
-                >
-                  <FormControl>
-                    <SelectTrigger className="transition-all focus:ring-2 focus:ring-blue-500">
-                      <SelectValue placeholder="Selecciona un curso" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {courses.map((course) => (
-                      <SelectItem key={course.id} value={course.id}>
-                        <div className="flex flex-col">
-                          <span className="font-medium">{course.name}</span>
-                          {course.shortName && (
-                            <span className="text-sm text-gray-500">
-                              {course.shortName}
-                            </span>
-                          )}
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
+          <div className="grid gap-6 md:grid-cols-2">
+            {/* Curso */}
+            <FormField
+              control={form.control}
+              name="courseId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="flex items-center gap-2 font-semibold">
+                    <FaChalkboardUser className="h-4 w-4" />
+                    Curso
+                  </FormLabel>
+                  <Select
+                    onValueChange={(value) => {
+                      field.onChange(value);
+                      // Limpiar el nivel seleccionado si cambia el curso
+                      setValue("courseLevelId", "");
+                    }}
+                    defaultValue={field.value}
+                  >
+                    <FormControl>
+                      <SelectTrigger className="transition-all focus:ring-2 focus:ring-blue-500">
+                        <SelectValue placeholder="Selecciona un curso" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {courses.map((course) => (
+                        <SelectItem key={course.id} value={course.id}>
+                          <div className="flex flex-col">
+                            <span className="font-medium">{course.name}</span>
+                            {course.shortName && (
+                              <span className="text-sm text-gray-500">
+                                {course.shortName}
+                              </span>
+                            )}
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            {/* Nivel del curso */}
+            {selectedCourse && (
+              <FormField
+                control={form.control}
+                name="courseLevelId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="flex items-center gap-2 font-semibold">
+                      Nivel del Curso
+                    </FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      value={field.value}
+                      disabled={!selectedCourse}
+                    >
+                      <FormControl>
+                        <SelectTrigger className="transition-all focus:ring-2 focus:ring-blue-500">
+                          <SelectValue placeholder="Selecciona un nivel" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {selectedCourse.courseLevels.map((level) => (
+                          <SelectItem key={level.id} value={level.id}>
+                            <div className="flex flex-col">
+                              <span className="font-medium">{level.name}</span>
+                              <span className="text-xs text-gray-500">
+                                {level.hours} horas •{" "}
+                                {level.requiredDocuments.length} doc. requeridos
+                              </span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             )}
-          />
+          </div>
 
           {/* Mostrar niveles del curso seleccionado */}
-          {!watch("byCetar") && selectedCourse && (
-            <Card className="border-yellow-200 bg-yellow-50/50 p-1 rounded-md">
-              <CardHeader className="p-1">
-                <CardTitle className="text-yellow-900 text-lg flex items-center gap-x-2">
-                  <FaChalkboardUser className="h-4 w-4" /> Niveles Disponibles:{" "}
-                  {selectedCourse.name}
-                </CardTitle>
-                <CardDescription className="text-yellow-700">
-                  Los colaboradores podrán inscribirse en cualquiera de estos
-                  niveles
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="p-1">
-                <div className="grid gap-1 md:grid-cols-2 lg:grid-cols-3">
-                  {selectedCourse.courseLevels.map((level) => (
-                    <div
-                      key={level.id}
-                      className="flex items-center justify-between p-1 border rounded-lg bg-white"
-                    >
-                      <div className="p-1">
-                        <p className="font-medium text-gray-900 text-sm">
-                          {level.name}
-                        </p>
-                        <p className="text-xs text-gray-600">
-                          {level.hours} horas • {level.requiredDocuments.length}{" "}
-                          doc. requeridos
-                        </p>
-                      </div>
-                      <Badge
-                        variant="secondary"
-                        className="bg-yellow-100 text-yellow-800 h-6 w-6"
-                      >
-                        {level.requiredDocuments.length}
-                      </Badge>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
         </div>
 
         {/* <Separator /> */}

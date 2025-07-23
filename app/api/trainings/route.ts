@@ -81,11 +81,15 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { courseId, startDate, endDate, location, instructor, coachId, maxCapacity, byCetar } = body;
+    const { courseId, courseLevelId, startDate, endDate, location, instructor, coachId, maxCapacity, byCetar } = body;
 
     if (!courseId) {
       console.log("Missing courseId");
       return new NextResponse("Missing courseId", { status: 400 });
+    }
+    if (!courseLevelId) {
+      console.log("Missing courseLevelId");
+      return new NextResponse("Missing courseLevelId", { status: 400 });
     }
 
     if (!startDate) {
@@ -105,6 +109,7 @@ export async function POST(req: NextRequest) {
       data: {
         code,
         courseId,
+        courseLevelId,
         startDate,
         endDate,
         location,

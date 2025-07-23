@@ -14,7 +14,7 @@ export async function GET(req: Request) {
     const { searchParams } = new URL(req.url);
     const status = searchParams.get('status');
     const page = parseInt(searchParams.get('page') || '1');
-    const limit = parseInt(searchParams.get('limit') || '20');
+    const limit = parseInt(searchParams.get('limit') || '10');
     const search = searchParams.get('search');
     const eppType = searchParams.get('eppType');
     const isSuitable = searchParams.get('isSuitable');
@@ -66,6 +66,8 @@ export async function GET(req: Request) {
         eppBrand: true,
         inspectorName: true,
         isSuitable: true,
+        sessionId: true,
+        equipmentIndex: true,
         validatedBy: true,
         validatedAt: true,
         validationNotes: true,

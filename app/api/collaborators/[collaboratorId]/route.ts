@@ -29,7 +29,7 @@ export async function PATCH(req: Request, { params }: { params: { collaboratorId
                 });
 
                 if (duplicateDoc) {
-                    return new NextResponse("Número de documento ya registrado", { status: 400 });
+                    return new NextResponse("there is already a collaborator with this document", { status: 400 });
                 }
             }
         }

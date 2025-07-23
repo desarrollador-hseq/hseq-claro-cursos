@@ -9,7 +9,6 @@ import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import * as z from "zod";
 
-
 import {
   Form,
   FormControl,
@@ -49,7 +48,10 @@ const formSchema = z.object({
   numDoc: z.string().min(1, {
     message: "Número de documento requerido",
   }),
-  email: z.string().email({ message: "Correo electrónico inválido" }).optional(),
+  email: z
+    .string()
+    .email({ message: "Correo electrónico inválido" })
+    .optional(),
   cityId: z.string().min(1, "Seleccione una ciudad"),
   docType: z.string().min(1, "Seleccione un tipo de documento"),
   // evaluationPass: z.boolean().default(false),
@@ -117,27 +119,17 @@ export const CreateCollaboratorForm = ({
       }
       // router.push(`/admin/colaboradores`);
       router.refresh();
-    } catch (error) {
-      if (axios.isAxiosError(error)) {
-        const serverResponse = error.response;
-        if (serverResponse && serverResponse.status === 400) {
-          const errorMessage = serverResponse.data;
-          if (
-            typeof errorMessage === "string" &&
-            errorMessage.includes("Número de documento ya registrado")
-          ) {
-            setError("numDoc", {
-              type: "manual",
-              message: "Número de documento ya registrado",
-            });
-          } else {
-            toast.error(errorMessage);
-          }
-        } else {
-          toast.error("Ocurrió un error inesperado");
-        }
+    } catch (error: any) {
+      
+      const errorMessage = error.response.data;
+      console.log({ error, errorMessage });
+      if (errorMessage.includes("collaborator with this document")) {
+        setError("numDoc", {
+          type: "manual",
+          message: "Número de documento ya registrado",
+        }, {shouldFocus: true});
+        toast.error("Ocurrió un error, revise el número de documento");
       } else {
-        console.error(error);
         toast.error("Ocurrió un error inesperado");
       }
     }
@@ -214,6 +206,7 @@ export const CreateCollaboratorForm = ({
                   label="Identificación"
                   typeFieldName="docType"
                   numberFieldName="numDoc"
+                  externalError={form.formState.errors.numDoc?.message}
                 />
               </div>
 

@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
+  CardDescription,
   CardFooter,
   CardHeader,
   CardTitle,
@@ -69,6 +70,7 @@ interface TrainingCollaboratorsListProps {
 interface trainingInterface extends Training {
   trainingCollaborators: TrainingCollaboratorWithRelations[];
   course: Course;
+  courseLevel: (CourseLevel & { requiredDocuments: RequiredDocument[] }) | null;
 }
 
 interface TrainingCollaboratorWithRelations extends TrainingCollaborator {
@@ -95,6 +97,7 @@ export const TrainingCollaboratorsList = ({
   const [selectedCertificateId, setSelectedCertificateId] = useState<
     string | null
   >(null);
+  const [isCloseModal, setIsCloseModal] = useState(true);
 
   const getStatusBadge = (status: string) => {
     const statusConfig = {
@@ -285,14 +288,16 @@ export const TrainingCollaboratorsList = ({
             <p className="text-xs">
               Agrega colaboradores usando el panel de la derecha
             </p> */}
-            <AddCollaboratorForm
-              trainingId={training.id}
-              course={training.course}
-              availableCollaborators={availableCollaborators}
-              maxCapacity={training.maxCapacity}
-              currentCount={totalCollaborators}
-              byCetar={training.byCetar}
-            />
+            {training.courseLevel && (
+              <AddCollaboratorForm
+                trainingId={training.id}
+                course={training.course}
+                courseLevel={training.courseLevel}
+                maxCapacity={training.maxCapacity}
+                currentCount={totalCollaborators}
+                byCetar={training.byCetar}
+              />
+            )}
           </div>
         </CardContent>
       </Card>
@@ -308,6 +313,9 @@ export const TrainingCollaboratorsList = ({
               <User className="h-5 w-5" />
               Colaboradores Inscritos ({training.trainingCollaborators.length})
             </CardTitle>
+            <CardDescription className="text-base text-secondary font-semibold">
+              Nivel: {training.courseLevel?.name}
+            </CardDescription>
             {/* <TrainingResume
               trainingCollaborators={training.trainingCollaborators}
               threshold={threshold}
@@ -316,25 +324,34 @@ export const TrainingCollaboratorsList = ({
 
           <div className="flex flex-col items-end gap-2 h-full">
             <SimpleModal
-              title="Agregar colaborador"
-              desc="Agregar un colaborador a la capacitación"
-              btnDisabled={isDisabled || training.status === "COMPLETED"}
-              textBtn={
-                <span className="flex items-center gap-2">
-                  <PlusCircle className="h-6 w-6" /> Agregar colaborador
-                </span>
-              }
+              title="Agregar Colaboradores"
+              desc="Selecciona colaboradores para agregar a la capacitación"
+              btnDisabled={isDisabled}
+              textBtn="Agregar Colaboradores"
+              large
+              contentClass="min-h-[400px]"
+              btnClass="justify-self-end align-self-end align-end"
+              // onClose={() => setIsCloseModal(true)}
+              close={isCloseModal}
+              onClose={() => setIsCloseModal(true)}
             >
-              <AddCollaboratorForm
-                trainingId={training.id}
-                course={training.course}
-                availableCollaborators={availableCollaborators}
-                maxCapacity={training.maxCapacity}
-                currentCount={totalCollaborators}
-                byCetar={training.byCetar}
-              />
+          
+              {training.courseLevel && (
+                <AddCollaboratorForm
+                  trainingId={training.id}
+                  course={training.course}
+                  courseLevel={training.courseLevel as CourseLevel & { requiredDocuments: RequiredDocument[] }}
+                  maxCapacity={training.maxCapacity}
+                  currentCount={totalCollaborators}
+                  byCetar={training.byCetar}
+                  currentCollaborators={training.trainingCollaborators.map((tc) => tc.collaborator as Collaborator)}
+                  onSubmitted={() => {
+                      setIsCloseModal(false);
+                  }}
+                />
+              )}
             </SimpleModal>
-            {/* Botón de certificación masiva */}
+         
           </div>
         </CardHeader>
         <CardContent>
@@ -389,7 +406,7 @@ export const TrainingCollaboratorsList = ({
 
                     <div className="flex items-center gap-4 flex-wrap">
                       {/* Nivel del curso */}
-                      <div
+                      {/* <div
                         className={`flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 `}
                       >
                         <div className="flex flex-col">
@@ -399,9 +416,9 @@ export const TrainingCollaboratorsList = ({
                           <span className="text-sm font-semibold text-slate-700">
                             {tc.courseLevel.name}
                           </span>
-                        </div>
+                        </div> */}
 
-                        <Button
+                      {/* <Button
                           variant="ghost"
                           size="sm"
                           onClick={() => handleChangeLevel(tc)}
@@ -414,8 +431,8 @@ export const TrainingCollaboratorsList = ({
                           }
                         >
                           <ArrowUpDown className="h-4 w-4" />
-                        </Button>
-                      </div>
+                        </Button> */}
+                      {/* </div> */}
 
                       {/* Estado de documentos */}
                       {!training.byCetar && (
@@ -575,22 +592,25 @@ export const TrainingCollaboratorsList = ({
                               )} */}
                               </span>
                               {tc.certificateIssued && (
-                               <SimpleModal
-                               title="Ver certificado"
-                               desc="Ver el certificado del colaborador"
-                               btnDisabled={isDisabled || training.status === "COMPLETED"}
-                               textBtn={
-                                <span className="flex items-center gap-2">
-                                  <Award className="h-6 w-6" /> Ver certificado
-                                </span>
-                               }
-                               >
-                                <ShowCertificate
-                                
-                                  courseLevelId={tc.courseLevel.id}
-                                  collaboratorId={tc.collaborator.id}
-                                />
-                               </SimpleModal>
+                                <SimpleModal
+                                  title="Ver certificado"
+                                  desc="Ver el certificado del colaborador"
+                                  btnDisabled={
+                                    isDisabled ||
+                                    training.status === "COMPLETED"
+                                  }
+                                  textBtn={
+                                    <span className="flex items-center gap-2">
+                                      <Award className="h-6 w-6" /> Ver
+                                      certificado
+                                    </span>
+                                  }
+                                >
+                                  <ShowCertificate
+                                    courseLevelId={tc.courseLevel.id}
+                                    collaboratorId={tc.collaborator.id}
+                                  />
+                                </SimpleModal>
                               )}
                             </div>
                           </div>

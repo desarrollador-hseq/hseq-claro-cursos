@@ -2,7 +2,24 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import axios from "axios";
+import { format } from "date-fns";
+import { es } from "date-fns/locale";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -14,31 +31,47 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  Plus,
+  Eye,
   Search,
   Filter,
-  Eye,
-  FileUp,
-  AlertTriangle,
+  ChevronDown,
+  ChevronRight,
+  Users,
+  Calendar,
+  Package,
+  Clock,
   CheckCircle,
   XCircle,
-  Clock,
+  X,
 } from "lucide-react";
-import { toast } from "sonner";
-import { useEppInspections } from "@/hooks/use-epp-inspections";
-import { format } from "date-fns";
-import { es } from "date-fns/locale";
 import TitlePage from "@/components/title-page";
 
-const EPP_TYPE_NAMES: Record<string, string> = {
+// Configuración de estados
+const STATUS_CONFIG = {
+  PENDING: {
+    label: "Pendiente",
+    color: "bg-yellow-100 text-yellow-800 border-yellow-200",
+    icon: Clock,
+  },
+  APPROVED: {
+    label: "Aprobada",
+    color: "bg-green-100 text-green-800 border-green-200",
+    icon: CheckCircle,
+  },
+  REJECTED: {
+    label: "Rechazada",
+    color: "bg-red-100 text-red-800 border-red-200",
+    icon: XCircle,
+  },
+  CANCELLED: {
+    label: "Cancelada",
+    color: "bg-gray-100 text-gray-800 border-gray-200",
+    icon: X,
+  },
+};
+
+// Nombres de tipos EPP
+const EPP_TYPE_NAMES = {
   ARNES_CUERPO_COMPLETO: "ARNÉS CUERPO COMPLETO",
   ESLINGA_DOBLE_TERMINAL_EN_Y: "ESLINGA DE DOBLE TERMINAL EN Y",
   ESLINGA_POSICIONAMIENTO: "ESLINGA DE POSICIONAMIENTO",
@@ -47,392 +80,476 @@ const EPP_TYPE_NAMES: Record<string, string> = {
   ANCLAJE_TIPO_TIE_OFF: "ANCLAJE TIPO TIE OFF",
 };
 
-const STATUS_CONFIG = {
-  PENDING: {
-    label: "Pendiente",
-    color: "bg-yellow-100 text-yellow-800 border-yellow-200",
-    icon: Clock,
-  },
-  VALIDATED: {
-    label: "Validado",
-    color: "bg-green-100 text-green-800 border-green-200",
-    icon: CheckCircle,
-  },
-  CANCELED: {
-    label: "Cancelado",
-    color: "bg-red-100 text-red-800 border-red-200",
-    icon: XCircle,
-  },
-};
+interface Inspection {
+  id: string;
+  collaboratorName: string;
+  collaboratorNumDoc: string;
+  eppType: string;
+  eppName: string;
+  inspectorName: string;
+  inspectionDate: string;
+  isSuitable: boolean;
+  status: string;
+  sessionId?: string;
+  equipmentIndex?: number;
+  createdAt: string;
+}
 
- function EppInspectionsPage() {
+interface InspectionGroup {
+  sessionId: string;
+  inspections: Inspection[];
+  totalEquipment: number;
+  completedEquipment: number;
+  sessionDate: string;
+  collaboratorName: string;
+  inspectorName: string;
+}
+
+export default function EppInspectionsPage() {
   const router = useRouter();
-  const { inspections, loading, error, stats, pagination, fetchInspections } =
-    useEppInspections();
-
+  const [inspections, setInspections] = useState<Inspection[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string>("");
-  const [eppTypeFilter, setEppTypeFilter] = useState<string>("");
-  const [suitabilityFilter, setSuitabilityFilter] = useState<string>("");
+  const [statusFilter, setStatusFilter] = useState("");
+  const [expandedSessions, setExpandedSessions] = useState<Set<string>>(new Set());
+  
+  // Estados de paginación
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [totalInspections, setTotalInspections] = useState(0);
 
-  // Cargar inspecciones al montar el componente
   useEffect(() => {
-    handleSearch();
-  }, []);
+    fetchInspections();
+  }, [searchTerm, statusFilter]);
 
-  // Función para realizar búsqueda con filtros
-  const handleSearch = () => {
-    const filters: any = {};
+  const fetchInspections = async () => {
+    try {
+      // Solo enviar filtros de búsqueda y estado, no paginación
+      const params = new URLSearchParams();
+      if (searchTerm) params.append('search', searchTerm);
+      if (statusFilter) params.append('status', statusFilter);
 
-    if (searchTerm.trim()) {
-      filters.search = searchTerm.trim();
+      const response = await axios.get(`/api/epp-inspections?${params}`);
+      console.log("API Response:", response.data);
+      console.log("Response type:", typeof response.data);
+      console.log("Is Array:", Array.isArray(response.data));
+      
+      // Asegurar que response.data sea un array
+      let data: Inspection[] = [];
+      
+      if (Array.isArray(response.data)) {
+        data = response.data;
+      } else if (response.data && Array.isArray(response.data.inspections)) {
+        data = response.data.inspections;
+      } else if (response.data && Array.isArray(response.data.data)) {
+        data = response.data.data;
+      } else {
+        console.warn("Unexpected API response format:", response.data);
+        data = [];
+      }
+      
+      setInspections(data);
+      console.log("Final inspections data:", data);
+    } catch (error) {
+      console.error("Error fetching inspections:", error);
+      setInspections([]);
+    } finally {
+      setLoading(false);
     }
-    if (statusFilter) {
-      filters.status = statusFilter;
-    }
-    if (eppTypeFilter) {
-      filters.eppType = eppTypeFilter;
-    }
-    if (suitabilityFilter) {
-      filters.isSuitable = suitabilityFilter === "true";
-    }
-
-    fetchInspections(1, filters);
   };
 
-  // Función para cambiar página
+  // Agrupar inspecciones por sessionId
+  const groupedInspections = Array.isArray(inspections) ? inspections.reduce((groups: InspectionGroup[], inspection) => {
+    const sessionId = inspection.sessionId || `individual-${inspection.id}`;
+    const existingGroup = groups.find(g => g.sessionId === sessionId);
+    
+    if (existingGroup) {
+      existingGroup.inspections.push(inspection);
+      existingGroup.totalEquipment = existingGroup.inspections.length;
+      existingGroup.completedEquipment = existingGroup.inspections.filter(i => i.status === 'APPROVED').length;
+    } else {
+      groups.push({
+        sessionId,
+        inspections: [inspection],
+        totalEquipment: 1,
+        completedEquipment: inspection.status === 'APPROVED' ? 1 : 0,
+        sessionDate: inspection.createdAt,
+        collaboratorName: inspection.collaboratorName,
+        inspectorName: inspection.inspectorName,
+      });
+    }
+    
+    return groups;
+  }, []) : [];
+
+  // Filtrar grupos
+  const filteredGroups = groupedInspections.filter(group => {
+    const matchesSearch = group.inspections.some(inspection =>
+      inspection.collaboratorName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      inspection.collaboratorNumDoc.includes(searchTerm) ||
+      inspection.eppName.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+    
+    const matchesStatus = !statusFilter || group.inspections.some(inspection =>
+      inspection.status === statusFilter
+    );
+    
+    return matchesSearch && matchesStatus;
+  });
+
+  // Aplicar paginación a las sesiones filtradas
+  const totalSessions = filteredGroups.length;
+  const totalPages = Math.ceil(totalSessions / pageSize);
+  const startIndex = (currentPage - 1) * pageSize;
+  const endIndex = startIndex + pageSize;
+  const paginatedGroups = filteredGroups.slice(startIndex, endIndex);
+
+  const toggleSession = (sessionId: string) => {
+    const newExpanded = new Set(expandedSessions);
+    if (newExpanded.has(sessionId)) {
+      newExpanded.delete(sessionId);
+    } else {
+      newExpanded.add(sessionId);
+    }
+    setExpandedSessions(newExpanded);
+  };
+
+  const getSessionStatus = (group: InspectionGroup) => {
+    const allApproved = group.inspections.every(i => i.status === 'APPROVED');
+    const allRejected = group.inspections.every(i => i.status === 'REJECTED');
+    const allCancelled = group.inspections.every(i => i.status === 'CANCELLED');
+    const hasPending = group.inspections.some(i => i.status === 'PENDING');
+    
+    if (allApproved) return { label: "Completa", color: "bg-green-100 text-green-800" };
+    if (allRejected) return { label: "Rechazada", color: "bg-red-100 text-red-800" };
+    if (allCancelled) return { label: "Cancelada", color: "bg-gray-100 text-gray-800" };
+    if (hasPending) return { label: "Pendiente", color: "bg-yellow-100 text-yellow-800" };
+    return { label: "Mixta", color: "bg-blue-100 text-blue-800" };
+  };
+
+  // Funciones de paginación
   const handlePageChange = (page: number) => {
-    const filters: any = {};
-
-    if (searchTerm.trim()) filters.search = searchTerm.trim();
-    if (statusFilter) filters.status = statusFilter;
-    if (eppTypeFilter) filters.eppType = eppTypeFilter;
-    if (suitabilityFilter) filters.isSuitable = suitabilityFilter === "true";
-
-    fetchInspections(page, filters);
+    setCurrentPage(page);
+    setExpandedSessions(new Set()); // Reset expanded sessions on page change
   };
 
-  // Función para limpiar filtros
-  const clearFilters = () => {
+  const handlePageSizeChange = (newPageSize: number) => {
+    setPageSize(newPageSize);
+    setCurrentPage(1); // Reset to first page
+    setExpandedSessions(new Set()); // Reset expanded sessions
+  };
+
+  const resetFilters = () => {
     setSearchTerm("");
     setStatusFilter("");
-    setEppTypeFilter("");
-    setSuitabilityFilter("");
-    fetchInspections(1, {});
+    setCurrentPage(1);
+    setExpandedSessions(new Set());
   };
 
-  console.log({ pagination, inspections });
+  if (loading) {
+    return (
+      <div className="container mx-auto py-6">
+        <div className="flex items-center justify-center py-12">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-gray-600">Cargando inspecciones...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-6 p-6">
-      {/* Header */}
+    <div className="container mx-auto py-6">
       <TitlePage
-        title="Gestión de Inspecciones EPP"
-        description="Administra todas las inspecciones de equipos de protección personal"
-      >
-        <div className="flex space-x-3">
-          <Button
-            onClick={() => router.push("/admin/inspecciones/equipos/generar")}
-            className="bg-blue-600 hover:bg-blue-700"
-          >
-            <FileUp className="w-4 h-4 mr-2" />
-            Cargar Excel
-          </Button>
-          <Button onClick={() => router.push("/inspeccion")} variant="outline">
-            <Plus className="w-4 h-4 mr-2" />
-            Nueva Inspección
-          </Button>
-        </div>
-      </TitlePage>
+        title="Inspecciones EPP"
+        description="Gestión de inspecciones de equipos de protección personal"
+      />
 
-      {/* Estadísticas */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <FileUp className="h-6 w-6 text-blue-600" />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Total</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {stats.total}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center">
-              <div className="p-2 bg-yellow-100 rounded-lg">
-                <Clock className="h-6 w-6 text-yellow-600" />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Pendientes</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {stats.pending}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center">
-              <div className="p-2 bg-green-100 rounded-lg">
-                <CheckCircle className="h-6 w-6 text-green-600" />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Validados</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {stats.validated}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center">
-              <div className="p-2 bg-red-100 rounded-lg">
-                <XCircle className="h-6 w-6 text-red-600" />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Cancelados</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {stats.canceled}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Filtros */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center">
-            <Filter className="w-5 h-5 mr-2" />
-            Filtros
-          </CardTitle>
+          <CardTitle>Inspecciones EPP</CardTitle>
+          <CardDescription>
+            Gestiona las inspecciones de equipos de protección personal
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-            <div>
-              <Input
-                placeholder="Buscar por nombre, documento..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-              />
+          {/* Filtros */}
+          <div className="flex gap-4 mb-6">
+            <div className="flex-1">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                <Input
+                  placeholder="Buscar por colaborador, documento o equipo..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
             </div>
-
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger>
-                <SelectValue placeholder="Estado" />
+              <SelectTrigger className="w-48">
+                <SelectValue placeholder="Filtrar por estado" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="ALL">Todos los estados</SelectItem>
                 <SelectItem value="PENDING">Pendiente</SelectItem>
-                <SelectItem value="VALIDATED">Validado</SelectItem>
-                <SelectItem value="CANCELED">Cancelado</SelectItem>
+                <SelectItem value="APPROVED">Aprobada</SelectItem>
+                <SelectItem value="REJECTED">Rechazada</SelectItem>
+                <SelectItem value="CANCELLED">Cancelada</SelectItem>
               </SelectContent>
             </Select>
-
-            <Select value={eppTypeFilter} onValueChange={setEppTypeFilter}>
-              <SelectTrigger>
-                <SelectValue placeholder="Tipo de EPP" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="ALL">Todos los tipos</SelectItem>
-                {Object.entries(EPP_TYPE_NAMES).map(([value, label]) => (
-                  <SelectItem key={value} value={value}>
-                    {label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <Select
-              value={suitabilityFilter}
-              onValueChange={setSuitabilityFilter}
+            <Button
+              variant="outline"
+              onClick={resetFilters}
+              className="flex items-center gap-2"
             >
-              <SelectTrigger>
-                <SelectValue placeholder="Aptitud" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="ALL">Todas las aptitudes</SelectItem>
-                <SelectItem value="true">Apto</SelectItem>
-                <SelectItem value="false">No Apto</SelectItem>
-              </SelectContent>
-            </Select>
-
-            <div className="flex space-x-2">
-              <Button onClick={handleSearch} className="flex-1">
-                <Search className="w-4 h-4 mr-2" />
-                Buscar
-              </Button>
-              <Button onClick={clearFilters} variant="outline">
-                Limpiar
-              </Button>
-            </div>
+              <Filter className="h-4 w-4" />
+              Limpiar
+            </Button>
           </div>
-        </CardContent>
-      </Card>
 
-      {/* Tabla de Inspecciones */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Lista de Inspecciones</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {loading ? (
-            <div className="flex items-center justify-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mr-3"></div>
-              <span>Cargando inspecciones...</span>
-            </div>
-          ) : error ? (
-            <div className="flex items-center justify-center py-8 text-red-600">
-              <AlertTriangle className="h-6 w-6 mr-2" />
-              <span>{error}</span>
-            </div>
-          ) : inspections.length === 0 ? (
-            <div className="text-center py-8">
-              <FileUp className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">
-                No hay inspecciones
-              </h3>
+          {/* Tabla agrupada */}
+          <div className="space-y-4">
+            {paginatedGroups.map((group) => {
+              const sessionStatus = getSessionStatus(group);
+              const isExpanded = expandedSessions.has(group.sessionId);
+              
+              return (
+                <div key={group.sessionId} className="border rounded-lg overflow-hidden">
+                  {/* Header del grupo */}
+                  <div 
+                    className="bg-gray-50 p-4 cursor-pointer hover:bg-gray-100 transition-colors"
+                    onClick={() => toggleSession(group.sessionId)}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        {isExpanded ? (
+                          <ChevronDown className="h-5 w-5 text-gray-600" />
+                        ) : (
+                          <ChevronRight className="h-5 w-5 text-gray-600" />
+                        )}
+                        
+                        <div className="flex items-center gap-3">
+                          <Badge variant="outline" className="font-mono text-xs">
+                            {group.sessionId.slice(0, 8)}...
+                          </Badge>
+                          
+                          <div className="flex items-center gap-2">
+                            <Users className="h-4 w-4 text-gray-500" />
+                            <span className="font-medium">{group.collaboratorName}</span>
+                          </div>
+                          
+                          <div className="flex items-center gap-2">
+                            <Package className="h-4 w-4 text-gray-500" />
+                            <span className="text-sm text-gray-600">
+                              {group.totalEquipment} equipo{group.totalEquipment !== 1 ? 's' : ''}
+                            </span>
+                          </div>
+                          
+                          <div className="flex items-center gap-2">
+                            <Calendar className="h-4 w-4 text-gray-500" />
+                            <span className="text-sm text-gray-600">
+                              {format(new Date(group.sessionDate), "dd/MM/yyyy", { locale: es })}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center gap-3">
+                        <Badge className={sessionStatus.color}>
+                          {sessionStatus.label}
+                        </Badge>
+                        <span className="text-sm text-gray-600">
+                          {group.completedEquipment}/{group.totalEquipment} completados
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Contenido expandible */}
+                  {isExpanded && (
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Equipo</TableHead>
+                          <TableHead>Tipo EPP</TableHead>
+                          <TableHead>Inspector</TableHead>
+                          <TableHead>Fecha Inspección</TableHead>
+                          <TableHead>Aptitud</TableHead>
+                          <TableHead>Estado</TableHead>
+                          <TableHead>Acciones</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {group.inspections
+                          .sort((a, b) => (a.equipmentIndex || 0) - (b.equipmentIndex || 0))
+                          .map((inspection) => {
+                          const StatusIcon = STATUS_CONFIG[inspection.status as keyof typeof STATUS_CONFIG]?.icon;
+                          return (
+                            <TableRow key={inspection.id}>
+                              <TableCell className="font-medium">
+                                <div className="flex items-center gap-2">
+                                  {inspection.equipmentIndex && (
+                                    <Badge variant="secondary" className="text-xs">
+                                      #{inspection.equipmentIndex}
+                                    </Badge>
+                                  )}
+                                  {inspection.eppName}
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <span className="text-sm">
+                                  {EPP_TYPE_NAMES[inspection.eppType as keyof typeof EPP_TYPE_NAMES] ||
+                                    inspection.eppType}
+                                </span>
+                              </TableCell>
+                              <TableCell>{inspection.inspectorName}</TableCell>
+                              <TableCell>
+                                {format(
+                                  new Date(inspection.inspectionDate),
+                                  "dd/MM/yyyy",
+                                  { locale: es }
+                                )}
+                              </TableCell>
+                              <TableCell>
+                                <Badge
+                                  className={
+                                    inspection.isSuitable
+                                      ? "bg-green-100 text-green-800"
+                                      : "bg-red-100 text-red-800"
+                                  }
+                                >
+                                  {inspection.isSuitable ? "APTO" : "NO APTO"}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                <Badge
+                                  className={`${
+                                    STATUS_CONFIG[inspection.status as keyof typeof STATUS_CONFIG]?.color
+                                  } border`}
+                                >
+                                  {StatusIcon && <StatusIcon className="w-3 h-3 mr-1" />}
+                                  {STATUS_CONFIG[inspection.status as keyof typeof STATUS_CONFIG]?.label}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() =>
+                                    router.push(
+                                      `/admin/inspecciones/equipos/gestionar/${inspection.id}`
+                                    )
+                                  }
+                                >
+                                  <Eye className="w-4 h-4 mr-1" />
+                                  Gestionar
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          {paginatedGroups.length === 0 && (
+            <div className="text-center py-12">
+              <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
               <p className="text-gray-600">
-                No se encontraron inspecciones con los filtros aplicados.
+                {filteredGroups.length === 0 
+                  ? "No se encontraron inspecciones" 
+                  : "No hay sesiones en esta página"
+                }
               </p>
             </div>
-          ) : (
-            <>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Colaborador</TableHead>
-                    <TableHead>Documento</TableHead>
-                    <TableHead>Tipo EPP</TableHead>
-                    <TableHead>Inspector</TableHead>
-                    <TableHead>Fecha Inspección</TableHead>
-                    <TableHead>Aptitud</TableHead>
-                    <TableHead>Estado</TableHead>
-                    <TableHead>Acciones</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {inspections.map((inspection) => {
-                    const StatusIcon = STATUS_CONFIG[inspection.status].icon;
+          )}
+
+          {/* Paginación */}
+          {totalSessions > 0 && (
+            <div className="flex items-center justify-between mt-6 pt-4 border-t">
+              <div className="flex items-center gap-4 text-sm text-gray-600">
+                <span>
+                  Mostrando {((currentPage - 1) * pageSize) + 1} a{" "}
+                  {Math.min(currentPage * pageSize, totalSessions)} de{" "}
+                  {totalSessions} sesiones
+                  {(() => {
+                    const totalInspectionsInPage = paginatedGroups.reduce((total, group) => total + group.inspections.length, 0);
+                    return ` (${totalInspectionsInPage} inspecciones en esta página)`;
+                  })()}
+                </span>
+                <div className="flex items-center gap-2">
+                  <span>Mostrar</span>
+                  <Select value={pageSize.toString()} onValueChange={(value) => handlePageSizeChange(Number(value))}>
+                    <SelectTrigger className="w-20 h-8">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="5">5</SelectItem>
+                      <SelectItem value="10">10</SelectItem>
+                      <SelectItem value="20">20</SelectItem>
+                      <SelectItem value="50">50</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <span>por página</span>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={currentPage === 1}
+                >
+                  Anterior
+                </Button>
+                
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    let pageNum;
+                    if (totalPages <= 5) {
+                      pageNum = i + 1;
+                    } else if (currentPage <= 3) {
+                      pageNum = i + 1;
+                    } else if (currentPage >= totalPages - 2) {
+                      pageNum = totalPages - 4 + i;
+                    } else {
+                      pageNum = currentPage - 2 + i;
+                    }
+                    
                     return (
-                      <TableRow key={inspection.id}>
-                        <TableCell className="font-medium">
-                          {inspection.collaboratorName}
-                        </TableCell>
-                        <TableCell>{inspection.collaboratorNumDoc}</TableCell>
-                        <TableCell>
-                          <span className="text-sm">
-                            {EPP_TYPE_NAMES[inspection.eppType] ||
-                              inspection.eppType}
-                          </span>
-                        </TableCell>
-                        <TableCell>{inspection.inspectorName}</TableCell>
-                        <TableCell>
-                          {format(
-                            new Date(inspection.inspectionDate),
-                            "dd/MM/yyyy",
-                            { locale: es }
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          <Badge
-                            className={
-                              inspection.isSuitable
-                                ? "bg-green-100 text-green-800"
-                                : "bg-red-100 text-red-800"
-                            }
-                          >
-                            {inspection.isSuitable ? "APTO" : "NO APTO"}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <Badge
-                            className={`${
-                              STATUS_CONFIG[inspection.status].color
-                            } border`}
-                          >
-                            <StatusIcon className="w-3 h-3 mr-1" />
-                            {STATUS_CONFIG[inspection.status].label}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() =>
-                              router.push(
-                                `/admin/inspecciones/equipos/gestionar/${inspection.id}`
-                              )
-                            }
-                          >
-                            <Eye className="w-4 h-4 mr-1" />
-                            Gestionar
-                          </Button>
-                        </TableCell>
-                      </TableRow>
+                      <Button
+                        key={pageNum}
+                        variant={currentPage === pageNum ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => handlePageChange(pageNum)}
+                        className="w-8 h-8 p-0"
+                      >
+                        {pageNum}
+                      </Button>
                     );
                   })}
-                </TableBody>
-              </Table>
-
-              {/* Paginación */}
-              {pagination.totalPages > 0 && (
-                <div className="flex items-center justify-between mt-6">
-                  <p className="text-sm text-gray-600">
-                    Mostrando {(pagination.currentPage - 1) * 10 + 1} a{" "}
-                    {Math.min(
-                      pagination.currentPage * 10,
-                      pagination.totalCount
-                    )}{" "}
-                    de {pagination.totalCount} resultados
-                  </p>
-                  <div className="flex space-x-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() =>
-                        handlePageChange(pagination.currentPage - 1)
-                      }
-                      disabled={!pagination.hasPrevPage}
-                    >
-                      Anterior
-                    </Button>
-                    <span className="flex items-center px-3 text-sm">
-                      Página {pagination.currentPage} de {pagination.totalPages}
-                    </span>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() =>
-                        handlePageChange(pagination.currentPage + 1)
-                      }
-                      disabled={!pagination.hasNextPage}
-                    >
-                      Siguiente
-                    </Button>
-                  </div>
                 </div>
-              )}
-            </>
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                >
+                  Siguiente
+                </Button>
+              </div>
+            </div>
           )}
         </CardContent>
       </Card>
     </div>
   );
 }
-
-export default EppInspectionsPage;

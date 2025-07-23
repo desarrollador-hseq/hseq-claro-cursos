@@ -52,17 +52,24 @@ const TrainingPage = async ({ params }: TrainingPageProps) => {
       },
     },
     include: {
-      course: {
+      course: true,
+      // {
+      //   include: {
+      //     courseLevels: {
+      //       include: {
+      //         requiredDocuments: {
+      //           where: {
+      //             active: true,
+      //           },
+      //         },
+      //       },
+      //     },
+      //   },
+      // }
+      
+      courseLevel: {
         include: {
-          courseLevels: {
-            include: {
-              requiredDocuments: {
-                where: {
-                  active: true,
-                },
-              },
-            },
-          },
+          requiredDocuments: true,
         },
       },
 
@@ -148,27 +155,33 @@ const TrainingPage = async ({ params }: TrainingPageProps) => {
   });
 
   const threshold = await getFormationThreshold();
+  console.log({trainingCollaborators: training.trainingCollaborators, courseLevel: training.courseLevel})
 
+  const requiredDocsCount = training.courseLevel.requiredDocuments.length;
   // Estadísticas
   const totalCollaborators = training.trainingCollaborators.length;
   const collaboratorsWithCompleteDocuments =
     training.trainingCollaborators.filter((tc) => {
-      const requiredDocsCount = tc.courseLevel.requiredDocuments.length;
+
+      // Si no hay documentos requeridos, el colaborador está completo
+      if (requiredDocsCount === 0) {
+        return false;
+      }
 
       // Filtrar solo los documentos que corresponden a los documentos requeridos del nivel actual
-      const currentLevelRequiredDocIds = tc.courseLevel.requiredDocuments.map(
+      const currentLevelRequiredDocIds = training.courseLevel.requiredDocuments.map(
         (doc) => doc.id
       );
-      const validSubmittedDocs = tc.documents.filter((doc) =>
+      const validSubmittedDocs = tc.documents?.filter((doc) =>
         currentLevelRequiredDocIds.includes(doc.requiredDocumentId)
       );
 
       const approvedDocsCount = validSubmittedDocs.filter(
         (doc) => doc.status === "APPROVED"
       ).length;
-      return requiredDocsCount > 0
-        ? approvedDocsCount === requiredDocsCount
-        : true;
+      
+      // Solo contar como completo si tiene todos los documentos requeridos aprobados
+      return approvedDocsCount === requiredDocsCount;
     }).length;
 
   const getStatusBadge = (status: string) => {
@@ -292,6 +305,22 @@ const TrainingPage = async ({ params }: TrainingPageProps) => {
           <Card className="pb-0">
             <CardContent className="py-3">
               <div className="flex items-center space-x-2">
+                <FileStack className="h-5 w-5 text-orange-600" />
+                <div>
+                  <p className="text-sm font-medium text-gray-600">
+                    Nivel
+                  </p>
+                  <p className="text-lg font-semibold">
+                    {training.courseLevel?.name || "No asignado"}
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="pb-0">
+            <CardContent className="py-3">
+              <div className="flex items-center space-x-2">
                 <Users className="h-5 w-5 text-green-600" />
                 <div>
                   <p className="text-sm font-medium text-gray-600">
@@ -306,21 +335,7 @@ const TrainingPage = async ({ params }: TrainingPageProps) => {
             </CardContent>
           </Card>
 
-          <Card className="pb-0">
-            <CardContent className="py-3">
-              <div className="flex items-center space-x-2">
-                <FileStack className="h-5 w-5 text-orange-600" />
-                <div>
-                  <p className="text-sm font-medium text-gray-600">
-                    Niveles Disponibles
-                  </p>
-                  <p className="text-lg font-semibold">
-                    {training.course.courseLevels.length}
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          
           <Card className="pb-0">
             <CardContent className="py-3">
               <div className="flex items-center space-x-2">
@@ -349,7 +364,7 @@ const TrainingPage = async ({ params }: TrainingPageProps) => {
                       </p>
                       <p className="text-lg font-semibold">
                         {collaboratorsWithCompleteDocuments} /{" "}
-                        {totalCollaborators}
+                        {requiredDocsCount}
                       </p>
                     </div>
                   </div>

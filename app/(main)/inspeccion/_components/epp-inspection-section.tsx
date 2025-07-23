@@ -193,7 +193,7 @@ export const EppInspectionSection: React.FC<EppInspectionSectionProps> = ({
       >
         <CardTitle className="flex flex-col items-center justify-between">
           <div className="flex justify-between  gap-2 w-full">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 text-secondary font-normal text-lg">
               <Package className="h-5 w-5" />
               Equipo #{index + 1}
             </div>
@@ -218,14 +218,14 @@ export const EppInspectionSection: React.FC<EppInspectionSectionProps> = ({
               </Button>
             </span>
           </div>
-          <div className="flex justify-between w-full items-center gap-2">
+          <div className="flex justify-between w-full items-center gap-2 my-2 text-primary font-bold">
             {equipment.eppType && (
-              <span className="text-lg">
+              <span className="text-2xl">
                 {equipment.eppName || equipment.eppType}
               </span>
             )}
             {/* Indicador de estado del equipo */}
-            <div className="flex items-center gap-1">
+            {/* <div className="flex items-center gap-1">
               <div
                 className={`w-3 h-3 rounded-full ${
                   equipment.isSuitable ? "bg-green-500" : "bg-red-500"
@@ -234,7 +234,7 @@ export const EppInspectionSection: React.FC<EppInspectionSectionProps> = ({
               <span className="text-sm font-medium">
                 {equipment.isSuitable ? "APTO" : "NO APTO"}
               </span>
-            </div>
+            </div> */}
 
             {/* Indicador de completitud */}
           </div>
@@ -260,35 +260,6 @@ export const EppInspectionSection: React.FC<EppInspectionSectionProps> = ({
                 )}
               </div>
             )}
-            <div className="flex justify-between text-xs text-gray-600 mb-1">
-              <span>Progreso de inspección</span>
-              <span>
-                {Math.round((answeredQuestions / questions.length) * 100)}%
-              </span>
-            </div>
-            <div className="w-full bg-gray-200 rounded-full h-2">
-              <div
-                className={`h-2 rounded-full transition-all duration-300 ${
-                  answeredQuestions === questions.length
-                    ? "bg-green-500"
-                    : answeredQuestions > questions.length * 0.5
-                    ? "bg-yellow-500"
-                    : "bg-red-500"
-                }`}
-                style={{
-                  width: `${Math.min(
-                    (answeredQuestions / questions.length) * 100,
-                    100
-                  )}%`,
-                }}
-              />
-            </div>
-            {answeredQuestions < questions.length && (
-              <p className="text-xs text-orange-600 mt-1">
-                ⚠️ Faltan {questions.length - answeredQuestions} preguntas por
-                responder
-              </p>
-            )}
           </div>
         )}
       </CardHeader>
@@ -297,20 +268,20 @@ export const EppInspectionSection: React.FC<EppInspectionSectionProps> = ({
         <CardContent className="space-y-6">
           {/* Información básica del equipo */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="md:col-span-2">
+            {/* <div className="md:col-span-2">
               <Label htmlFor={`eppType_${equipment.id}`}>Tipo de EPP *</Label>
               <Select
                 value={equipment.eppType}
-                onValueChange={(value) => onUpdate({ eppType: value })}
+                disabled={true}
               >
                 <SelectTrigger
                   className={
                     errors[`equipment_${equipment.id}_type`]
                       ? "border-red-500"
-                      : ""
+                      : "bg-gray-50"
                   }
                 >
-                  <SelectValue placeholder="Seleccionar tipo de EPP" />
+                  <SelectValue placeholder="Tipo de EPP" />
                 </SelectTrigger>
                 <SelectContent>
                   {EPP_TYPES.map((type) => (
@@ -325,7 +296,7 @@ export const EppInspectionSection: React.FC<EppInspectionSectionProps> = ({
                   {errors[`equipment_${equipment.id}_type`]}
                 </p>
               )}
-            </div>
+            </div> */}
 
             <div>
               <Label htmlFor={`brand_${equipment.id}`}>Marca *</Label>
@@ -419,185 +390,181 @@ export const EppInspectionSection: React.FC<EppInspectionSectionProps> = ({
           </div>
 
           {/* Preguntas de inspección */}
-          {equipment.eppType && questions.length > 0 && (
-            <div className="space-y-4">
-              <Button
-                type="button"
-                variant="outline"
-                className="w-full justify-between"
-                onClick={() => setQuestionsOpen(!questionsOpen)}
-              >
-                <div className="flex items-center gap-2">
-                  <AlertTriangle className="h-4 w-4 text-orange-600" />
-                  Preguntas de Inspección ({answeredQuestions}/
-                  {questions.length})
-                </div>
-                {questionsOpen ? (
-                  <ChevronUp className="h-4 w-4" />
-                ) : (
-                  <ChevronDown className="h-4 w-4" />
-                )}
-              </Button>
 
-              {/* Mostrar error general de preguntas */}
-              {errors[`equipment_${equipment.id}_questions`] && (
-                <div className="p-3 bg-red-50 border border-red-200 rounded-md">
-                  <p className="text-red-600 text-sm font-medium">
-                    ⚠️ {errors[`equipment_${equipment.id}_questions`]}
-                  </p>
-                </div>
-              )}
+          <div>
+            <div className="flex justify-between text-sm text-gray-600 font-semibold mb-1">
+              <span>Progreso de inspección</span>
+              <span className="text-primary font-bold">
+                {Math.round((answeredQuestions / questions.length) * 100)}%
+              </span>
+            </div>
+            <div className="w-full bg-gray-200 rounded-full h-2">
+              <div
+                className={`h-2 rounded-full transition-all duration-300 ${
+                  answeredQuestions === questions.length
+                    ? "bg-green-500"
+                    : answeredQuestions > questions.length * 0.5
+                    ? "bg-yellow-500"
+                    : "bg-red-500"
+                }`}
+                style={{
+                  width: `${Math.min(
+                    (answeredQuestions / questions.length) * 100,
+                    100
+                  )}%`,
+                }}
+              />
+            </div>
+            {/* Mostrar error general de preguntas */}
+            {errors[`equipment_${equipment.id}_questions`] && (
+              <div className="p-3 bg-red-50 border border-red-200 rounded-md mt-2">
+                <p className="text-red-600 text-sm font-medium">
+                  ⚠️ {errors[`equipment_${equipment.id}_questions`]}
+                </p>
+              </div>
+            )}
+          </div>
 
-              {questionsOpen && (
-                <div className="mt-4 space-y-6 border-l-2 border-primary pl-1">
-                  {loadingQuestions ? (
-                    <div className="flex items-center justify-center py-8">
-                      <Loader2 className="h-6 w-6 animate-spin mr-2" />
-                      <span className="text-gray-600">
-                        Cargando preguntas...
-                      </span>
-                    </div>
-                  ) : questionsError ? (
-                    <div className="flex items-center justify-center py-8 text-red-600">
-                      <AlertTriangle className="h-5 w-5 mr-2" />
-                      <span>{questionsError}</span>
-                    </div>
-                  ) : questions.length === 0 ? (
-                    <div className="flex items-center justify-center py-8 text-gray-500">
-                      <span>
-                        No hay preguntas configuradas para este tipo de EPP
-                      </span>
-                    </div>
-                  ) : (
-                    // Agrupar preguntas por categoría
-                    (() => {
-                      const groupedQuestions = questions.reduce(
-                        (groups, question) => {
-                          const category = question.category || "General";
-                          if (!groups[category]) {
-                            groups[category] = [];
-                          }
-                          groups[category].push(question);
-                          return groups;
-                        },
-                        {} as Record<string, typeof questions>
-                      );
+          <div className="mt-4 space-y-6 border-l-2 border-primary pl-1">
+            {loadingQuestions ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin mr-2" />
+                <span className="text-gray-600">Cargando preguntas...</span>
+              </div>
+            ) : questionsError ? (
+              <div className="flex items-center justify-center py-8 text-red-600">
+                <AlertTriangle className="h-5 w-5 mr-2" />
+                <span>{questionsError}</span>
+              </div>
+            ) : questions.length === 0 ? (
+              <div className="flex items-center justify-center py-8 text-gray-500">
+                <span>No hay preguntas configuradas para este tipo de EPP</span>
+              </div>
+            ) : (
+              // Agrupar preguntas por categoría
+              (() => {
+                const groupedQuestions = questions.reduce(
+                  (groups, question) => {
+                    const category = question.category || "General";
+                    if (!groups[category]) {
+                      groups[category] = [];
+                    }
+                    groups[category].push(question);
+                    return groups;
+                  },
+                  {} as Record<string, typeof questions>
+                );
 
-                      // Definir colores para cada categoría
-                      const categoryColors: Record<string, string> = {
-                        "Componente textil": "bg-blue-50 border-blue-200",
-                        "Componente metálico": "bg-gray-50 border-gray-200",
-                        "Componente de funcionalidad":
-                          "bg-green-50 border-green-200",
-                        "Componente de impacto":
-                          "bg-orange-50 border-orange-200",
-                        General: "bg-slate-50 border-slate-200",
-                      };
+                // Definir colores para cada categoría
+                const categoryColors: Record<string, string> = {
+                  "Componente textil": "bg-blue-50 border-blue-200",
+                  "Componente metálico": "bg-gray-50 border-gray-200",
+                  "Componente de funcionalidad": "bg-green-50 border-green-200",
+                  "Componente de impacto": "bg-orange-50 border-orange-200",
+                  General: "bg-slate-50 border-slate-200",
+                };
 
-                      return Object.entries(groupedQuestions).map(
-                        ([category, categoryQuestions]) => (
-                          <div
-                            key={category}
-                            className={`rounded-lg border-2 p-4 ${
-                              categoryColors[category] ||
-                              categoryColors["General"]
-                            }`}
-                          >
-                            {/* Título de la categoría */}
-                            <div className="mb-4 pb-2 border-b border-current border-opacity-20">
-                              <h4 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-                                <span className="">{category}</span>
-                                <span className="text-sm text-gray-600">
-                                  (
-                                  {
-                                    categoryQuestions.filter(
-                                      (q) =>
-                                        equipment.inspectionAnswers[
-                                          q.questionCode
-                                        ]
-                                    ).length
-                                  }
-                                  /{categoryQuestions.length})
+                return Object.entries(groupedQuestions).map(
+                  ([category, categoryQuestions]) => (
+                    <div
+                      key={category}
+                      className={`rounded-lg border-2 p-4 ${
+                        categoryColors[category] || categoryColors["General"]
+                      }`}
+                    >
+                      {/* Título de la categoría */}
+                      <div className="mb-4 pb-2 border-b border-current border-opacity-20">
+                        <h4 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                          <span className="">{category}</span>
+                          <span className="text-sm text-gray-600">
+                            (
+                            {
+                              categoryQuestions.filter(
+                                (q) =>
+                                  equipment.inspectionAnswers[q.questionCode]
+                              ).length
+                            }
+                            /{categoryQuestions.length})
+                          </span>
+                        </h4>
+                      </div>
+
+                      {/* Preguntas de la categoría */}
+                      <div className="space-y-4">
+                        {categoryQuestions.map((question) => {
+                          const hasError =
+                            errors[
+                              `equipment_${equipment.id}_question_${question.questionCode}`
+                            ];
+
+                          return (
+                            <div
+                              key={question.questionCode}
+                              className={`space-y-2 bg-white/60 rounded-md p-3 border ${
+                                hasError
+                                  ? "border-red-300 bg-red-50/50"
+                                  : "border-white/50"
+                              }`}
+                            >
+                              <div className="flex items-center gap-2">
+                                <Label className="text-base font-medium text-gray-700">
+                                  {question.questionText}
+                                </Label>
+                                <span className="text-base text-red-500">
+                                  *
                                 </span>
-                              </h4>
-                            </div>
-
-                            {/* Preguntas de la categoría */}
-                            <div className="space-y-4">
-                              {categoryQuestions.map((question) => {
-                                const hasError =
-                                  errors[
-                                    `equipment_${equipment.id}_question_${question.questionCode}`
-                                  ];
-
-                                return (
-                                  <div
-                                    key={question.questionCode}
-                                    className={`space-y-2 bg-white/60 rounded-md p-3 border ${
-                                      hasError
-                                        ? "border-red-300 bg-red-50/50"
-                                        : "border-white/50"
-                                    }`}
+                                {question.helpText && (
+                                  <Badge
+                                    variant="outline"
+                                    className="text-xs bg-blue-50 text-blue-700"
                                   >
-                                    <div className="flex items-center gap-2">
-                                      <Label className="text-base font-medium text-gray-700">
-                                        {question.questionText}
-                                      </Label>
-                                      <span className="text-base text-red-500">
-                                        *
-                                      </span>
-                                      {question.helpText && (
-                                        <Badge
-                                          variant="outline"
-                                          className="text-xs bg-blue-50 text-blue-700"
-                                        >
-                                          Ayuda
-                                        </Badge>
-                                      )}
-                                    </div>
+                                    Ayuda
+                                  </Badge>
+                                )}
+                              </div>
 
-                                    {question.helpText && (
-                                      <p className="text-xs text-gray-600 italic">
-                                        {question.helpText}
-                                      </p>
-                                    )}
+                              {question.helpText && (
+                                <p className="text-xs text-gray-600 italic">
+                                  {question.helpText}
+                                </p>
+                              )}
 
-                                    {/* Mostrar error específico de la pregunta */}
-                                    {hasError && (
-                                      <p className="text-red-500 text-sm font-medium">
-                                        ⚠️ {hasError}
-                                      </p>
-                                    )}
+                              {/* Mostrar error específico de la pregunta */}
+                              {hasError && (
+                                <p className="text-red-500 text-sm font-medium">
+                                  ⚠️ {hasError}
+                                </p>
+                              )}
 
-                                    <div className="grid grid-cols-3 gap-2">
-                                      {[
-                                        {
-                                          value: "Si",
-                                          label: "Sí",
-                                          color:
-                                            "border-secondary bg-secondary/20 text-secondary",
-                                        },
-                                        {
-                                          value: "No",
-                                          label: "No",
-                                          color:
-                                            "border-secondary bg-secondary/20  text-secondary",
-                                        },
-                                        {
-                                          value: "N/A",
-                                          label: "N/A",
-                                          color:
-                                            "border-secondary bg-secondary/20  text-secondary",
-                                        },
-                                      ].map((option) => {
-                                        const isSelected =
-                                          equipment.inspectionAnswers[
-                                            question.questionCode
-                                          ] === option.value;
-                                        return (
-                                          <div
-                                            key={option.value}
-                                            className={`
+                              <div className="grid grid-cols-3 gap-2">
+                                {[
+                                  {
+                                    value: "Si",
+                                    label: "Sí",
+                                    color:
+                                      "border-secondary bg-secondary/20 text-secondary",
+                                  },
+                                  {
+                                    value: "No",
+                                    label: "No",
+                                    color:
+                                      "border-secondary bg-secondary/20  text-secondary",
+                                  },
+                                  {
+                                    value: "N/A",
+                                    label: "N/A",
+                                    color:
+                                      "border-secondary bg-secondary/20  text-secondary",
+                                  },
+                                ].map((option) => {
+                                  const isSelected =
+                                    equipment.inspectionAnswers[
+                                      question.questionCode
+                                    ] === option.value;
+                                  return (
+                                    <div
+                                      key={option.value}
+                                      className={`
                                               flex items-center space-x-3 rounded-lg border-2 p-3 cursor-pointer 
                                               transition-all duration-200 hover:scale-[1.02] hover:shadow-sm
                                               ${
@@ -606,15 +573,15 @@ export const EppInspectionSection: React.FC<EppInspectionSectionProps> = ({
                                                   : "border-gray-200 bg-white hover:bg-gray-50"
                                               }
                                             `}
-                                            onClick={() =>
-                                              updateQuestionAnswer(
-                                                question.questionCode,
-                                                option.value
-                                              )
-                                            }
-                                          >
-                                            <div
-                                              className={`
+                                      onClick={() =>
+                                        updateQuestionAnswer(
+                                          question.questionCode,
+                                          option.value
+                                        )
+                                      }
+                                    >
+                                      <div
+                                        className={`
                                               w-5 h-5 rounded-full border-2 flex items-center justify-center
                                               transition-all duration-200
                                               ${
@@ -623,31 +590,28 @@ export const EppInspectionSection: React.FC<EppInspectionSectionProps> = ({
                                                   : "border-gray-300"
                                               }
                                             `}
-                                            >
-                                              {isSelected && (
-                                                <Check className="w-3 h-3 text-white" />
-                                              )}
-                                            </div>
-                                            <Label className="cursor-pointer w-full font-medium">
-                                              {option.label}
-                                            </Label>
-                                          </div>
-                                        );
-                                      })}
+                                      >
+                                        {isSelected && (
+                                          <Check className="w-3 h-3 text-white" />
+                                        )}
+                                      </div>
+                                      <Label className="cursor-pointer w-full font-medium">
+                                        {option.label}
+                                      </Label>
                                     </div>
-                                  </div>
-                                );
-                              })}
+                                  );
+                                })}
+                              </div>
                             </div>
-                          </div>
-                        )
-                      );
-                    })()
-                  )}
-                </div>
-              )}
-            </div>
-          )}
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )
+                );
+              })()
+            )}
+          </div>
 
           {/* Estado del Equipo - Al final del formulario */}
           {equipment.eppType && (

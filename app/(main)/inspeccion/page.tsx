@@ -44,9 +44,10 @@ import {
 } from "@/components/ui/popover";
 import { EppInspectionSection } from "./_components/epp-inspection-section";
 import { InspectionSummaryModal } from "./_components/epp-inspection-section";
+import { EppSelection } from "./_components/epp-selection";
 import TitlePage from "@/components/title-page";
 import axios from "axios";
-import { FaCalendarCheck, FaHelmetSafety, FaUser } from "react-icons/fa6";
+import { FaCalendarCheck, FaFileLines, FaHelmetSafety, FaUser } from "react-icons/fa6";
 import { Banner } from "@/components/ui/banner";
 
 // Tipos de EPP disponibles
@@ -93,7 +94,22 @@ interface InspectionForm {
   equipment: EppEquipment[];
 }
 
+// ID de sesión de inspección para agrupar inspecciones relacionadas
+interface InspectionSession {
+  sessionId: string;
+  createdAt: Date;
+  totalInspections: number;
+  completedInspections: number;
+}
+
 export default function InspectionPage() {
+  const [selectedEppTypes, setSelectedEppTypes] = useState<string[]>([]);
+  const [inspectionSession, setInspectionSession] = useState<InspectionSession>({
+    sessionId: crypto.randomUUID(),
+    createdAt: new Date(),
+    totalInspections: 0,
+    completedInspections: 0,
+  });
   const [formData, setFormData] = useState<InspectionForm>({
     collaboratorName: "",
     collaboratorLastName: "",
@@ -137,7 +153,49 @@ export default function InspectionPage() {
     fetchRegionals();
   }, []);
 
-  // Agregar nuevo equipo
+  // Sincronizar tipos seleccionados con equipos existentes
+  useEffect(() => {
+    const existingTypes = formData.equipment.map(eq => eq.eppType).filter(Boolean);
+    if (existingTypes.length > 0 && selectedEppTypes.length === 0) {
+      setSelectedEppTypes(existingTypes);
+    }
+  }, [formData.equipment, selectedEppTypes.length]);
+
+  // Manejar selección de tipos de EPP
+  const handleEppTypeSelection = (selectedTypes: string[]) => {
+    setSelectedEppTypes(selectedTypes);
+    
+    // Sincronizar equipos con la selección
+    const currentEquipmentTypes = formData.equipment.map(eq => eq.eppType);
+    
+    // Agregar equipos para tipos seleccionados que no existen
+    const newEquipment: EppEquipment[] = selectedTypes
+      .filter(type => !currentEquipmentTypes.includes(type))
+      .map(type => ({
+        id: crypto.randomUUID(),
+        eppType: type,
+        eppName: EPP_TYPES.find(epp => epp.value === type)?.name || type,
+        brand: "",
+        model: "",
+        serialNumber: "",
+        manufacturingDate: undefined,
+        isSuitable: true,
+        observations: "",
+        inspectionAnswers: {},
+      }));
+
+    // Remover equipos que ya no están seleccionados
+    const filteredEquipment = formData.equipment.filter(eq => 
+      selectedTypes.includes(eq.eppType)
+    );
+
+    setFormData(prev => ({
+      ...prev,
+      equipment: [...filteredEquipment, ...newEquipment]
+    }));
+  };
+
+  // Agregar nuevo equipo (mantener para compatibilidad)
   const addEquipment = () => {
     if (formData.equipment.length >= 6) {
       toast.error("Máximo 6 equipos por inspección");
@@ -151,8 +209,8 @@ export default function InspectionPage() {
       brand: "",
       model: "",
       serialNumber: "",
-      manufacturingDate: undefined, // Inicializar fecha de fabricación como undefined
-      isSuitable: true, // Por defecto APTO, el usuario puede cambiarlo
+      manufacturingDate: undefined,
+      isSuitable: true,
       observations: "",
       inspectionAnswers: {},
     };
@@ -187,6 +245,11 @@ export default function InspectionPage() {
   // Validar formulario
   const validateForm = async (): Promise<boolean> => {
     const newErrors: Record<string, string> = {};
+
+    // Validar selección de EPP
+    if (selectedEppTypes.length === 0) {
+      newErrors.eppSelection = "Debes seleccionar al menos un equipo EPP para inspeccionar";
+    }
 
     // Validar información del colaborador
     if (!formData.collaboratorName.trim()) {
@@ -284,51 +347,66 @@ export default function InspectionPage() {
     setIsSubmitting(true);
 
     try {
-      // Debug: Log data being sent to API
-      console.log("Data being sent to API:", {
-        ...formData,
-        equipment: formData.equipment.map((eq) => ({
-          ...eq,
-          manufacturingDate:
-            eq.manufacturingDate?.toISOString() || "No date set",
-        })),
+      // Crear inspecciones individuales para cada equipo
+      const inspectionPromises = formData.equipment.map(async (equipment) => {
+        const inspectionData = {
+          ...formData,
+          equipment: [equipment], // Solo un equipo por inspección
+          sessionId: inspectionSession.sessionId, // ID de sesión para agrupar
+          equipmentIndex: formData.equipment.indexOf(equipment) + 1, // Índice del equipo en la sesión
+        };
+
+        console.log(`Enviando inspección ${equipment.eppName}:`, inspectionData);
+
+        return axios.post("/api/epp-inspections/create", inspectionData);
       });
 
-      const response = await axios.post(
-        "/api/epp-inspections/create",
-        formData
-      );
+      // Ejecutar todas las inspecciones en paralelo
+      const responses = await Promise.all(inspectionPromises);
+      
+      // Verificar que todas las inspecciones se guardaron correctamente
+      const successfulInspections = responses.filter(response => response.status === 200);
+      
+      if (successfulInspections.length === formData.equipment.length) {
+        // Actualizar contador de sesión
+        setInspectionSession(prev => ({
+          ...prev,
+          totalInspections: prev.totalInspections + formData.equipment.length,
+          completedInspections: prev.completedInspections + formData.equipment.length,
+        }));
 
-      if (response.status !== 200) {
-        throw new Error("Error al guardar la inspección");
+        toast.success(
+          `${formData.equipment.length} inspección(es) guardada(s) exitosamente. Sesión: ${inspectionSession.sessionId.slice(0, 8)}...`
+        );
+
+        // Cerrar modal y limpiar formulario
+        setShowSummaryModal(false);
+        setFormData({
+          collaboratorName: "",
+          collaboratorLastName: "",
+          collaboratorNumDoc: "",
+          collaboratorTypeDoc: "CC",
+          inspectorName: "",
+          inspectionDate: new Date(),
+          city: "",
+          regional: "",
+          position: "",
+          equipment: [],
+        });
+        setSelectedEppTypes([]);
+      } else {
+        throw new Error(`Solo ${successfulInspections.length} de ${formData.equipment.length} inspecciones se guardaron`);
       }
-
-      const result = response.data;
-
-      toast.success("Inspección guardada exitosamente");
-
-      // Cerrar modal y limpiar formulario
-      setShowSummaryModal(false);
-      setFormData({
-        collaboratorName: "",
-        collaboratorLastName: "",
-        collaboratorNumDoc: "",
-        collaboratorTypeDoc: "CC",
-        inspectorName: "",
-        inspectionDate: new Date(),
-        city: "",
-        regional: "",
-        position: "",
-        equipment: [],
-      });
     } catch (error) {
       console.error("Error:", error);
       if (axios.isAxiosError(error)) {
         if (error.response?.data.message.includes("No equipment provided")) {
           toast.error("No se especificó ningún equipo");
+        } else {
+          toast.error(error.response?.data.message || "Error al guardar las inspecciones");
         }
       } else {
-        toast.error("Error al guardar la inspección");
+        toast.error("Error al guardar las inspecciones");
       }
     } finally {
       setIsSubmitting(false);
@@ -341,7 +419,7 @@ export default function InspectionPage() {
   };
 
   return (
-    <div className="container mx-auto py-2 px-1 lg:px-4 max-w-6xl bg-primary my-1 rounded-lg">
+    <div className="container mx-auto py-2 px-1 lg:px-4 max-w-6xl bg-primary xl:rounded-lg xl:my-1">
       <div className="flex justify-between gap-2">
         <div className="h-10 flex justify-start items-center">
           <Image
@@ -382,6 +460,32 @@ export default function InspectionPage() {
         variant="info"
         label="Registra hasta 6 equipos de protección personal asignados al mismo tiempo."
       />
+
+      {/* Información de Sesión */}
+      <Card className="mb-3 border-blue-200 bg-blue-50">
+        <CardContent className="py-3">
+          <div className="flex items-center justify-between text-sm">
+            <div className="flex items-center gap-4">
+              <span className="font-medium text-blue-900">
+                Sesión de Inspección:
+              </span>
+              <Badge variant="outline" className="font-mono text-xs">
+                {inspectionSession.sessionId.slice(0, 8)}...
+              </Badge>
+            </div>
+            <div className="flex items-center gap-4">
+              <span className="text-blue-700">
+                Creada: {inspectionSession.createdAt.toLocaleDateString()}
+              </span>
+              {inspectionSession.totalInspections > 0 && (
+                <span className="text-blue-700">
+                  Inspecciones: {inspectionSession.completedInspections}/{inspectionSession.totalInspections}
+                </span>
+              )}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       <div className="space-y-6">
         {/* Información del Colaborador */}
@@ -619,47 +723,48 @@ export default function InspectionPage() {
           </CardContent>
         </Card>
 
-        {/* Equipos EPP */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center justify-between text-primary">
-              <div className="flex items-center gap-2">
-                <FaHelmetSafety className="h-5 w-5" />
-                Equipos de Protección Personal
-              </div>
-              <Badge variant="outline">
-                {formData.equipment.length}/6 equipos
-              </Badge>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {errors.equipment && (
-              <div className="text-red-500 text-sm">{errors.equipment}</div>
-            )}
+        {/* Selección de EPP */}
+        <EppSelection
+          selectedEppTypes={selectedEppTypes}
+          onSelectionChange={handleEppTypeSelection}
+          error={errors.eppSelection}
+        />
 
-            {formData.equipment.map((equipment, index) => (
-              <EppInspectionSection
-                key={equipment.id}
-                equipment={equipment}
-                index={index}
-                onUpdate={(updates) => updateEquipment(equipment.id, updates)}
-                onRemove={() => removeEquipment(equipment.id)}
-                errors={errors}
-              />
-            ))}
+        {/* Equipos EPP - Solo mostrar si hay tipos seleccionados */}
+        {selectedEppTypes.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between text-primary">
+                <div className="flex items-center gap-2">
+                  <FaFileLines className="h-5 w-5" />
+                  Formularios de inspección
+                </div>
+                <Badge variant="outline" className="text-base">
+                  {formData.equipment.length} Inspecciones
+                </Badge>
+              </CardTitle>
+              <CardDescription>
+                Complete los formularios de inspección para cada equipo seleccionado.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {errors.equipment && (
+                <div className="text-red-500 text-sm">{errors.equipment}</div>
+              )}
 
-            <Button
-              type="button"
-              variant="outline"
-              onClick={addEquipment}
-              disabled={formData.equipment.length >= 6}
-              className="w-full"
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              Agregar Equipo EPP ({formData.equipment.length}/6)
-            </Button>
-          </CardContent>
-        </Card>
+              {formData.equipment.map((equipment, index) => (
+                <EppInspectionSection
+                  key={equipment.id}
+                  equipment={equipment}
+                  index={index}
+                  onUpdate={(updates) => updateEquipment(equipment.id, updates)}
+                  onRemove={() => removeEquipment(equipment.id)}
+                  errors={errors}
+                />
+              ))}
+            </CardContent>
+          </Card>
+        )}
 
         {/* Botones de Acción */}
         <div className="flex justify-between gap-4 w-full">
