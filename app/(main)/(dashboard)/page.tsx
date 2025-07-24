@@ -9,6 +9,7 @@ import { Dashboardtitle } from "./_components/dashboard-title";
 import { MonthlyReportsSection } from "./_components/monthly-reports/monthly-reports-section";
 import { CetarDistribution } from "./_components/collaborators/cetar-distribution";
 import { getCertificatesWithCourses } from "@/actions/certificates.action";
+import { EppInspectionsReports } from "./_components/inspections/epp-inspection-report";
 
 const DashboardPage = async () => {
   const collaborators = await db.collaborator.findMany({
@@ -147,6 +148,7 @@ const DashboardPage = async () => {
           <Separator className="h-1.5 bg-primary" />
        
           {inspections && <InspectionsReports inspections={inspections} />}
+          {<EppInspectionsReports  />}
 
           {/* <Separator className="h-1.5 bg-primary" /> */}
           {report && <ReportsChartReports reports={report} />}

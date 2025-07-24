@@ -60,6 +60,7 @@ export async function GET(req: Request) {
         certificationDate: true,
         collaboratorName: true,
         collaboratorNumDoc: true,
+        collaboratorCityName: true,
         eppType: true,
         eppName: true,
         eppSerialNumber: true,

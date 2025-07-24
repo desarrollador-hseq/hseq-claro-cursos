@@ -576,7 +576,9 @@ model EppCertificationInspection {
   equipmentIndex Int?
 
   // Relación con detalles de inspección
-  inspectionDetails EppInspectionDetail[]
+  // inspectionDetails EppInspectionDetail[]
+
+  certificateNumber String? @unique // Número de certificado incremental, único
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -592,41 +594,7 @@ model EppCertificationInspection {
   @@index([sessionId, equipmentIndex])
 }
 
-model EppInspectionDetail {
-  id String @id @default(uuid())
 
-  inspectionId String
-  inspection   EppCertificationInspection @relation(fields: [inspectionId], references: [id], onDelete: Cascade)
-
-  // Código de la pregunta (ej: "quemaduras", "decoloracion")
-  questionCode String
-
-  // Texto completo de la pregunta
-  questionText String
-
-  // Respuesta (Si/No/N/A/Valor específico)
-  answer String
-
-  // Severidad o nivel (1-5, null si no aplica)
-  severity Int?
-
-  // Notas específicas de esta pregunta
-  notes String?
-
-  // Categoría de la pregunta
-  category String? // "visual", "funcional", "estructural", "seguridad"
-
-  // Si esta pregunta afecta la aptitud del equipo
-  affectsSuitability Boolean @default(false)
-
-  createdAt DateTime @default(now())
-
-  @@unique([inspectionId, questionCode])
-  @@index([inspectionId])
-  @@index([questionCode])
-  @@index([category])
-  @@index([affectsSuitability])
-}
 
 // Plantilla de preguntas por tipo de EPP
 model EppInspectionQuestion {

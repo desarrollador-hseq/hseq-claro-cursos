@@ -13,7 +13,7 @@ const navigationSettings = [
     pattern: /^\/admin\/inspecciones\/equipos.*/, // Coincide con /proveedores y sus subrutas, pero no con /documentacion
   },
   {
-    name: "Instalaciones",
+    name: "Instalaciones (UVAE)",
     href: `/admin/inspecciones/instalaciones`,
     pattern: /^\/admin\/inspecciones\/instalaciones.*/, // Coincide con /documentacion y sus subrutas
   },
@@ -34,7 +34,7 @@ const InspectionsLayout = ({ children }: { children: React.ReactNode }) => {
         <TabNavigation className="">
           {navigationSettings.map((item) => (
             <TabNavigationLink
-              className=""
+              className="min-w-[160px]"
               key={item.name}
               asChild
               active={isActiveTab(item.pattern)}
@@ -44,7 +44,7 @@ const InspectionsLayout = ({ children }: { children: React.ReactNode }) => {
           ))}
         </TabNavigation>
       </div>
-      <div className="mt-4">{children}</div>
+      <div className="mt-2">{children}</div>
     </div>
   );
 };

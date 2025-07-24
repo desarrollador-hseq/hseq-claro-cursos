@@ -4,6 +4,7 @@ import { formatDate, formatDateCert } from "@/lib/utils";
 import {
   EppCertificationInspection,
   EppInspectionDetail,
+  EppType,
 } from "@prisma/client";
 import {
   Document,
@@ -12,6 +13,7 @@ import {
   StyleSheet,
   View,
   Font,
+  Image,
 } from "@react-pdf/renderer";
 
 Font.register({
@@ -52,11 +54,33 @@ interface EppInspectionCertificateProps {
     | null;
 }
 
+const getEppName = (eppType: EppType | "") => {
+  switch (eppType) {
+    case "ARNES_CUERPO_COMPLETO":
+      return "ARNES CUERPO COMPLETO";
+    case "ESLINGA_DOBLE_TERMINAL_EN_Y":
+      return "ESLINGA DOBLE TERMINAL EN Y";
+    case "ESLINGA_POSICIONAMIENTO":
+      return "ESLINGA POSICIONAMIENTO";
+    case "FRENO_ARRESTADOR_CABLE":
+      return "FRENO ARRESTADOR CABLE";
+    case "MOSQUETON":
+      return "MOSQUETON";
+    case "ANCLAJE_TIPO_TIE_OFF":
+      return "ANCLAJE TIPO TIE OFF";
+    default:
+      return "-";
+  }
+}
+
 export const EppInspectionCertificateTemplate = ({
   eppInspection,
 }: EppInspectionCertificateProps) => {
+  const COMPANY_NAME = "CLARO S.A.S";
   const inspectionDate = formatDate(eppInspection?.inspectionDate);
-  const eppType = eppInspection?.eppType || "-";
+  const certificationDate = formatDate(eppInspection?.certificationDate, "dd/MM/yyyy");
+  const collaboratorName = eppInspection?.collaboratorName || "-";
+  const eppType = eppInspection?.eppType || "";
   const eppName = eppInspection?.eppName || "-";
   const eppSerialNumber = eppInspection?.eppSerialNumber || "-";
   const eppBrand = eppInspection?.eppBrand || "-";
@@ -79,85 +103,149 @@ export const EppInspectionCertificateTemplate = ({
   return (
     <Document style={{ height: "100%", width: "100%" }}>
       <Page size="A4" style={styles.page} orientation="landscape">
-        {/* Main Container with Border */}
         <View style={styles.mainContainer}>
-          {/* Header Section */}
-          <View style={styles.headerSection}>
-            {/* Logo and Title */}
-            <View style={styles.headerContent}>
-              <View style={styles.logoContainer}>
-                <View style={styles.logoBox}>
-                  <Text style={styles.logoText}>HSEQ</Text>
-                </View>
-              </View>
-              <View style={styles.titleContainer}>
-                <Text style={styles.mainTitle}>HSEQ – CGIR S.A.S.</Text>
-                <Text style={styles.subtitle}>
-                  CONSULTORIA EN GESTION INTEGRAL DE RIESGOS
+          {/* Nueva cabecera tipo imagen */}
+          <View style={styles.headerRow}>
+            <View style={styles.headerLogoBox}>
+              <Image
+                src="/logo-grupohseq.png"
+                style={{ width: 70, height: 35 }}
+              />
+            </View>
+            <View style={styles.headerTitleBox}>
+              <Text style={styles.headerMainTitle}>HSEQ – CGIR S. A. S.</Text>
+              <Text style={styles.headerSubtitle}>
+                CONSULTORIA EN GESTION INTEGRAL DE RIESGOS
+              </Text>
+            </View>
+            <View style={styles.headerCertBox}>
+              <View style={styles.headerCertNumberBox}>
+                <Text style={styles.headerCertNumberLabel}>CERTIFICADO </Text>
+                <Text style={styles.headerCertNumber}>
+                No {eppInspection?.certificateNumber || "-----"}
                 </Text>
               </View>
             </View>
           </View>
 
-          {/* Certificate Info Section */}
-          <View style={styles.contentSection}>
-            {/* Certificate Info Header */}
-            <View style={styles.infoHeader}>
-              <View style={styles.leftInfo}>
-                <View style={styles.infoRow}>
-                  <Text style={styles.boldText}>CERTIFICADO</Text>
-                  <Text style={styles.normalText}>FOR-HSEQ-CGIR-155</Text>
-                </View>
-                <View style={styles.infoRow}>
-                  <Text style={styles.boldText}>Denominación:</Text>
-                  <Text style={styles.boldText}>
-                    Inspección de equipos y elementos para trabajo seguro en
-                    alturas
-                  </Text>
-                </View>
+          <View style={{...styles.infoRowBlock, borderLeft: "1px solid #333333", borderRight: "1px solid #333333"}}>
+            <Text style={styles.infoBlockTitle}>CERTIFICADO</Text>
+            <Text style={styles.infoBlockCode}>FOR-HSEQ-CGIR-155</Text>
+          </View>
+
+          <View
+            style={{ flexDirection: "row", borderBottom: "1px solid #333333" }}
+          >
+            <View
+              style={{
+                width: "75%",
+                borderRight: "1px solid #333333",
+
+                display: "flex",
+                alignItems: "flex-start",
+                justifyContent: "flex-start",
+                paddingTop: 4,
+                paddingLeft: 6,
+                borderLeft: "1px solid #333333",
+              }}
+            >
+              <Text style={styles.infoBlockLabel}>Denominación:</Text>
+              <Text style={styles.infoBlockDenom}>
+                Inspección de equipos y elementos para trabajo seguro en alturas
+              </Text>
+            </View>
+            <View style={{...styles.headerCertRow, borderRight: "1px solid #333333"}}>
+              <View
+                style={{
+                  flexDirection: "column",
+                  alignItems: "flex-start",
+                  gap: 2,
+                  width: "60%",
+                  borderRight: "1px solid #333333",
+                }}
+              >
+                <Text style={styles.headerCertSmall}>Emisión: {certificationDate}</Text>
+                <Text style={styles.headerCertSmall}>Revisión:</Text>
               </View>
-              <View style={styles.rightInfo}>
-                <Text style={styles.smallText}>Emisión: 08/11/2021</Text>
-                <Text style={styles.smallText}>Versión: 01</Text>
-                <Text style={styles.smallText}>Revisión:</Text>
-                <View style={styles.certificateNumberBox}>
-                  <Text style={styles.boldText}>CERTIFICADO No</Text>
-                  <Text style={styles.certificateNumber}>
-                    {eppInspection?.id}
-                  </Text>
-                </View>
+              <View
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  width: "40%",
+                
+                }}
+              >
+                <Text style={{ ...styles.headerCertSmall, fontWeight: 700 }}>
+                  Versión: 01
+                </Text>
               </View>
             </View>
+          </View>
+          {/* Bloque de datos principales */}
+          <View style={{ padding: 10 }}>
+            <View
+              style={{
+                display: "flex",
+                flexDirection: "row",
+                paddingVertical: 10,
 
-            {/* Company and Inspector Info */}
-            <View style={styles.companyInfo}>
-              <View style={styles.infoGrid}>
-                <View style={styles.gridLeft}>
-                  <View style={styles.fieldRow}>
-                    <Text style={styles.boldText}>EMPRESA USUARIA:</Text>
-                    <View style={styles.inputBox}>
-                      <Text style={styles.boldCenterText}>
-                        {eppInspection?.collaboratorName}
-                      </Text>
-                    </View>
-                  </View>
-                  <View style={styles.fieldRow}>
-                    <Text style={styles.boldText}>INSPECTOR ENCARGADO:</Text>
-                    <View style={styles.inputBox}>
-                      <Text style={styles.normalText}>
-                        {eppInspection?.inspectorName}
-                      </Text>
-                    </View>
+                marginBottom: 10,
+              }}
+            >
+              <View
+                style={{
+                  width: "50%",
+                  display: "flex",
+                  flexDirection: "column",
+                  justifyContent: "space-between",
+                  gap: 5,
+                }}
+              >
+                <View style={styles.infoRowBlock}>
+                  <Text style={styles.infoBlockLabel}>EMPRESA USUARIA:</Text>
+                  <View style={styles.infoBlockInput}>
+                    <Text style={styles.infoBlockInputText}>
+                      {COMPANY_NAME}
+                    </Text>
                   </View>
                 </View>
-                <View style={styles.gridRight}>
-                  <View style={styles.fieldRow}>
-                    <Text style={styles.boldText}>FECHA DE INSPECCIÓN:</Text>
-                    <View style={styles.inputBox}>
-                      <Text style={styles.boldCenterText}>
-                        {inspectionDate}
-                      </Text>
-                    </View>
+                <View style={styles.infoRowBlock}>
+                  <Text style={styles.infoBlockLabel}>COLABORADOR:</Text>
+                  <View style={styles.infoBlockInput}>
+                    <Text style={styles.infoBlockInputText}>
+                      {eppInspection?.collaboratorName}
+                    </Text>
+                  </View>
+                </View>
+                
+              </View>
+              <View
+                style={{
+                  width: "50%",
+                  display: "flex",
+                  flexDirection: "column",
+                  justifyContent: "space-between",
+                }}
+              >
+                <View style={styles.infoRowBlock}>
+                  <Text style={{ ...styles.infoBlockLabel }}>
+                    FECHA DE INSPECCIÓN:
+                  </Text>
+                  <View style={styles.infoBlockInput}>
+                    <Text style={styles.infoBlockInputText}>
+                      {inspectionDate?.toUpperCase()}
+                    </Text>
+                  </View>
+                </View>
+                <View style={styles.infoRowBlock}>
+                  <Text style={styles.infoBlockLabel}>
+                    INSPECTOR:
+                  </Text>
+                  <View style={styles.infoBlockInput}>
+                    <Text style={styles.infoBlockInputText}>
+                      {eppInspection?.inspectorName}
+                    </Text>
                   </View>
                 </View>
               </View>
@@ -166,7 +254,7 @@ export const EppInspectionCertificateTemplate = ({
             {/* Element Description Table */}
             <View style={styles.sectionContainer}>
               <Text style={styles.sectionTitle}>
-                1. DESCRIPCIÓN DEL ELEMENTO/EQUIPO
+                1. DESCRIPCIÓN DEL ELEMENTO / EQUIPO
               </Text>
               <View style={styles.table}>
                 {/* Table Header */}
@@ -175,10 +263,7 @@ export const EppInspectionCertificateTemplate = ({
                     <Text style={styles.tableHeaderText}>TIPO DE ELEMENTO</Text>
                   </View>
                   <View style={[styles.tableHeader, styles.column2]}>
-                    <Text style={styles.tableHeaderText}>MARCA</Text>
-                  </View>
-                  <View style={[styles.tableHeader, styles.column2]}>
-                    <Text style={styles.tableHeaderText}>LOTE</Text>
+                    <Text style={styles.tableHeaderText}>FABRICANTE</Text>
                   </View>
                   <View style={[styles.tableHeader, styles.column2]}>
                     <Text style={styles.tableHeaderText}>
@@ -194,19 +279,20 @@ export const EppInspectionCertificateTemplate = ({
                 {/* Table Content */}
                 <View style={styles.tableRow}>
                   <View style={[styles.tableCell, styles.column1]}>
-                    <Text style={styles.tableCellBoldText}>{eppType}</Text>
+                    <Text style={styles.tableCellBoldText}>{getEppName(eppType)}</Text>
                   </View>
                   <View style={[styles.tableCell, styles.column2]}>
                     <Text style={styles.tableCellText}>{eppBrand}</Text>
                   </View>
                   <View style={[styles.tableCell, styles.column2]}>
-                    <Text style={styles.tableCellBoldText}>{eppModel}</Text>
+                    <Text style={styles.tableCellText}>
+                      {eppSerialNumber}
+                    </Text>
                   </View>
                   <View style={[styles.tableCell, styles.column2]}>
-                    <Text style={styles.tableCellText}>{eppSerialNumber}</Text>
-                  </View>
-                  <View style={[styles.tableCell, styles.column2]}>
-                    <Text style={styles.tableCellText}>{manufacturingDate}</Text>
+                    <Text style={styles.tableCellText}>
+                      {manufacturingDate || "NO DESCRIBE"}
+                    </Text>
                   </View>
                 </View>
               </View>
@@ -215,8 +301,8 @@ export const EppInspectionCertificateTemplate = ({
             {/* Component Verification */}
             <View style={styles.sectionContainer}>
               <Text style={styles.sectionTitle}>
-                2. 2. VERIFICACIÓN DE LOS COMPONENTES DEL ELEMENTO/EQUIPO (B:
-                Bueno, M: Malo)
+                2. VERIFICACIÓN DE LOS COMPONENTES DEL ELEMENTO/EQUIPO (B:
+                Bueno, M: Malo, NA: No aplica)
               </Text>
               <View style={styles.table}>
                 {/* Table Header */}
@@ -249,7 +335,7 @@ export const EppInspectionCertificateTemplate = ({
               <Text style={styles.sectionTitle}>3. ASPECTO POR MEJORAR</Text>
               <View style={styles.textBox}>
                 <Text style={styles.normalText}>
-                  {eppInspection?.observations}
+                  {eppInspection?.observations || "-"}
                 </Text>
               </View>
             </View>
@@ -259,23 +345,73 @@ export const EppInspectionCertificateTemplate = ({
               <View style={styles.determinationRow}>
                 <View style={styles.determinationLeft}>
                   <Text style={styles.sectionTitle}>4. DETERMINACIÓN</Text>
-                  <View style={styles.determinationField}>
-                    <Text style={styles.boldText}>CONTINUA EN SERVICIO:</Text>
-                    <View style={styles.determinationBox}>
-                      <Text style={styles.boldText}>{isSuitable}</Text>
+                  <View style={{ display: "flex", flexDirection: "row" }}>
+                    <View style={styles.determinationField}>
+                      <Text style={styles.normalText}>CONTINUA EN SERVICIO:</Text>
+                      <View style={styles.determinationBox}>
+                        <Text style={styles.boldText}>{isSuitable}</Text>
+                      </View>
+                    </View>
+                    {/* Justification */}
+                    <View
+                      style={{
+                        width: "50%",
+                        paddingLeft: 10,
+                        
+                      }}
+                    >
+                      <Text style={styles.boldText}>JUSTIFICACIÓN:</Text>
+                      <View style={styles.textBox}>
+                        <Text style={styles.normalText}>
+                          {validationNotes || "-"}
+                        </Text>
+                      </View>
                     </View>
                   </View>
                 </View>
               </View>
             </View>
 
-            {/* Justification */}
-            <View style={styles.sectionContainer}>
-              <View style={styles.justificationBox}>
-                <Text style={styles.boldText}>JUSTIFICACIÓN:</Text>
-                <Text style={styles.normalText}>{validationNotes}</Text>
+            {/* <View
+              style={{
+                display: "flex",
+                flexDirection: "row",
+                width: "100%",
+               
+              }}
+            >
+              <View
+                style={{
+                  width: "70%",
+                  padding: 10,
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                }}
+              >
+                <View style={styles.signatureBox}></View>
+                <Text style={styles.boldText}>
+                  FIRMA DEL INSPECTOR CERTIFICADO
+                </Text>
               </View>
-            </View>
+              <View
+                style={{
+                  width: "30%",
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                }}
+              >
+                <Text style={styles.boldText}>QR</Text>
+                <View
+                  style={{
+                    width: "60px",
+                    height: "60px",
+                    backgroundColor: "black",
+                  }}
+                ></View>
+              </View>
+            </View> */}
           </View>
         </View>
       </Page>
@@ -286,133 +422,156 @@ export const EppInspectionCertificateTemplate = ({
 const styles = StyleSheet.create({
   page: {
     fontFamily: "calibri",
-    backgroundColor: "#fff",
+    // backgroundColor: "#fff",
     padding: 15,
     fontSize: 10,
   },
+
   mainContainer: {
-    border: "2px solid black",
+    // border: "1px solid #333333",
     width: "100%",
     height: "100%",
+    paddingVertical: 35,
   },
-  headerSection: {
-    borderBottom: "1px solid black",
-    padding: 10,
-  },
-  headerContent: {
+  // CABECERA
+  headerRow: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
+    border: "1px solid #333333",
+    padding: 4,
+    // marginBottom: 2,
   },
-  logoContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  logoBox: {
-    width: 50,
-    height: 50,
-    backgroundColor: "#f97316",
-    borderRadius: 4,
+  headerLogoBox: {
+    width: 90,
     alignItems: "center",
     justifyContent: "center",
-    marginRight: 10,
   },
-  logoText: {
-    color: "white",
-    fontWeight: 700,
-    fontSize: 14,
-  },
-  titleContainer: {
+  headerTitleBox: {
     flex: 1,
     alignItems: "center",
+    justifyContent: "center",
+    marginTop: 10,
   },
-  mainTitle: {
-    fontSize: 14,
-    fontWeight: 700,
+  headerMainTitle: {
     color: "#dc2626",
+    fontWeight: 700,
+    fontSize: 18,
+    textAlign: "center",
+    marginBottom: 2,
+  },
+  headerSubtitle: {
+    color: "#dc2626",
+    fontWeight: 700,
+    fontSize: 13,
     textAlign: "center",
   },
-  subtitle: {
-    fontSize: 11,
-    fontWeight: 700,
-    color: "#dc2626",
-    textAlign: "center",
-  },
-  contentSection: {
-    padding: 10,
-    flex: 1,
-  },
-  infoHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 10,
-  },
-  leftInfo: {
-    flex: 1,
-  },
-  rightInfo: {
+  headerCertBox: {
+    minWidth: 180,
     alignItems: "flex-end",
+    justifyContent: "flex-end",
   },
-  infoRow: {
-    marginBottom: 5,
+  headerCertRow: {
+    flexDirection: "row",
+    width: "25%",
+    alignItems: "center",
+    justifyContent: "flex-start",
   },
+  headerCertSmall: {
+    fontSize: 10,
+    marginLeft: 6,
+  },
+  headerCertNumberBox: {
+    border: "1px solid #333333",
+    padding: 3,
+    alignItems: "center",
+    minWidth: 90,
+
+  },
+  headerCertNumberLabel: {
+    fontWeight: 700,
+    fontSize: 10,
+    textAlign: "center",
+  },
+  headerCertNumber: {
+    fontWeight: 700,
+    fontSize: 14,
+    textAlign: "center",
+  },
+  // BLOQUE INFO PRINCIPAL
+  infoBlock: {
+    borderBottom: "1px solid #333333",
+    padding: 8,
+    
+  },
+  infoRowBlock: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    height: "auto",
+    
+  },
+  infoBlockTitle: {
+    fontWeight: 700,
+    fontSize: 12,
+    borderBottom: "1px solid #333333",
+    borderRight: "1px solid #333333",
+    width: "75%",
+    textAlign: "center",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingTop: 2,
+  },
+  infoBlockCode: {
+    fontWeight: 400,
+    fontSize: 12,
+    width: "25%",
+    borderBottom: "1px solid #333333",
+    textAlign: "center",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingTop: 2,
+  },
+  infoBlockLabel: {
+    fontWeight: 700,
+    fontSize: 10,
+    width: "25%",
+  },
+  infoBlockDenom: {
+    fontWeight: 700,
+    fontSize: 12,
+  },
+  infoBlockInput: {
+    borderRadius: 3,
+    backgroundColor: "#e4e4e4",
+    minWidth: 180,
+    minHeight: 18,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 10,
+    paddingHorizontal: 4,
+    flex: 1,
+    width: "75%",
+  },
+
+  infoBlockInputText: {
+    fontWeight: 700,
+    fontSize: 10,
+    textAlign: "center",
+    textTransform: "uppercase",
+  },
+  // ESTILOS RESTANTES
   boldText: {
     fontWeight: 700,
     fontSize: 10,
   },
   normalText: {
     fontWeight: 400,
-    fontSize: 10,
-  },
-  smallText: {
-    fontSize: 9,
-    marginBottom: 2,
-  },
-  certificateNumberBox: {
-    border: "1px solid black",
-    padding: 5,
-    marginTop: 5,
-    alignItems: "center",
-    minWidth: 80,
-  },
-  certificateNumber: {
-    textAlign: "center",
-    fontWeight: 700,
-    fontSize: 12,
-  },
-  companyInfo: {
-    marginBottom: 10,
-  },
-  infoGrid: {
-    flexDirection: "row",
-    gap: 10,
-  },
-  gridLeft: {
-    flex: 1,
-  },
-  gridRight: {
-    flex: 1,
-  },
-  fieldRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 5,
-  },
-  inputBox: {
-    border: "1px solid black",
-    padding: 3,
-    marginLeft: 5,
-    flex: 1,
-    minHeight: 15,
-    justifyContent: "center",
-  },
-  boldCenterText: {
-    fontWeight: 700,
-    textAlign: "center",
-    fontSize: 10,
+    fontSize: 11,
   },
   sectionContainer: {
-    marginBottom: 10,
+    marginBottom: 16,
   },
   sectionTitle: {
     fontWeight: 700,
@@ -421,29 +580,34 @@ const styles = StyleSheet.create({
   },
   table: {
     width: "100%",
-    border: "1px solid black",
+    borderBottom: "1px solid #333333",
+    borderLeft: "1px solid #333333",
   },
   tableRow: {
     flexDirection: "row",
   },
   tableHeader: {
     backgroundColor: "#e5e7eb",
-    border: "1px solid black",
+    // borderLeft: "1px solid #333333",
+    borderTop: "1px solid #333333",
+    borderBottom: "1px solid #333333",
     padding: 5,
     alignItems: "center",
     justifyContent: "center",
   },
   tableCell: {
-    border: "1px solid black",
+     borderRight: "1px solid #333333",
     padding: 5,
     alignItems: "center",
     justifyContent: "center",
   },
   column1: {
     flex: 1.2,
+    borderRight: "1px solid #333333",
   },
   column2: {
     flex: 1,
+    borderRight: "1px solid #333333",
   },
   tableHeaderText: {
     fontSize: 9,
@@ -460,9 +624,11 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   textBox: {
-    border: "1px solid black",
+    borderRadius: 3,
+    backgroundColor: "#e4e4e4",
     padding: 5,
-    minHeight: 30,
+    minHeight: 40,
+    paddingVertical: 10,
   },
   determinationRow: {
     flexDirection: "row",
@@ -472,19 +638,30 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   determinationField: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: "column",
+    alignItems: "flex-start",
+    justifyContent: "center",
     marginTop: 5,
+    width: "30%",
+    paddingLeft: 10,
   },
   determinationBox: {
-    border: "1px solid black",
+    borderRadius: 3,
+    backgroundColor: "#e4e4e4",
     padding: 5,
-    marginLeft: 10,
     minWidth: 30,
     alignItems: "center",
+    justifyContent: "center",
   },
   justificationBox: {
-    border: "1px solid black",
+    border: "1px solid #333333",
     padding: 5,
+  },
+
+  signatureBox: {
+    backgroundColor: "gray",
+    width: 100,
+    height: 60,
+    marginTop: 2,
   },
 });

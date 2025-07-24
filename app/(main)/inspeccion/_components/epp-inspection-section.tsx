@@ -660,13 +660,13 @@ export const EppInspectionSection: React.FC<EppInspectionSectionProps> = ({
           {/* Observaciones */}
           <div>
             <Label htmlFor={`observations_${equipment.id}`}>
-              Observaciones
+              Observaciones (ASPECTO POR MEJORAR)
             </Label>
             <Textarea
               id={`observations_${equipment.id}`}
               value={equipment.observations}
               onChange={(e) => onUpdate({ observations: e.target.value })}
-              placeholder="Observaciones adicionales sobre el equipo..."
+              placeholder="ASPECTO POR MEJORAR sobre el equipo..."
               className="min-h-[80px]"
             />
           </div>

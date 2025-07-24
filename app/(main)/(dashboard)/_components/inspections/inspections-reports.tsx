@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { City, Inspection } from "@prisma/client";
+import { City, EppCertificationInspection, Inspection } from "@prisma/client";
 import { Fade } from "react-awesome-reveal";
 import { InspectionsExecutedCity } from "./Inspections-executed-city";
 import { InspectionsCity } from "./inspections-city";
@@ -25,20 +25,21 @@ export const InspectionsReports = ({
 }: InspectionsReportsProps) => {
   const { date } = useDashboard();
 
-  const filteredInspections =  !date || (date?.from === undefined && date?.to === undefined)
-  ? inspections
-  : inspections.filter((inspections) => {
-      const startDate = new Date(inspections.date);
-      return (
-        (!date.from || startDate >= date.from) &&
-        (!date.to || startDate <= date.to)
-      );
-    });
+  const filteredInspections =
+    !date || (date?.from === undefined && date?.to === undefined)
+      ? inspections
+      : inspections.filter((inspections) => {
+          const startDate = new Date(inspections.date);
+          return (
+            (!date.from || startDate >= date.from) &&
+            (!date.to || startDate <= date.to)
+          );
+        });
   return (
     <div className="w-full flex flex-col justify-center mb-6" id="inspection">
       <div className="w-full grid grid-rows-3 grid-cols-1 md:grid-rows-1 md:grid-cols-3 my-1 h-max md:my-3  place-content-center px-3 ">
         <div />
-        <h2 className="text-3xl font-bold text-center">Inspecciones</h2>
+        <h2 className="text-3xl font-bold text-center">Inspecciones Instalaciones (UVAE)</h2>
         <div className="place-content-center flex justify-center md:justify-end">
           <ShowTableModal title="Inspecciones">
             <InspectionsDataTable

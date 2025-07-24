@@ -88,6 +88,23 @@ export async function PATCH(
     };
 
     // Actualizar estado de la inspección
+    let certificateNumberToAssign: string | undefined = undefined;
+    if (body.status === 'VALIDATED' && !existingInspection.certificateNumber) {
+      // Buscar el último número de certificado asignado
+      const lastCert = await db.eppCertificationInspection.findFirst({
+        where: { certificateNumber: { not: null } },
+        orderBy: { certificateNumber: 'desc' },
+        select: { certificateNumber: true },
+      });
+      let nextNumber = 1;
+      if (lastCert && lastCert.certificateNumber) {
+        // Quitar ceros a la izquierda y convertir a número
+        const parsed = parseInt(lastCert.certificateNumber, 10);
+        if (!isNaN(parsed)) nextNumber = parsed + 1;
+      }
+      certificateNumberToAssign = nextNumber.toString().padStart(5, '0');
+    }
+
     const updatedInspection = await db.eppCertificationInspection.update({
       where: { id: inspectionId },
       data: {
@@ -95,7 +112,8 @@ export async function PATCH(
         validatedBy: session.user?.email || session.user?.name || "Usuario desconocido",
         validatedAt: new Date(),
         validationNotes: body.validationNotes || null,
-        inspectionSummary: updatedSummary
+        inspectionSummary: updatedSummary,
+        ...(certificateNumberToAssign ? { certificateNumber: certificateNumberToAssign } : {}),
       },
       select: {
         id: true,
@@ -106,7 +124,8 @@ export async function PATCH(
         collaboratorName: true,
         eppName: true,
         eppSerialNumber: true,
-        inspectionDate: true
+        inspectionDate: true,
+        certificateNumber: true,
       }
     });
 
