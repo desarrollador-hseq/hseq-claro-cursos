@@ -42,15 +42,6 @@ export async function PATCH(
     // Verificar que la inspección existe y obtener detalles de inspección
     const existingInspection = await db.eppCertificationInspection.findUnique({
       where: { id: inspectionId },
-      include: {
-        inspectionDetails: {
-          select: {
-            category: true,
-            answer: true,
-            questionText: true
-          }
-        }
-      }
     });
 
     if (!existingInspection) {
@@ -69,11 +60,7 @@ export async function PATCH(
     } else {
       // Fallback: generar automáticamente desde inspectionDetails
       const categoriesMap: Record<string, string> = {};
-      existingInspection.inspectionDetails.forEach(detail => {
-        if (detail.category) {
-          categoriesMap[detail.category] = detail.answer;
-        }
-      });
+
 
       inspectionCategories = Object.keys(categoriesMap).length > 0 
         ? Object.entries(categoriesMap).map(([category, answer]) => ({ [category]: answer }))

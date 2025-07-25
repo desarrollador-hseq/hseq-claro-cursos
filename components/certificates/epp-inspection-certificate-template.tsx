@@ -3,7 +3,6 @@
 import { formatDate, formatDateCert } from "@/lib/utils";
 import {
   EppCertificationInspection,
-  EppInspectionDetail,
   EppType,
 } from "@prisma/client";
 import {
@@ -48,9 +47,7 @@ Font.register({
 
 interface EppInspectionCertificateProps {
   eppInspection:
-    | (EppCertificationInspection & {
-        inspectionDetails: EppInspectionDetail[];
-      })
+    | (EppCertificationInspection)
     | null;
 }
 
@@ -214,7 +211,7 @@ export const EppInspectionCertificateTemplate = ({
                   <Text style={styles.infoBlockLabel}>COLABORADOR:</Text>
                   <View style={styles.infoBlockInput}>
                     <Text style={styles.infoBlockInputText}>
-                      {eppInspection?.collaboratorName}
+                      {collaboratorName}
                     </Text>
                   </View>
                 </View>

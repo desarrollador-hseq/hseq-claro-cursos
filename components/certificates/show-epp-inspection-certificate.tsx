@@ -3,10 +3,9 @@ import { useEffect, useState } from "react";
 import { AlertCircle, FileWarning, Loader2 } from "lucide-react";
 
 import { PdfPreview } from "../pdf-preview";
-import { CertificateTemplate } from "./certificate-template";
 import { getEppCertificationInspection } from "@/actions/certificates.action";
-import { Banner } from "../ui/banner";
-import { EppCertificationInspection, EppInspectionDetail } from "@prisma/client";
+
+import { EppCertificationInspection } from "@prisma/client";
 import { EppInspectionCertificateTemplate } from "./epp-inspection-certificate-template";
 
 const getEppInspectionByClient = async (eppInspectionId: string) => {
@@ -28,12 +27,8 @@ const ShowEppInspectionCertificate = ({
   showButtons?: boolean;
   onDownload?: (eppInspection: EppCertificationInspection) => void;
 }) => {
-  const [eppInspection, setEppInspection] = useState<
-    | (EppCertificationInspection & {
-        inspectionDetails: EppInspectionDetail[];
-      })
-    | null
-  >(null);
+  const [eppInspection, setEppInspection] =
+    useState<EppCertificationInspection | null>(null);
   const [pdfComponent, setPdfComponent] = useState<React.ReactNode | null>(
     null
   );
