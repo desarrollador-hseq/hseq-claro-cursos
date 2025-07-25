@@ -131,7 +131,7 @@ export const CollaboratorsRegional = ({
       title={
         <div className="flex flex-col items-center gap-3">
           <span>Colaboradores certificados en cada regional</span>
-          <CollaboratorsRegionalMenu regionals={regionalsFull} />
+          {/* <CollaboratorsRegionalMenu regionals={regionalsFull} /> */}
           <div />
         </div>
       }

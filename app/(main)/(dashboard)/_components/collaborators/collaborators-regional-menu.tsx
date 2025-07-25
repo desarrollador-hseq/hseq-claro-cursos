@@ -134,5 +134,5 @@ const ContentRegionalModal = ({
     },
   };
 
-  return <Chart option={option} title={title} />;
+  return <Chart option={option} title={title} className="" />;
 };

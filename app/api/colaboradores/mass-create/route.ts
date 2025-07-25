@@ -10,7 +10,7 @@ interface EmployeeInput {
   identificationNumber: string;
   docType: DocType;
   cityId: string; // Cambiado de city a cityId
-  email: string;
+  email?: string;
 }
 
 interface ProcessResult {
@@ -51,7 +51,7 @@ export async function POST(req: NextRequest) {
     for (const employee of employees) {
       try {
         // Validar campos requeridos
-        if (!employee.name || !employee.lastName || !employee.email || !employee.identificationNumber || !employee.docType || !employee.cityId) {
+        if (!employee.name || !employee.lastName || !employee.identificationNumber || !employee.docType || !employee.cityId) {
           result.errores.push({
             empleado: employee,
             error: "Faltan campos requeridos (name, lastName, identificationNumber, docType, cityId)"
@@ -108,7 +108,7 @@ export async function POST(req: NextRequest) {
             lastname: employee.lastName.trim(),
             docType: employee.docType,
             numDoc: employee.identificationNumber.trim(),
-            email: employee.email.trim(),
+            email: employee.email?.trim() || null,
             cityId: employee.cityId,
           
           },

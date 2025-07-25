@@ -45,6 +45,7 @@ import {
   X,
 } from "lucide-react";
 import TitlePage from "@/components/title-page";
+import { cn } from "@/lib/utils";
 
 // Configuración de estados
 const STATUS_CONFIG = {
@@ -186,13 +187,7 @@ export default function EppInspectionsPage() {
         description="Gestión de inspecciones de equipos de protección personal"
       />
       <Card>
-        <CardHeader>
-          <CardTitle>Inspecciones EPP</CardTitle>
-          <CardDescription>
-            Gestiona las inspecciones de equipos de protección personal
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
+        <CardContent className="pt-6">
           {/* Filtros */}
           <div className="flex flex-wrap gap-4 mb-6">
             <div className="flex-1 min-w-[200px]">
@@ -288,7 +283,7 @@ export default function EppInspectionsPage() {
                         inspection.status as keyof typeof STATUS_CONFIG
                       ]?.icon;
                     return (
-                      <TableRow key={inspection.id}>
+                      <TableRow key={inspection.id}  className={cn(inspection.status === "PENDING" && "bg-yellow-100")}>
                         <TableCell className="font-medium">
                           <div className="flex items-center gap-2">
                             {inspection.equipmentIndex && (

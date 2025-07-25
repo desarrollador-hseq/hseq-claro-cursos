@@ -3,7 +3,6 @@
 import { City, Inspection } from "@prisma/client";
 import { Chart } from "@/components/chart";
 
-
 interface InspectionWithCity extends Inspection {
   city: City | null;
 }
@@ -16,25 +15,26 @@ export const InspectionsCity = ({ inspections }: InspectionsReportsProps) => {
   const processDataForBarChart = () => {
     const cityData = inspections.map((inspection) => {
       const cityName = inspection.city?.realName || "Desconocida";
-      
+
       return {
         cityName,
-        count: 1, 
+        count: 1,
       };
     });
-  
+
     const countsByCity = cityData.reduce((acc: any, { cityName, count }) => {
       acc[cityName] = (acc[cityName] || 0) + count;
       return acc;
     }, {});
-  
+
     const cities = Object.keys(countsByCity);
-    const counts = Object.values(countsByCity);
-  
-    return { cities, counts };
+    const counts = Object.values(countsByCity) as number[];
+    const total = counts.reduce((sum, count) => sum + count, 0);
+
+    return { cities, counts, total };
   };
 
-  const { cities, counts } = processDataForBarChart();
+  const { cities, counts, total } = processDataForBarChart();
 
   const col = [
     "#1DACD6",
@@ -75,6 +75,12 @@ export const InspectionsCity = ({ inspections }: InspectionsReportsProps) => {
       axisPointer: {
         type: "shadow",
       },
+      formatter: function (params: any) {
+        const data = params[0];
+        const count = data.value;
+        const percentage = total > 0 ? ((count / total) * 100).toFixed(1) : "0";
+        return `${data.name}<br/>Cantidad: ${count}<br/>Porcentaje: ${percentage}%`;
+      },
     },
     grid: {
       left: "3%",
@@ -99,8 +105,16 @@ export const InspectionsCity = ({ inspections }: InspectionsReportsProps) => {
     series: [
       {
         label: {
-          show: false,
-          position: "center",
+          show: true,
+          position: "top",
+          formatter: function (params: any) {
+            const count = params.value;
+
+            return `${count}`;
+          },
+          fontSize: 12,
+          fontWeight: "bold",
+          color: "#333",
         },
         data: cities.map((city, index) => ({
           value: counts[index],

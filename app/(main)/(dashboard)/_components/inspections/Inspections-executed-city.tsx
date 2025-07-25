@@ -4,7 +4,7 @@ import { City, Inspection } from "@prisma/client";
 import { Chart } from "@/components/chart";
 
 interface InspectionWithCity extends Inspection {
-  city: City | null
+  city: City | null;
 }
 
 interface InspectionsReportProps {
@@ -14,11 +14,10 @@ interface InspectionsReportProps {
 export const InspectionsExecutedCity = ({
   inspections,
 }: InspectionsReportProps) => {
-
-  const countInspectionsByCity = (inspections: InspectionWithCity[] ) => {
+  const countInspectionsByCity = (inspections: InspectionWithCity[]) => {
     const counts = inspections.reduce((acc: any, { city, isExecuted }: any) => {
       if (!acc[city.id]) {
-        acc[city.id] = { executed: 0, notExecuted: 0, cityName: (city.realName) }; // Incluir el nombre de la ciudad
+        acc[city.id] = { executed: 0, notExecuted: 0, cityName: city.realName }; // Incluir el nombre de la ciudad
       }
       if (isExecuted) {
         acc[city.id].executed += 1;
@@ -27,17 +26,19 @@ export const InspectionsExecutedCity = ({
       }
       return acc;
     }, {});
-  
-    return Object.values(counts).map(({ cityName, executed, notExecuted }: any) => {
-      return [cityName, executed, notExecuted]; // No incluir el nombre de la ciudad al final de cada fila
-    });
+
+    return Object.values(counts).map(
+      ({ cityName, executed, notExecuted }: any) => {
+        return [cityName, executed, notExecuted]; // No incluir el nombre de la ciudad al final de cada fila
+      }
+    );
   };
-  
+
   const datasetSource = [
     ["Ciudad", "Ejecutadas", "Programadas"],
     ...countInspectionsByCity(inspections),
   ];
-  
+
   const option = {
     legend: {},
     tooltip: {},

@@ -65,7 +65,9 @@ const formSchema = z.object({
   email: z
     .string()
     .email({ message: "Correo electrónico inválido" })
-    .optional(),
+    .optional()
+    .nullable()
+    .or(z.literal("")),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -336,7 +338,7 @@ export const EmployeeValidationDataRow = ({
               errors.email && "border-red-500",
               hasApiError && "bg-red-50"
             )}
-            placeholder="Correo electrónico"
+            placeholder="sin correo"
           />
           {errors.email && (
             <span className="text-red-500 text-sm">{errors.email.message}</span>

@@ -7,55 +7,19 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import axios from "axios";
 import { toast } from "sonner";
-import {
-  UserPlus,
-  Search,
-  Filter,
-  Users,
-  MapPin,
-  CheckCircle,
-  AlertCircle,
-  XCircle,
-} from "lucide-react";
-
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Collaborator, CourseLevel, RequiredDocument } from "@prisma/client";
+import { Users } from "lucide-react";
 import {
   Form,
   FormControl,
   FormField,
   FormItem,
-  FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
+
 import { LoadingButton } from "@/components/ui/loading-button";
-import { cn } from "@/lib/utils";
-import { compressAndResizeImage, formatFileSize } from "@/lib/utils";
 
 import { CollaboratorSearchTable } from "@/components/collaborator-search-table";
-import { SimpleModal } from "@/components/simple-modal";
-import { Collaborator } from "@prisma/client";
-
-interface CourseLevel {
-  id: string;
-  name: string;
-  requiredDocuments: RequiredDocument[];
-}
-
-interface RequiredDocument {
-  id: string;
-  name: string;
-}
 
 interface SelectedCollaborator {
   id: string;
@@ -195,8 +159,8 @@ export const AddCollaboratorForm = ({
   };
 
   useEffect(() => {
-    console.log({selectedCollaborators})
-  }, [selectedCollaborators])
+    console.log({ selectedCollaborators });
+  }, [selectedCollaborators]);
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
@@ -274,7 +238,9 @@ export const AddCollaboratorForm = ({
                         selectedCollaborators={selectedCollaborators}
                         onRemoveCollaborator={handleRemoveCollaborator}
                         loadingCertificates={loadingCertificates}
-                        excludeCollaboratorIds={currentCollaborators?.map(c => c.id) || []}
+                        excludeCollaboratorIds={
+                          currentCollaborators?.map((c) => c.id) || []
+                        }
                       />
                     </FormControl>
                     <FormMessage />

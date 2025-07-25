@@ -52,6 +52,8 @@ export async function PATCH(req: Request, { params }: { params: { collaboratorId
             name: values.name,
             lastname: values.lastname,
             numDoc: values.numDoc,
+            email: values.email,
+            phone: values.phone,
             cityId: values.cityId,
             startDate: values.startDate,
             endDate: values.endDate,

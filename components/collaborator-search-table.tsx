@@ -152,6 +152,7 @@ export const CollaboratorSearchTable: React.FC<
               const status = getCertificateStatus(collaborator);
               return (
                 <div
+                  key={collaborator.id}
                   className={cn(
                     "flex items-center gap-2 border-2 px-4 py-1",
                     collaborator.hasCertificate && "bg-red-100 border-red-400"

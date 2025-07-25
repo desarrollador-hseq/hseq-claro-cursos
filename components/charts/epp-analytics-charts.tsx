@@ -11,9 +11,11 @@ import {
   Legend,
   ArcElement,
 } from "chart.js";
+import ChartDataLabels from 'chartjs-plugin-datalabels';
 import { Bar, Pie } from "react-chartjs-2";
 import { Card, CardContent, CardHeader } from "../ui/card";
 import { EppAnalyticsData } from "@/hooks/use-epp-analytics";
+import { Fade } from "react-awesome-reveal";
 
 ChartJS.register(
   CategoryScale,
@@ -22,7 +24,8 @@ ChartJS.register(
   Title,
   Tooltip,
   Legend,
-  ArcElement
+  ArcElement,
+  ChartDataLabels
 );
 
 interface RegionalData {
@@ -52,6 +55,8 @@ interface EppAnalyticsChartsProps {
 export const RegionalBarChart: React.FC<{ data: RegionalData[] }> = ({
   data,
 }) => {
+  const total = data.reduce((sum, item) => sum + item.count, 0);
+  
   const chartData = {
     labels: data.map((item) => item.regionalName),
     datasets: [
@@ -70,11 +75,43 @@ export const RegionalBarChart: React.FC<{ data: RegionalData[] }> = ({
     plugins: {
       legend: {
         position: "top" as const,
+        display: false,
       },
       title: {
-        display: true,
+        display: false,
         text: "Inspecciones por Regional",
+        style: {
+          marginTop: "10px",
+        },
       },
+      tooltip: {
+        callbacks: {
+          label: function(context: any) {
+            const count = context.parsed.y;
+            const percentage = total > 0 ? ((count / total) * 100).toFixed(1) : '0';
+            return `${context.dataset.label}: ${count} (${percentage}%)`;
+          }
+        }
+      },
+      datalabels: {
+        display: true,
+        color: '#fff',
+        font: {
+          weight: 700,
+          size: 16
+        }
+      }
+      // datalabels: {
+      //   display: true,
+      //   color: '#000',
+      //   anchor: 'end',
+      //   align: 'top',
+      //   offset: 4,
+      //   formatter: function(value: number) {
+      //     const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : '0';
+      //     return `${value}\n(${percentage}%)`;
+      //   }
+      // }
     },
     scales: {
       y: {
@@ -92,14 +129,16 @@ export const RegionalBarChart: React.FC<{ data: RegionalData[] }> = ({
 export const EppTypeBarChart: React.FC<{ data: EppTypeData[] }> = ({
   data,
 }) => {
+  const total = data.reduce((sum, item) => sum + item.count, 0);
+  
   const chartData = {
     labels: data.map((item) => item.eppType.replace(/_/g, " ")),
     datasets: [
       {
         label: "Inspecciones por Tipo de EPP",
         data: data.map((item) => item.count),
-        backgroundColor: "rgba(16, 185, 129, 0.8)",
-        borderColor: "rgba(16, 185, 129, 1)",
+        backgroundColor: "#4e71b1",
+        borderColor: "#4e71b1",
         borderWidth: 1,
       },
     ],
@@ -110,11 +149,43 @@ export const EppTypeBarChart: React.FC<{ data: EppTypeData[] }> = ({
     plugins: {
       legend: {
         position: "top" as const,
+        display: false,
       },
       title: {
-        display: true,
+        display: false,
         text: "Inspecciones por Tipo de EPP",
+        style: {
+          marginTop: "10px",
+        },
       },
+      tooltip: {
+        callbacks: {
+          label: function(context: any) {
+            const count = context.parsed.y;
+            const percentage = total > 0 ? ((count / total) * 100).toFixed(1) : '0';
+            return `${context.dataset.label}: ${count} (${percentage}%)`;
+          }
+        }
+      },
+      datalabels: {
+        display: true,
+        color: '#fff',
+        font: {
+          weight: 700,
+          size: 16
+        }
+      }
+      // datalabels: {
+      //   display: true,
+      //   color: '#000',
+      //   anchor: 'end',
+      //   align: 'top',
+      //   offset: 4,
+      //   formatter: function(value: number) {
+      //     const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : '0';
+      //     return `${value}\n(${percentage}%)`;
+      //   }
+      // }
     },
     scales: {
       y: {
@@ -132,6 +203,8 @@ export const EppTypeBarChart: React.FC<{ data: EppTypeData[] }> = ({
 export const SuitabilityPieChart: React.FC<{ data: PieChartData[] }> = ({
   data,
 }) => {
+  const total = data.reduce((sum, item) => sum + item.value, 0);
+  
   const chartData = {
     labels: data.map((item) => item.label),
     datasets: [
@@ -151,15 +224,40 @@ export const SuitabilityPieChart: React.FC<{ data: PieChartData[] }> = ({
         position: "bottom" as const,
       },
       title: {
-        display: true,
+        display: false,
         text: "Distribución Aptos vs No Aptos",
+        style: {
+          marginTop: "10px",
+        },
       },
+      tooltip: {
+        callbacks: {
+          label: function(context: any) {
+            const value = context.parsed;
+            const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : '0';
+            return `${context.label}: ${value} (${percentage}%)`;
+          }
+        }
+      },
+     
+      datalabels: {
+        display: true,
+        color: '#fff',
+        font: {
+          weight: 700,
+          size: 12
+        },
+        formatter: function(value: number) {
+          const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : '0';
+          return `${value}\n(${percentage}%)`;
+        }
+      }
     },
   };
 
   return (
     <Pie
-      className="max-w-[400px] max-h-[400px]"
+      className="max-w-[300px] max-h-[300px]"
       data={chartData}
       options={options}
     />
@@ -173,11 +271,10 @@ export const EppAnalyticsCharts: React.FC<EppAnalyticsChartsProps> = ({
   analyticsData,
 }) => {
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      <div className="bg-white p-4 rounded-lg shadow">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+      <Fade delay={200} cascade triggerOnce>
         <Card className="h-full">
-          <CardHeader></CardHeader>
-          <CardContent className="grid grid-cols-1 md:grid-cols-2 md:grid-rows-2 gap-3">
+          <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-6 ">
             {/* =============== 1 =============== */}
             <Card
               className={`${
@@ -189,7 +286,7 @@ export const EppAnalyticsCharts: React.FC<EppAnalyticsChartsProps> = ({
               <CardHeader className="flex justify-center font-semibold ">
                 <h4 className="text-center">Total Inspecciones</h4>
               </CardHeader>
-              <CardContent className="flex justify-center">
+              <CardContent className="flex justify-center ">
                 <p className="text-4xl font-bold">
                   {analyticsData?.summaryStats.total}
                 </p>
@@ -213,16 +310,41 @@ export const EppAnalyticsCharts: React.FC<EppAnalyticsChartsProps> = ({
             </Card>
           </CardContent>
         </Card>
-      </div>
-      <div className="bg-white p-4 rounded-lg shadow">
-        <RegionalBarChart data={regionalData} />
-      </div>
-      <div className="bg-white p-4 rounded-lg shadow">
-        <EppTypeBarChart data={eppTypeData} />
-      </div>
-      <div className="bg-white p-4 rounded-lg shadow flex justify-center items-center">
-        <SuitabilityPieChart data={pieChartData} />
-      </div>
+      </Fade>
+      <Fade delay={400} cascade triggerOnce>
+        <Card className="h-full">
+          <CardHeader className="border-b flex justify-center ">
+            <span className="font-bold text-xl">Inspecciones por Regional</span>
+          </CardHeader>
+          <CardContent className="pt-6">
+            <RegionalBarChart data={regionalData} />
+          </CardContent>
+        </Card>
+      </Fade>
+      <Fade delay={600} cascade triggerOnce>
+        <Card className="h-full">
+          <CardHeader className="border-b flex justify-center ">
+            <span className="font-bold text-xl">
+              Inspecciones por Tipo de EPP
+            </span>
+          </CardHeader>
+          <CardContent className="pt-6">
+            <EppTypeBarChart data={eppTypeData} />
+          </CardContent>
+        </Card>
+      </Fade>
+      <Fade delay={800} cascade triggerOnce>
+        <Card className="h-full">
+          <CardHeader className="border-b flex justify-center ">
+            <span className="font-bold text-xl">
+              Distribución por estado <span className="font-normal">(Aptos vs No Aptos)</span>
+            </span>
+          </CardHeader>
+          <CardContent className="pt-6 flex justify-center">
+            <SuitabilityPieChart data={pieChartData} />
+          </CardContent>
+        </Card>
+      </Fade>
     </div>
   );
 };

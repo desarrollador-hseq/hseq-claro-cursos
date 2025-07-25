@@ -27,8 +27,7 @@ const isValidEmployee = (row: any) => {
     lastName &&
     identificationNumber &&
     docType &&
-    city &&
-    email
+    city 
   );
 };
 

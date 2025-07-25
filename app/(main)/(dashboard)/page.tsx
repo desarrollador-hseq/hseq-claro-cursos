@@ -139,21 +139,27 @@ const DashboardPage = async () => {
               <Loader2 className="w-7 h-7 animate-spin" />
             </div>
           )}
-          <Separator className="h-1.5 bg-primary" />
+          {/* <Separator className="h-1.5 bg-primary my-3" /> */}
              {/* Gráfico CETAR vs UVAE */}
              {trainingCollaborators && (
             <CetarDistribution trainingCollaborators={trainingCollaborators} />
           )}
           
-          <Separator className="h-1.5 bg-primary" />
+          <Separator className="h-1.5 bg-primary my-3" />
        
+          {/*============ UVAE Inspections Reports ============*/}
           {inspections && <InspectionsReports inspections={inspections} />}
+
+          {/*============ EPP Inspections Reports ============*/}
+          <Separator className="h-1.5 bg-primary my-3" />
           {<EppInspectionsReports  />}
 
-          {/* <Separator className="h-1.5 bg-primary" /> */}
+          {/*============ Reports Reports ============*/}
+          <Separator className="h-1.5 bg-primary my-3" />
           {report && <ReportsChartReports reports={report} />}
 
-          <Separator className="h-1.5 bg-primary flex justify-center" />
+          {/*============ Monthly Reports ============*/}
+          <Separator className="h-1.5 bg-primary my-3 flex justify-center" />
           {monthlyReports && (
             <MonthlyReportsSection monthlyReports={monthlyReports} />
           )}

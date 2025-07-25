@@ -296,6 +296,8 @@ export const TrainingCollaboratorsList = ({
                 maxCapacity={training.maxCapacity}
                 currentCount={totalCollaborators}
                 byCetar={training.byCetar}
+                currentCollaborators={[]}
+                onSubmitted={() => {}}
               />
             )}
           </div>
@@ -335,23 +337,27 @@ export const TrainingCollaboratorsList = ({
               close={isCloseModal}
               onClose={() => setIsCloseModal(true)}
             >
-          
               {training.courseLevel && (
                 <AddCollaboratorForm
                   trainingId={training.id}
                   course={training.course}
-                  courseLevel={training.courseLevel as CourseLevel & { requiredDocuments: RequiredDocument[] }}
+                  courseLevel={
+                    training.courseLevel as CourseLevel & {
+                      requiredDocuments: RequiredDocument[];
+                    }
+                  }
                   maxCapacity={training.maxCapacity}
                   currentCount={totalCollaborators}
                   byCetar={training.byCetar}
-                  currentCollaborators={training.trainingCollaborators.map((tc) => tc.collaborator as Collaborator)}
+                  currentCollaborators={training.trainingCollaborators.map(
+                    (tc) => tc.collaborator as Collaborator
+                  )}
                   onSubmitted={() => {
-                      setIsCloseModal(false);
+                    setIsCloseModal(false);
                   }}
                 />
               )}
             </SimpleModal>
-         
           </div>
         </CardHeader>
         <CardContent>

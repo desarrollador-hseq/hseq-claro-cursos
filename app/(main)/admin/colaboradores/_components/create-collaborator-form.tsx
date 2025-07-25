@@ -51,7 +51,8 @@ const formSchema = z.object({
   email: z
     .string()
     .email({ message: "Correo electrónico inválido" })
-    .optional(),
+    .optional()
+    .or(z.literal("")),
   cityId: z.string().min(1, "Seleccione una ciudad"),
   docType: z.string().min(1, "Seleccione un tipo de documento"),
   // evaluationPass: z.boolean().default(false),

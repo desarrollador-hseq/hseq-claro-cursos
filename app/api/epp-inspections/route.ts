@@ -16,6 +16,7 @@ export async function GET(req: Request) {
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '10');
     const search = searchParams.get('search');
+    const sessionId = searchParams.get('sessionId');
     const eppType = searchParams.get('eppType');
     const isSuitable = searchParams.get('isSuitable');
 
@@ -42,6 +43,10 @@ export async function GET(req: Request) {
         { eppBrand: { contains: search } },
         { inspectorName: { contains: search, mode: 'insensitive' } }
       ];
+    }
+
+    if (sessionId) {
+      where.sessionId = sessionId;
     }
 
     // Calcular offset para paginación
@@ -118,7 +123,8 @@ export async function GET(req: Request) {
         totalCount,
         limit,
         hasNextPage,
-        hasPrevPage
+        hasPrevPage,
+        statusStats
       },
       stats,
       filters: {

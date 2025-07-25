@@ -33,8 +33,8 @@ export async function GET(req: Request) {
     }
 
     const whereClause = Object.keys(dateFilter).length > 0 
-      ? { certificationDate: dateFilter }
-      : {};
+      ? { certificationDate: dateFilter, status: "VALIDATED" as const }
+      : { status: "VALIDATED" as const };
 
     // 1. Inspecciones por regional
     const inspectionsByRegional = await db.eppCertificationInspection.groupBy({
@@ -72,7 +72,7 @@ export async function GET(req: Request) {
     const regionalData = inspectionsByRegional.map(item => ({
       regionalId: item.regionalId,
       regionalName: item.regionalId ? regionalMap.get(item.regionalId) || 'Sin Regional' : 'Sin Regional',
-      count: item._count.id
+      count: item._count?.id || 0
     }));
 
     // 2. Inspecciones por tipo de EPP
@@ -91,7 +91,7 @@ export async function GET(req: Request) {
 
     const eppTypeData = inspectionsByEppType.map(item => ({
       eppType: item.eppType,
-      count: item._count.id
+      count: item._count?.id || 0
     }));
 
     // 3. Inspecciones aptas vs no aptas (gráfica de torta)
@@ -105,7 +105,7 @@ export async function GET(req: Request) {
 
     const pieChartData = suitabilityData.map(item => ({
       label: item.isSuitable ? 'Aptos' : 'No Aptos',
-      value: item._count.id,
+      value: item._count?.id || 0,
       color: item.isSuitable ? '#10B981' : '#EF4444' // Verde para aptos, rojo para no aptos
     }));
 
