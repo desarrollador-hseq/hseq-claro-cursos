@@ -211,7 +211,7 @@ export const CertificateTemplate = ({
                   través del área de seguridad, salud y ambiente (SST&A)de CLARO
                   a través del correo{" "}
                   <Text style={styles.emailLink}>
-                    trabajoenalturas@claro.com.co
+                    seguridadeneltrabajo@claro.com.co
                   </Text>{" "}
                   con el siguiente consecutivo:{" "}
                   <Text style={styles.consecutive}>BOG2025RESC001381</Text>
