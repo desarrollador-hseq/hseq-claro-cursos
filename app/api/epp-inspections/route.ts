@@ -6,7 +6,7 @@ import { authOptions } from "@/lib/auth-options";
 export async function GET(req: Request) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session) {
       return new NextResponse("Unauthorized", { status: 401 });
     }
@@ -19,6 +19,7 @@ export async function GET(req: Request) {
     const sessionId = searchParams.get('sessionId');
     const eppType = searchParams.get('eppType');
     const isSuitable = searchParams.get('isSuitable');
+    const isKitRescue = searchParams.get('isKitRescue');
 
     // Construir filtros dinámicamente
     const where: any = {};
@@ -31,8 +32,13 @@ export async function GET(req: Request) {
       where.eppType = eppType;
     }
 
+    if (isKitRescue) {
+      where.isKitRescue = isKitRescue === 'true';
+    }
+
     if (isSuitable !== null && isSuitable !== undefined) {
       where.isSuitable = isSuitable === 'true';
+
     }
 
     if (search) {
@@ -41,7 +47,7 @@ export async function GET(req: Request) {
         { collaboratorNumDoc: { contains: search } },
         { eppSerialNumber: { contains: search } },
         { eppBrand: { contains: search } },
-        { inspectorName: { contains: search, mode: 'insensitive' } }
+        { inspectorName: { contains: search, mode: 'insensitive' } },
       ];
     }
 

@@ -49,7 +49,10 @@ const ShowEppInspectionCertificate = ({
   useEffect(() => {
     if (eppInspection) {
       setPdfComponent(
-        <EppInspectionCertificateTemplate eppInspection={eppInspection} />
+        <EppInspectionCertificateTemplate 
+          eppInspection={eppInspection} 
+          hideCollaboratorInfo={eppInspection.isKitRescue}
+        />
       );
     }
     console.log({ eppInspection });

@@ -580,6 +580,9 @@ model EppCertificationInspection {
 
   certificateNumber String? @unique // Número de certificado incremental, único
 
+  // Campo para diferenciar inspecciones de kit de rescate
+  isKitRescue Boolean @default(false)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -646,6 +649,12 @@ enum EppType {
   FRENO_ARRESTADOR_CABLE
   MOSQUETON
   ANCLAJE_TIPO_TIE_OFF
+  // Nuevos tipos para kit de rescate
+  ARNES_RESCATE
+  POLIPASTO_RESCATE
+  MOSQUETON_RESCATE
+  ANCLAJE_PORTATIL_RESCATE
+  BLOQUEADORES_RESCATE
 }
 
 enum EppInspectionStatus {

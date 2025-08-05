@@ -11,7 +11,13 @@ enum EppType {
   ESLINGA_POSICIONAMIENTO = "ESLINGA_POSICIONAMIENTO",
   FRENO_ARRESTADOR_CABLE = "FRENO_ARRESTADOR_CABLE",
   MOSQUETON = "MOSQUETON",
-  ANCLAJE_TIPO_TIE_OFF = "ANCLAJE_TIPO_TIE_OFF"
+  ANCLAJE_TIPO_TIE_OFF = "ANCLAJE_TIPO_TIE_OFF",
+  // Tipos de kit de rescate
+  ARNES_RESCATE = "ARNES_RESCATE",
+  POLIPASTO_RESCATE = "POLIPASTO_RESCATE",
+  MOSQUETON_RESCATE = "MOSQUETON_RESCATE",
+  ANCLAJE_PORTATIL_RESCATE = "ANCLAJE_PORTATIL_RESCATE",
+  BLOQUEADORES_RESCATE = "BLOQUEADORES_RESCATE"
 }
 
 interface EppEquipment {
@@ -41,6 +47,7 @@ interface InspectionFormData {
   equipment: EppEquipment[];
   sessionId?: string; // ID de sesión para agrupar inspecciones
   equipmentIndex?: number; // Índice del equipo en la sesión
+  isKitRescue?: boolean; // Campo para diferenciar inspecciones de kit de rescate
 }
 
 export async function POST(req: Request) {
@@ -163,6 +170,7 @@ export async function POST(req: Request) {
               cityName: formData.city,
               sessionId: formData.sessionId || null, // ID de sesión para agrupar inspecciones
               equipmentIndex: formData.equipmentIndex || null, // Índice del equipo en la sesión
+              isKitRescue: formData.isKitRescue || false, // Campo para diferenciar inspecciones de kit de rescate
               // Resumen JSON con todas las respuestas y metadatos
               inspectionSummary: {
                 totalQuestions: Object.keys(equipment.inspectionAnswers || {}).length,

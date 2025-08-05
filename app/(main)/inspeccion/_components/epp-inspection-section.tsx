@@ -50,7 +50,7 @@ import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 
-// Tipos de EPP disponibles
+// Tipos de EPP disponibles (normales y kit de rescate)
 const EPP_TYPES = [
   { value: "ARNES_CUERPO_COMPLETO", name: "ARNÉS CUERPO COMPLETO" },
   {
@@ -61,6 +61,13 @@ const EPP_TYPES = [
   { value: "FRENO_ARRESTADOR_CABLE", name: "FRENO O ARRESTADOR DE CABLE" },
   { value: "MOSQUETON", name: "MOSQUETÓN" },
   { value: "ANCLAJE_TIPO_TIE_OFF", name: "ANCLAJE TIPO TIE OFF" },
+
+  // Kit de Rescate
+  { value: "ARNES_RESCATE", name: "ARNÉS DE RESCATE" },
+  { value: "POLIPASTO_RESCATE", name: "POLIPASTO DE RESCATE" },
+  { value: "MOSQUETON_RESCATE", name: "MOSQUETONES DE RESCATE" },
+  { value: "ANCLAJE_PORTATIL_RESCATE", name: "ANCLAJE PORTÁTIL DE RESCATE" },
+  { value: "BLOQUEADORES_RESCATE", name: "BLOQUEADORES DE RESCATE" },
 ];
 
 // Tipo para las preguntas desde la API
@@ -118,6 +125,7 @@ export const EppInspectionSection: React.FC<EppInspectionSectionProps> = ({
         onUpdate({ eppName: eppTypeName });
       }
     }
+    console.log({equipment})
   }, [equipment.eppType, equipment.eppName, onUpdate]);
 
   // Cargar preguntas cuando cambie el tipo de EPP
@@ -139,6 +147,7 @@ export const EppInspectionSection: React.FC<EppInspectionSectionProps> = ({
       const response = await axios.get(
         `/api/epp-questions?eppType=${encodeURIComponent(eppType)}`
       );
+      console.log({ response });
 
       if (!response.data) {
         throw new Error("Error al cargar las preguntas");
@@ -178,6 +187,8 @@ export const EppInspectionSection: React.FC<EppInspectionSectionProps> = ({
       return "text-red-600 bg-red-50 border-red-200";
     }
   };
+
+  console.log({ equipment });
 
   // Calcular progreso de respuestas
   const answeredQuestions = questions.filter(
@@ -219,11 +230,11 @@ export const EppInspectionSection: React.FC<EppInspectionSectionProps> = ({
             </span>
           </div>
           <div className="flex justify-between w-full items-center gap-2 my-2 text-primary font-bold">
-            {equipment.eppType && (
+            {
               <span className="text-2xl">
                 {equipment.eppName || equipment.eppType}
               </span>
-            )}
+            }
             {/* Indicador de estado del equipo */}
             {/* <div className="flex items-center gap-1">
               <div

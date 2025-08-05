@@ -49,6 +49,7 @@ interface EppInspectionCertificateProps {
   eppInspection:
     | (EppCertificationInspection)
     | null;
+  hideCollaboratorInfo?: boolean; // Nuevo prop para ocultar información del colaborador
 }
 
 const getEppName = (eppType: EppType | "") => {
@@ -65,6 +66,17 @@ const getEppName = (eppType: EppType | "") => {
       return "MOSQUETON";
     case "ANCLAJE_TIPO_TIE_OFF":
       return "ANCLAJE TIPO TIE OFF";
+    // Tipos de kit de rescate
+    case "ARNES_RESCATE":
+      return "ARNÉS";
+    case "POLIPASTO_RESCATE":
+      return "POLIPASTO";
+    case "MOSQUETON_RESCATE":
+      return "MOSQUETÓN";
+    case "ANCLAJE_PORTATIL_RESCATE":
+      return "ANCLAJE PORTÁTIL";
+    case "BLOQUEADORES_RESCATE":
+      return "BLOQUEADOR";
     default:
       return "-";
   }
@@ -72,6 +84,7 @@ const getEppName = (eppType: EppType | "") => {
 
 export const EppInspectionCertificateTemplate = ({
   eppInspection,
+  hideCollaboratorInfo = false,
 }: EppInspectionCertificateProps) => {
   const COMPANY_NAME = "CLARO S.A.S";
   const inspectionDate = formatDate(eppInspection?.inspectionDate);
@@ -207,14 +220,16 @@ export const EppInspectionCertificateTemplate = ({
                     </Text>
                   </View>
                 </View>
-                <View style={styles.infoRowBlock}>
-                  <Text style={styles.infoBlockLabel}>COLABORADOR:</Text>
-                  <View style={styles.infoBlockInput}>
-                    <Text style={styles.infoBlockInputText}>
-                      {collaboratorName}
-                    </Text>
+                {!hideCollaboratorInfo && (
+                  <View style={styles.infoRowBlock}>
+                    <Text style={styles.infoBlockLabel}>COLABORADOR:</Text>
+                    <View style={styles.infoBlockInput}>
+                      <Text style={styles.infoBlockInputText}>
+                        {collaboratorName}
+                      </Text>
+                    </View>
                   </View>
-                </View>
+                )}
                 
               </View>
               <View

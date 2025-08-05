@@ -73,12 +73,11 @@ const STATUS_CONFIG = {
 
 // Nombres de tipos EPP
 const EPP_TYPE_NAMES = {
-  ARNES_CUERPO_COMPLETO: "ARNÉS CUERPO COMPLETO",
-  ESLINGA_DOBLE_TERMINAL_EN_Y: "ESLINGA DE DOBLE TERMINAL EN Y",
-  ESLINGA_POSICIONAMIENTO: "ESLINGA DE POSICIONAMIENTO",
-  FRENO_ARRESTADOR_CABLE: "FRENO O ARRESTADOR DE CABLE",
-  MOSQUETON: "MOSQUETÓN",
-  ANCLAJE_TIPO_TIE_OFF: "ANCLAJE TIPO TIE OFF",
+  ARNES_RESCATE: "ARNÉS",
+  POLIPASTO_RESCATE: "POLIPASTO",
+  MOSQUETON_RESCATE: "MOSQUETÓN",
+  ANCLAJE_PORTATIL_RESCATE: "ANCLAJE PORTÁTIL",
+  BLOQUEADORES_RESCATE: "BLOQUEADOR",
 };
 
 interface Inspection {
@@ -98,7 +97,7 @@ interface Inspection {
   collaboratorCityName?: string; // Added for city filter
 }
 
-export default function EppInspectionsPage() {
+export default function EppInspectionsKitRescuePage() {
   const router = useRouter();
   const [inspections, setInspections] = useState<Inspection[]>([]);
   const [loading, setLoading] = useState(true);
@@ -133,7 +132,7 @@ export default function EppInspectionsPage() {
       if (dateFilter) params.append("search", dateFilter); // Same as above
       params.append("page", currentPage.toString());
       params.append("limit", pageSize.toString());
-      params.append("isKitRescue", "false");
+      params.append("isKitRescue", "true");
       const response = await axios.get(`/api/epp-inspections?${params}`);
       const data = response.data;
       setInspections(data.inspections || []);
@@ -184,8 +183,8 @@ export default function EppInspectionsPage() {
   return (
     <div className="container mx-auto py-6">
       <TitlePage
-        title="Inspecciones EPP"
-        description="Gestión de inspecciones de equipos de protección personal"
+        title="Inspecciones de Kit de Rescate"
+        description="Gestión de inspecciones de equipos de kit de rescate"
       />
       <Card>
         <CardContent className="pt-6">
@@ -351,7 +350,7 @@ export default function EppInspectionsPage() {
                             variant="outline"
                             onClick={() =>
                               router.push(
-                                `/admin/inspecciones/equipos/gestionar/${inspection.id}`
+                                `/admin/inspecciones/kit-rescate/gestionar/${inspection.id}`
                               )
                             }
                           >

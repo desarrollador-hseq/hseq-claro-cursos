@@ -47,10 +47,10 @@ import { InspectionSummaryModal } from "./_components/epp-inspection-section";
 import { EppSelection } from "./_components/epp-selection";
 import TitlePage from "@/components/title-page";
 import axios from "axios";
-import { FaCalendarCheck, FaFileLines, FaHelmetSafety, FaUser } from "react-icons/fa6";
+import { FaCalendarCheck, FaFileLines, FaHelmetSafety, FaShieldCat, FaUser } from "react-icons/fa6";
 import { Banner } from "@/components/ui/banner";
 
-// Tipos de EPP disponibles
+// Tipos de EPP normales disponibles
 const EPP_TYPES = [
   { value: "ARNES_CUERPO_COMPLETO", name: "ARNÉS CUERPO COMPLETO" },
   {
@@ -349,12 +349,13 @@ export default function InspectionPage() {
     try {
       // Crear inspecciones individuales para cada equipo
       const inspectionPromises = formData.equipment.map(async (equipment) => {
-        const inspectionData = {
-          ...formData,
-          equipment: [equipment], // Solo un equipo por inspección
-          sessionId: inspectionSession.sessionId, // ID de sesión para agrupar
-          equipmentIndex: formData.equipment.indexOf(equipment) + 1, // Índice del equipo en la sesión
-        };
+                 const inspectionData = {
+           ...formData,
+           equipment: [equipment], // Solo un equipo por inspección
+           sessionId: inspectionSession.sessionId, // ID de sesión para agrupar
+           equipmentIndex: formData.equipment.indexOf(equipment) + 1, // Índice del equipo en la sesión
+           isKitRescue: false, // Inspección normal
+         };
 
         console.log(`Enviando inspección ${equipment.eppName}:`, inspectionData);
 

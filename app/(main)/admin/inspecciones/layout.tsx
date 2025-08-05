@@ -8,7 +8,7 @@ import { usePathname } from "next/navigation";
 
 const navigationSettings = [
   {
-    name: "Equipos",
+    name: "Equipos (EPCC)",
     href: `/admin/inspecciones/equipos`,
     pattern: /^\/admin\/inspecciones\/equipos.*/, // Coincide con /proveedores y sus subrutas, pero no con /documentacion
   },
@@ -16,6 +16,11 @@ const navigationSettings = [
     name: "Instalaciones (UVAE)",
     href: `/admin/inspecciones/instalaciones`,
     pattern: /^\/admin\/inspecciones\/instalaciones.*/, // Coincide con /documentacion y sus subrutas
+  },
+  {
+    name: "Kit de rescate",
+    href: `/admin/inspecciones/kit-rescate`,
+    pattern: /^\/admin\/inspecciones\/kit-rescate.*/, // Coincide con /documentacion y sus subrutas
   },
 ];
 

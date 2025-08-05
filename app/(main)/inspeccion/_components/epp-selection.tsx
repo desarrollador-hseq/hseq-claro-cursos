@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { FaHelmetSafety } from "react-icons/fa6";
 import { CheckCircle } from "lucide-react";
 
-// Tipos de EPP disponibles
+// Tipos de EPP normales disponibles
 const EPP_TYPES = [
   { value: "ARNES_CUERPO_COMPLETO", name: "ARNÉS CUERPO COMPLETO" },
   {
@@ -23,12 +23,14 @@ interface EppSelectionProps {
   selectedEppTypes: string[];
   onSelectionChange: (selectedTypes: string[]) => void;
   error?: string;
+  eppTypes?: Array<{ value: string; name: string }>;
 }
 
 export const EppSelection: React.FC<EppSelectionProps> = ({
   selectedEppTypes,
   onSelectionChange,
   error,
+  eppTypes = EPP_TYPES,
 }) => {
   const handleEppTypeToggle = (eppType: string) => {
     const newSelection = selectedEppTypes.includes(eppType)
@@ -38,6 +40,9 @@ export const EppSelection: React.FC<EppSelectionProps> = ({
     onSelectionChange(newSelection);
   };
 
+  console.log({eppselectiontype: eppTypes, selectedEppTypes})
+
+
   return (
     <Card className="bg-white">
       <CardHeader>
@@ -46,13 +51,14 @@ export const EppSelection: React.FC<EppSelectionProps> = ({
           Selección de Equipos EPP
         </CardTitle>
         <div className="text-sm ">
-          Selecciona los equipos que vas a inspeccionar. Mínimo 1, máximo 6.
+          Selecciona los equipos que vas a inspeccionar. Mínimo 1, máximo{" "}
+          {eppTypes.length}.
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="flex items-center justify-between mb-4">
           <Badge variant="secondary" className=" text-base">
-            Seleccionados: {selectedEppTypes.length}/6
+            Seleccionados: {selectedEppTypes.length}/{eppTypes.length}
           </Badge>
           {selectedEppTypes.length === 0 && (
             <Badge variant="destructive" className="text-xs">
@@ -62,7 +68,7 @@ export const EppSelection: React.FC<EppSelectionProps> = ({
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {EPP_TYPES.map((eppType) => (
+          {eppTypes.map((eppType) => (
             <div
               key={eppType.value}
               className={`
