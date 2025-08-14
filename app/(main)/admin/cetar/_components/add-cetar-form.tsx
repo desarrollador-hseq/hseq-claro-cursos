@@ -130,9 +130,9 @@ export const AddCetarForm = ({ cetar, cities }: AddCetarFormProps) => {
                 control={form.control}
                 name="name"
                 render={({ field }) => (
-                  <FormItem>
+                  <FormItem className="max-w-[350px] mx-auto">
                     <FormLabel className="font-bold" htmlFor="fullName">
-                      Nombre del curso
+                      Nombre del CETAR
                     </FormLabel>
 
                     <FormControl>
@@ -153,8 +153,8 @@ export const AddCetarForm = ({ cetar, cities }: AddCetarFormProps) => {
                 control={form.control}
                 name="cityId"
                 render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Ciudad</FormLabel>
+                  <FormItem className="max-w-[350px] mx-auto">
+                    <FormLabel>Ciudad del CETAR</FormLabel>
                     <Select
                       onValueChange={(e) => handleCityChange(e)}
                       defaultValue={
@@ -162,14 +162,14 @@ export const AddCetarForm = ({ cetar, cities }: AddCetarFormProps) => {
                       }
                     >
                       <FormControl>
-                        <SelectTrigger className="bg-slate-100 border-slate-300 text-lg font-semibold">
+                        <SelectTrigger className="max-w-[350px] bg-slate-100 border-slate-300 text-lg font-semibold">
                           <SelectValue
                             className="text-red-500"
                             placeholder="Selecciona la ciudad del colaborador"
                           />
                         </SelectTrigger>
                       </FormControl>
-                      <SelectContent>
+                      <SelectContent className="max-h-[350px]">
                         {cities.map((city) => (
                           <SelectItem
                             key={city.id}
@@ -191,7 +191,7 @@ export const AddCetarForm = ({ cetar, cities }: AddCetarFormProps) => {
           <LoadingButton
             disabled={isSubmitting || !isValid}
             loading={isSubmitting}
-            className="w-full max-w-[500px] gap-3"
+            className="w-full max-w-[350px] gap-3"
           >
             {isEdit ? "Actualizar" : "Crear"}
           </LoadingButton>
